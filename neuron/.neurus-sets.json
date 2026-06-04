@@ -1,0 +1,115 @@
+[
+  {
+    "id": "set_75d6fa5f",
+    "name": "Project Atlas",
+    "namespace": "neurus_set_75d6fa5f",
+    "manifestPath": ".neurus-set_75d6fa5f.json",
+    "visibility": "private",
+    "sharedWith": [],
+    "createdAt": 1780571733003
+  },
+  {
+    "id": "set_8f59ee5d",
+    "name": "Climbing crew",
+    "namespace": "neurus_set_8f59ee5d",
+    "manifestPath": ".neurus-set_8f59ee5d.json",
+    "visibility": "shared",
+    "sharedWith": [
+      "agent:bob"
+    ],
+    "createdAt": 1780571733003
+  },
+  {
+    "id": "set_ab6e484e",
+    "name": "default",
+    "namespace": "neurus_set_ab6e484e",
+    "manifestPath": ".neurus-set_ab6e484e.json",
+    "visibility": "private",
+    "sharedWith": [],
+    "createdAt": 1780571733004
+  },
+  {
+    "id": "set_25b0573d",
+    "name": "acme-docs",
+    "namespace": "neurus_set_25b0573d",
+    "manifestPath": ".neurus-set_25b0573d.json",
+    "visibility": "private",
+    "sharedWith": [],
+    "createdAt": 1780583495897
+  },
+  {
+    "id": "set_f46045cc",
+    "name": "zephyr",
+    "namespace": "neurus_set_f46045cc",
+    "manifestPath": ".neurus-set_f46045cc.json",
+    "visibility": "private",
+    "sharedWith": [],
+    "createdAt": 1780591638592
+  },
+  {
+    "id": "set_bb49ca06",
+    "name": "zephyr-copy",
+    "namespace": "neurus_set_bb49ca06",
+    "manifestPath": ".neurus-set_bb49ca06.json",
+    "visibility": "private",
+    "sharedWith": [],
+    "createdAt": 1780591681433
+  },
+  {
+    "id": "set_05ec73b7",
+    "name": "work",
+    "namespace": "neurus_set_05ec73b7",
+    "manifestPath": ".neurus-set_05ec73b7.json",
+    "visibility": "private",
+    "sharedWith": [],
+    "createdAt": 1780593782754
+  },
+  {
+    "id": "set_1a6202aa",
+    "name": "walrus-docs",
+    "namespace": "neurus_set_1a6202aa",
+    "manifestPath": ".neurus-set_1a6202aa.json",
+    "visibility": "private",
+    "sharedWith": [],
+    "createdAt": 1780598706269
+  },
+  {
+    "id": "set_667e56bc",
+    "name": "api-demo",
+    "namespace": "neurus_set_667e56bc",
+    "manifestPath": ".neurus-set_667e56bc.json",
+    "visibility": "private",
+    "sharedWith": [],
+    "createdAt": 1780602470445
+  },
+  {
+    "id": "set_58d6be5d",
+    "name": "insp-demo",
+    "namespace": "neurus_set_58d6be5d",
+    "manifestPath": ".neurus-set_58d6be5d.json",
+    "visibility": "private",
+    "sharedWith": [],
+    "createdAt": 1780603290723
+  },
+  {
+    "id": "set_6507163a",
+    "name": "retr",
+    "namespace": "neurus_set_6507163a",
+    "manifestPath": ".neurus-set_6507163a.json",
+    "visibility": "private",
+    "sharedWith": [],
+    "createdAt": 1780603878748
+  },
+  {
+    "id": "set_ae2bf9df",
+    "name": "trading-rules",
+    "namespace": "neurus_set_ae2bf9df",
+    "manifestPath": ".neurus-set_ae2bf9df.json",
+    "visibility": "private",
+    "integrity": "verified",
+    "sharedWith": [],
+    "createdAt": 1780606334711,
+    "attestedRoot": "8dadb276efe49cb19186f52957a1c73a7d913853e26496a9f095aa088dbcbfbe",
+    "attestedAt": 1780606387889
+  }
+]

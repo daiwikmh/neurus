@@ -1,0 +1,34 @@
+[
+  {
+    "id": "note_aea3d596",
+    "type": "note",
+    "title": "i am daiwik maheshwari",
+    "body": "i am daiwik maheshwari",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780592189034,
+    "synapses": [
+      {
+        "to": "person_50660f87",
+        "kind": "about"
+      }
+    ],
+    "meta": {
+      "memwalBlob": "EZ3McvniDo_AQw7ohrLZTt_3R2qVE5MvgzGeJxEogpc"
+    }
+  },
+  {
+    "id": "person_50660f87",
+    "type": "person",
+    "title": "Daiwik Maheshwari",
+    "body": "Daiwik Maheshwari\nthe writer is Daiwik Maheshwari",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780592220901,
+    "synapses": []
+  }
+]

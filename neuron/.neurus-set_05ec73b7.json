@@ -1,0 +1,408 @@
+[
+  {
+    "id": "note_3e60c07c",
+    "type": "note",
+    "title": "Sarah needs the Q3 deck by Friday",
+    "body": "Sarah needs the Q3 deck by Friday",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780593782755,
+    "synapses": [
+      {
+        "to": "person_2b1fd725",
+        "kind": "about"
+      }
+    ],
+    "meta": {
+      "memwalBlob": "u6BCT1nWu6yerZFmrtFCVHBDs_Y8xwAVUAuhkARURt8"
+    }
+  },
+  {
+    "id": "person_2b1fd725",
+    "type": "person",
+    "title": "Sarah",
+    "body": "Sarah\nneeds the Q3 deck by Friday",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780593815382,
+    "synapses": []
+  },
+  {
+    "id": "commitment_29e2e646",
+    "type": "commitment",
+    "title": "owe Sarah: Q3 deck",
+    "body": "Q3 deck (due Friday)",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780593815383,
+    "synapses": [
+      {
+        "to": "person_2b1fd725",
+        "kind": "promised_to"
+      }
+    ],
+    "meta": {
+      "duePerson": "Sarah",
+      "due": "Friday"
+    }
+  },
+  {
+    "id": "note_b0f9217f",
+    "type": "note",
+    "title": "Tom asked when the Q3 deck is ready",
+    "body": "Tom asked when the Q3 deck is ready",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780593815870,
+    "synapses": [
+      {
+        "to": "person_4cec2e0e",
+        "kind": "about"
+      }
+    ],
+    "meta": {
+      "memwalBlob": "ar-cUcXj1g-_DG-EJWAPTDVxYEVCt4lzjA3bz45HNbI"
+    }
+  },
+  {
+    "id": "person_4cec2e0e",
+    "type": "person",
+    "title": "Tom",
+    "body": "Tom\nasked when the Q3 deck is ready",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780593861883,
+    "synapses": []
+  },
+  {
+    "id": "note_4f9da9e2",
+    "type": "note",
+    "title": "Priya is blocked until the Q3 deck is done",
+    "body": "Priya is blocked until the Q3 deck is done",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780593862369,
+    "synapses": [
+      {
+        "to": "person_a112022c",
+        "kind": "about"
+      }
+    ],
+    "meta": {
+      "memwalBlob": "YJLmCFPAiq6GxF9LzlXEN8A0Pm_bWKuYOf2YSmce-sU"
+    }
+  },
+  {
+    "id": "person_a112022c",
+    "type": "person",
+    "title": "Priya",
+    "body": "Priya\nis blocked until the Q3 deck is done",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780593893738,
+    "synapses": []
+  },
+  {
+    "id": "insight_54db8a67",
+    "type": "insight",
+    "title": "The Q3 deck is a critical bottleneck: Priya is blocked until",
+    "body": "The Q3 deck is a critical bottleneck: Priya is blocked until it’s finished, Sarah needs it by Friday, and Tom is awaiting its status. Delivering it on time is essential to unblock team members and meet stakeholder expectations.",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780593902747,
+    "synapses": [
+      {
+        "to": "person_a112022c",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_4f9da9e2",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_4cec2e0e",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_b0f9217f",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "commitment_29e2e646",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_2b1fd725",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_3e60c07c",
+        "kind": "reflects_on"
+      }
+    ],
+    "meta": {
+      "importance": 0.92,
+      "reflectedAt": 1780593902747,
+      "memwalBlob": "6EIMeNPJEaDbrEwPSde-KsXb6CX_ReXErJMZ3fslNLU"
+    }
+  },
+  {
+    "id": "insight_78be6b6d",
+    "type": "insight",
+    "title": "There’s a communication gap—Tom has asked about the deck’s r",
+    "body": "There’s a communication gap—Tom has asked about the deck’s readiness, indicating stakeholders are not yet updated on progress. Proactively sharing the schedule or status could reduce uncertainty.",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780593927133,
+    "synapses": [
+      {
+        "to": "person_a112022c",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_4f9da9e2",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_4cec2e0e",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_b0f9217f",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "commitment_29e2e646",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_2b1fd725",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_3e60c07c",
+        "kind": "reflects_on"
+      }
+    ],
+    "meta": {
+      "importance": 0.68,
+      "reflectedAt": 1780593927133,
+      "memwalBlob": "90-dSIjcr5QRrHD-uLmD9_NQW3G6Vl7LWRNzYYs9I8k"
+    }
+  },
+  {
+    "id": "note_3abc596d",
+    "type": "note",
+    "title": "daiwik is their leader",
+    "body": "daiwik is their leader",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780595816554,
+    "synapses": [
+      {
+        "to": "person_1e39bf96",
+        "kind": "about"
+      }
+    ],
+    "meta": {
+      "memwalBlob": "pzyxZOwGCKDUH-MEGki3zs0JZkWzGaHCU3R_HC04HI0"
+    }
+  },
+  {
+    "id": "person_1e39bf96",
+    "type": "person",
+    "title": "daiwik",
+    "body": "daiwik\nis their leader\nleading the q3 deck\nwants it on saturday",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780595839231,
+    "synapses": []
+  },
+  {
+    "id": "note_ebdd5d38",
+    "type": "note",
+    "title": "daiwik is leading the q3 deck and he wants it o…",
+    "body": "daiwik is leading the q3 deck and he wants it on saturday",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780595864960,
+    "synapses": [
+      {
+        "to": "person_1e39bf96",
+        "kind": "about"
+      }
+    ],
+    "meta": {
+      "memwalBlob": "yqnsJBcI3HafKwDez_E-Y862Ak5N1STvclpfCf8s26c"
+    }
+  },
+  {
+    "id": "commitment_34d0cd2e",
+    "type": "commitment",
+    "title": "owe daiwik: provide q3 deck",
+    "body": "provide q3 deck (due Saturday)",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780595894465,
+    "synapses": [
+      {
+        "to": "person_1e39bf96",
+        "kind": "promised_to"
+      }
+    ],
+    "meta": {
+      "duePerson": "daiwik",
+      "due": "Saturday"
+    }
+  },
+  {
+    "id": "insight_f88f7001",
+    "type": "insight",
+    "title": "There is a direct conflict between the stated due date for t",
+    "body": "There is a direct conflict between the stated due date for the Q3 deck (Saturday) and stakeholder expectations (Sarah needs it by Friday, Priya is blocked until it’s done, Tom is asking for its readiness). This requires immediate clarification and alignment on the actual deadline.",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780595993674,
+    "synapses": [
+      {
+        "to": "commitment_34d0cd2e",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_ebdd5d38",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_1e39bf96",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_3abc596d",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_a112022c",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_4f9da9e2",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_4cec2e0e",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_b0f9217f",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "commitment_29e2e646",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_2b1fd725",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_3e60c07c",
+        "kind": "reflects_on"
+      }
+    ],
+    "meta": {
+      "importance": 0.92,
+      "reflectedAt": 1780595993674,
+      "memwalBlob": "y3POI9xyCBJrKOsESb61ClB1BNeQT8z-w1f6MmpXwDg"
+    }
+  },
+  {
+    "id": "insight_f2b65b05",
+    "type": "insight",
+    "title": "Key stakeholders (Priya, Tom, Sarah) are dependent on the Q3",
+    "body": "Key stakeholders (Priya, Tom, Sarah) are dependent on the Q3 deck, so any delay will block their work. Prioritizing delivery by Friday (or communicating a revised timeline) is critical to avoid cascading bottlenecks.",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780596020391,
+    "synapses": [
+      {
+        "to": "commitment_34d0cd2e",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_ebdd5d38",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_1e39bf96",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_3abc596d",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_a112022c",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_4f9da9e2",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_4cec2e0e",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_b0f9217f",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "commitment_29e2e646",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_2b1fd725",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_3e60c07c",
+        "kind": "reflects_on"
+      }
+    ],
+    "meta": {
+      "importance": 0.84,
+      "reflectedAt": 1780596020391,
+      "memwalBlob": "Xt8Re_nntTGbtXdpugTprEwFZzr7Yr_mGtNeJ9A6tsQ"
+    }
+  }
+]

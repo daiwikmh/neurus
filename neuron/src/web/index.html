@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Neurus</title>
+<style>
+  :root { --bg1:#eef2ff; --bg2:#faf5ff; --ink:#1e1b2e; --muted:#6b6786; --accent:#6d5efc; --accent2:#a855f7; --card:#ffffffcc; --line:#e7e3f5; }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; min-height:100vh; font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif; color:var(--ink);
+    background: radial-gradient(1200px 600px at 15% -10%, var(--bg2), transparent), radial-gradient(1000px 600px at 110% 10%, #e0f2fe, transparent), linear-gradient(160deg, var(--bg1), #ffffff 60%);
+    display:flex; align-items:center; justify-content:center; padding:32px;
+  }
+  .card {
+    width:100%; max-width:680px; background:var(--card); backdrop-filter: blur(14px);
+    border:1px solid var(--line); border-radius:24px; box-shadow:0 30px 80px -30px #6d5efc55, 0 2px 8px #0000000a;
+    overflow:hidden;
+  }
+  header { padding:22px 26px 16px; border-bottom:1px solid var(--line); }
+  .brand { display:flex; align-items:center; gap:10px; }
+  .dot { width:11px; height:11px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); box-shadow:0 0 14px var(--accent); }
+  h1 { font-size:19px; margin:0; letter-spacing:-.3px; }
+  .sub { color:var(--muted); font-size:12.5px; margin-top:3px; }
+  .setrow { display:flex; align-items:center; gap:8px; margin-top:14px; }
+  .setrow label { font-size:12px; color:var(--muted); }
+  .setrow input { flex:0 0 160px; padding:7px 11px; border:1px solid var(--line); border-radius:10px; font:inherit; background:#fff; }
+  .pills { display:flex; flex-wrap:wrap; gap:7px; padding:16px 26px 6px; }
+  .pill { padding:6px 13px; border:1px solid var(--line); background:#fff; border-radius:999px; font-size:13px; color:var(--muted); cursor:pointer; transition:.15s; }
+  .pill:hover { border-color:var(--accent); color:var(--accent); }
+  .pill.on { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; border-color:transparent; box-shadow:0 6px 16px -6px var(--accent); }
+  .log { padding:10px 26px; max-height:46vh; overflow:auto; }
+  .turn { margin:14px 0; }
+  .q { font-size:12.5px; color:var(--accent); font-weight:600; margin-bottom:5px; }
+  .a { white-space:pre-wrap; background:#fff; border:1px solid var(--line); border-radius:14px; padding:13px 15px; box-shadow:0 1px 3px #0000000a; }
+  .a.err { color:#b42318; border-color:#fecdca; background:#fffafa; }
+  .empty { color:var(--muted); text-align:center; padding:26px 0; font-size:13.5px; }
+  .composer { display:flex; gap:10px; padding:16px 22px 22px; border-top:1px solid var(--line); }
+  .composer input { flex:1; padding:13px 15px; border:1px solid var(--line); border-radius:14px; font:inherit; background:#fff; outline:none; }
+  .composer input:focus { border-color:var(--accent); box-shadow:0 0 0 4px #6d5efc22; }
+  .send { padding:0 18px; border:none; border-radius:14px; background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; font-weight:600; cursor:pointer; }
+  .send:disabled { opacity:.55; cursor:default; }
+  .spin { display:inline-block; width:13px; height:13px; border:2px solid #fff8; border-top-color:#fff; border-radius:50%; animation:s .7s linear infinite; vertical-align:-2px; }
+  @keyframes s { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="card">
+  <header>
+    <div class="brand"><span class="dot"></span><h1>Neurus</h1></div>
+    <div class="sub">your owned memory on Walrus — talk to it below</div>
+    <div class="setrow"><label>set</label><input id="set" value="default" spellcheck="false" /></div>
+  </header>
+  <div class="pills" id="pills"></div>
+  <div class="log" id="log"><div class="empty">pick an action, type, and hit send</div></div>
+  <div class="composer">
+    <input id="input" placeholder="ask anything…" autocomplete="off" />
+    <button class="send" id="send">Send</button>
+  </div>
+</div>
+<script>
+  const ACTIONS = [
+    ["ask","ask a question"],["note","remember a note"],["brief","brief on a person"],
+    ["index","index a Walrus blob_id"],["reflect","synthesize insights"],["surface","what matters now"],
+    ["nudges","open loops"],["map","what's stored"],["sets","list sets"]
+  ];
+  const PLACE = { ask:"ask anything…", note:"Met Sarah, she's vegetarian, I owe her the deck Friday",
+    brief:"a person's name", index:"a Walrus blob_id", reflect:"(no input — just send)",
+    surface:"optional: a context to weigh by", nudges:"(no input — just send)", map:"(no input — just send)", sets:"(no input — just send)" };
+  let action = "ask";
+  const $ = (id) => document.getElementById(id);
+  const pills = $("pills"), log = $("log"), input = $("input"), send = $("send");
+
+  ACTIONS.forEach(([a, label]) => {
+    const b = document.createElement("button");
+    b.className = "pill" + (a === action ? " on" : ""); b.textContent = a; b.title = label;
+    b.onclick = () => { action = a; [...pills.children].forEach(c => c.classList.toggle("on", c.textContent === a)); input.placeholder = PLACE[a]; input.focus(); };
+    pills.appendChild(b);
+  });
+
+  function add(q, a, err) {
+    if (log.querySelector(".empty")) log.innerHTML = "";
+    const t = document.createElement("div"); t.className = "turn";
+    t.innerHTML = `<div class="q">${q}</div><div class="a${err ? " err" : ""}"></div>`;
+    t.querySelector(".a").textContent = a;
+    log.appendChild(t); log.scrollTop = log.scrollHeight;
+  }
+
+  async function go() {
+    const text = input.value.trim();
+    const needsInput = !["reflect","nudges","map","sets","surface"].includes(action);
+    if (needsInput && !text) { input.focus(); return; }
+    const set = $("set").value.trim() || "default";
+    add(`${action}${text ? " · " + text : ""}  ⟨${set}⟩`, "…");
+    const node = log.lastChild.querySelector(".a"); node.innerHTML = '<span class="spin"></span>';
+    input.value = ""; send.disabled = true;
+    try {
+      const r = await fetch("/api", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ action, set, input: text }) });
+      const j = await r.json();
+      node.classList.toggle("err", !j.ok); node.textContent = j.output;
+    } catch (e) { node.classList.add("err"); node.textContent = "error: " + e.message; }
+    send.disabled = false; log.scrollTop = log.scrollHeight; input.focus();
+  }
+  send.onclick = go;
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });
+  input.focus();
+</script>
+</body>
+</html>

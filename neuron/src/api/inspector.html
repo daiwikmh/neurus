@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Neurus · Memory Inspector</title>
+<style>
+  :root { --ink:#191627; --muted:#6b6786; --line:#e8e4f4; --accent:#6d5efc; --accent2:#a855f7; --card:#fff; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; color:var(--ink); font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;
+    background: radial-gradient(1100px 500px at 12% -10%, #f3eaff, transparent), radial-gradient(900px 500px at 110% 0, #e6f3ff, transparent), linear-gradient(170deg,#eef2ff,#fff 55%);
+    padding:28px; }
+  .wrap { max-width:980px; margin:0 auto; }
+  header { display:flex; align-items:center; gap:12px; margin-bottom:6px; }
+  .dot { width:11px; height:11px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); box-shadow:0 0 12px var(--accent); }
+  h1 { font-size:18px; margin:0; letter-spacing:-.3px; }
+  .sub { color:var(--muted); font-size:12px; margin:2px 0 16px; }
+  .bar { display:flex; gap:8px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+  .bar input { padding:8px 12px; border:1px solid var(--line); border-radius:10px; font:inherit; background:#fff; }
+  .bar input#set { width:150px; }
+  .bar input#q { flex:1; min-width:220px; }
+  button { border:none; border-radius:10px; padding:8px 14px; font:inherit; font-weight:600; color:#fff; cursor:pointer; background:linear-gradient(135deg,var(--accent),var(--accent2)); }
+  button.ghost { background:#fff; color:var(--muted); border:1px solid var(--line); font-weight:500; }
+  button:disabled { opacity:.5; cursor:default; }
+  .counts { color:var(--muted); font-size:12.5px; margin-bottom:14px; }
+  .counts b { color:var(--ink); }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px 18px; margin-bottom:16px; box-shadow:0 18px 50px -30px #6d5efc44; }
+  .panel h2 { font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); margin:0 0 10px; }
+  .answer { white-space:pre-wrap; background:#faf9ff; border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+  .span { display:flex; align-items:center; gap:8px; padding:6px 0; border-top:1px dashed var(--line); font-size:12.5px; }
+  .span:first-child { border-top:none; }
+  .relbar { flex:0 0 90px; height:7px; border-radius:4px; background:#eee; overflow:hidden; }
+  .relbar i { display:block; height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); }
+  .neuron { display:flex; align-items:center; gap:9px; padding:9px 0; border-top:1px solid var(--line); }
+  .neuron:first-child { border-top:none; }
+  .neuron .body { flex:1; min-width:0; }
+  .neuron .ttl { font-weight:600; }
+  .neuron .prev { color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .neuron .meta { color:var(--muted); font-size:11.5px; }
+  .badge { font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:999px; text-transform:uppercase; letter-spacing:.3px; }
+  .t-person{background:#eef0ff;color:#4f46e5} .t-note{background:#eef2f6;color:#475569} .t-file{background:#e6faf5;color:#0d9488}
+  .t-chunk{background:#f1f1f4;color:#666} .t-insight{background:#f6edff;color:#9333ea} .t-commitment{background:#fff5e6;color:#b45309}
+  .tr-owned{background:#e9fbef;color:#15803d} .tr-shared{background:#e8f1ff;color:#1d4ed8} .tr-untrusted{background:#fdecec;color:#b91c1c}
+  .ddot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .d-confirmed{background:#22c55e} .d-pending{background:#f59e0b} .d-failed{background:#ef4444}
+  .x { background:#fff; color:#b91c1c; border:1px solid #f3d3d3; border-radius:8px; padding:4px 8px; font-size:11px; font-weight:600; cursor:pointer; }
+  .empty { color:var(--muted); padding:14px 0; }
+  .stale { opacity:.55; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><span class="dot"></span><h1>Neurus · Memory Inspector</h1></header>
+  <div class="sub">see &amp; manage the neuron memory stored on Walrus — graph, recall spans, trust, durability</div>
+
+  <div class="bar">
+    <input id="set" value="default" spellcheck="false" placeholder="set" />
+    <button class="ghost" onclick="load()">Load</button>
+    <input id="q" placeholder="ask the memory — see exactly what it retrieved…" />
+    <button id="askBtn" onclick="ask()">Ask</button>
+  </div>
+  <div class="counts" id="counts"></div>
+
+  <div class="panel" id="askPanel" style="display:none">
+    <h2>Answer</h2>
+    <div class="answer" id="answer"></div>
+    <h2 style="margin-top:14px">Recall spans — what it retrieved &amp; why</h2>
+    <div id="spans"></div>
+  </div>
+
+  <div class="panel">
+    <h2 id="nHead">Neurons</h2>
+    <div id="neurons"><div class="empty">click Load</div></div>
+  </div>
+</div>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const api = (p, body) => fetch("/v1" + p, body ? { method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify(body) } : undefined).then(r => r.json());
+  const setName = () => $("set").value.trim() || "default";
+  const badge = (t) => `<span class="badge t-${t}">${t}</span>`;
+  const trust = (t) => `<span class="badge tr-${t}">${t}</span>`;
+
+  async function load() {
+    const set = setName();
+    const m = await api("/map?set=" + encodeURIComponent(set));
+    const c = m.counts || {};
+    $("counts").innerHTML = `set <b>${m.set}</b> · ` + Object.entries(c).filter(([,v])=>v).map(([k,v])=>`${v} <b>${k}</b>`).join(" · ") + (m.pending ? ` · <span style="color:#b45309">${m.pending} pending</span>` : "");
+    const r = await api("/neurons?set=" + encodeURIComponent(set));
+    const list = r.neurons || [];
+    $("nHead").textContent = `Neurons (${list.length})`;
+    $("neurons").innerHTML = list.length ? list.map(n => `
+      <div class="neuron ${n.ageHours>168?'stale':''}">
+        ${badge(n.type)} ${trust(n.trust)}
+        <span class="ddot d-${n.durability}" title="${n.durability}"></span>
+        <div class="body"><div class="ttl">${esc(n.title)}</div><div class="prev">${esc(n.preview)}</div></div>
+        <span class="meta">${n.synapses.length}🔗 · ${n.ageHours}h${n.importance!=null?` · imp ${(+n.importance).toFixed(2)}`:''}</span>
+        <button class="x" onclick="forget('${n.id}')">forget</button>
+      </div>`).join("") : '<div class="empty">empty set</div>';
+  }
+
+  async function ask() {
+    const text = $("q").value.trim(); if (!text) return;
+    $("askBtn").disabled = true; $("askPanel").style.display = "block";
+    $("answer").textContent = "…"; $("spans").innerHTML = "";
+    try {
+      const r = await api("/ask", { set:setName(), question:text });
+      $("answer").textContent = r.answer || r.error || "(no answer)";
+      $("spans").innerHTML = (r.spans||[]).map(s => {
+        const pct = Math.round((s.relevance||0)*100);
+        return `<div class="span">${badge(s.type)} ${trust(s.trust)}
+          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.title)}</span>
+          <span class="relbar"><i style="width:${pct}%"></i></span><span style="flex:0 0 78px;color:#6b6786">rel ${pct}% · ${s.score}</span></div>`;
+      }).join("") || '<div class="empty">nothing retrieved</div>';
+    } catch(e){ $("answer").textContent = "error: "+e.message; }
+    $("askBtn").disabled = false;
+  }
+
+  async function forget(id) {
+    await api("/forget", { set:setName(), id });
+    load();
+  }
+  function esc(s){ return (s||"").replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+  load();
+</script>
+</body>
+</html>

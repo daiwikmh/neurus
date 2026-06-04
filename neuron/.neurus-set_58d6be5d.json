@@ -1,0 +1,56 @@
+[
+  {
+    "id": "note_38fa8e6b",
+    "type": "note",
+    "title": "Met Dr. Lee, a cardiologist, who told me to cut…",
+    "body": "Met Dr. Lee, a cardiologist, who told me to cut caffeine. I owe her my lab results by Monday.",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780603290724,
+    "synapses": [
+      {
+        "to": "person_994dc414",
+        "kind": "about"
+      }
+    ],
+    "meta": {
+      "durability": "confirmed",
+      "memwalBlob": "7pAsayPu55XHCDEIh3gUPVlhhBgzvo8BOmP4KCrUGE4"
+    }
+  },
+  {
+    "id": "person_994dc414",
+    "type": "person",
+    "title": "Dr. Lee",
+    "body": "Dr. Lee\ntold me to cut caffeine",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780603294735,
+    "synapses": []
+  },
+  {
+    "id": "commitment_a51c1e83",
+    "type": "commitment",
+    "title": "owe Dr. Lee: lab results",
+    "body": "lab results (due Monday)",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780603294736,
+    "synapses": [
+      {
+        "to": "person_994dc414",
+        "kind": "promised_to"
+      }
+    ],
+    "meta": {
+      "duePerson": "Dr. Lee",
+      "due": "Monday"
+    }
+  }
+]
