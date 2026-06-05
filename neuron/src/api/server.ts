@@ -91,9 +91,15 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
       return { consideredNeurons: r.consideredNeurons, insights: r.insights.map((i) => ({ body: i.body, importance: i.meta?.importance })) };
     }
     case "POST /v1/surface": {
-      const s = await nx.surface({ context: body.context });
-      return { surfacings: s.map((x) => ({ type: x.neuron.type, body: x.neuron.body, score: Number(x.score.toFixed(2)) })) };
+      const { surfacings, delivered } = await nx.surfaceAndNotify({ context: body.context, notify: body.notify });
+      return { surfacings: surfacings.map((x) => ({ type: x.neuron.type, body: x.neuron.body, score: Number(x.score.toFixed(2)) })), delivered };
     }
+    case "GET /v1/notify":
+      return { config: await nx.notifyConfig() };
+    case "POST /v1/notify/telegram":
+      return { config: await nx.connectTelegram(String(body.chatId)) };
+    case "POST /v1/notify/test":
+      return nx.notify(String(body.text ?? "✅ Neurus is connected. You'll get nudges here."));
     case "GET /v1/map": {
       await nx.memory.ready();
       const all = nx.memory.all();

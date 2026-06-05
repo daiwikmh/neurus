@@ -23,7 +23,7 @@
     "id": "person_2b1fd725",
     "type": "person",
     "title": "Sarah",
-    "body": "Sarah\nneeds the Q3 deck by Friday",
+    "body": "Sarah\nneeds the Q3 deck by Friday\nis ill",
     "source": {
       "author": "self",
       "trust": "owned"
@@ -403,6 +403,227 @@
       "importance": 0.84,
       "reflectedAt": 1780596020391,
       "memwalBlob": "Xt8Re_nntTGbtXdpugTprEwFZzr7Yr_mGtNeJ9A6tsQ"
+    }
+  },
+  {
+    "id": "note_abe71fe4",
+    "type": "note",
+    "title": "sarah is ill",
+    "body": "sarah is ill",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780669644325,
+    "synapses": [
+      {
+        "to": "person_2b1fd725",
+        "kind": "about"
+      }
+    ],
+    "meta": {
+      "durability": "pending"
+    }
+  },
+  {
+    "id": "insight_632f41f5",
+    "type": "insight",
+    "title": "There is a conflict between the Q3 deck deadline (Friday) re",
+    "body": "There is a conflict between the Q3 deck deadline (Friday) required by commitments and Sarah, and Daiwik’s preference for a Saturday delivery, which could jeopardize dependent work for Priya and Tom.",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780669655205,
+    "synapses": [
+      {
+        "to": "note_abe71fe4",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "commitment_34d0cd2e",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_ebdd5d38",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_1e39bf96",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_3abc596d",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_a112022c",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_4f9da9e2",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_4cec2e0e",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_b0f9217f",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "commitment_29e2e646",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_2b1fd725",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_3e60c07c",
+        "kind": "reflects_on"
+      }
+    ],
+    "meta": {
+      "importance": 0.92,
+      "reflectedAt": 1780669655205,
+      "memwalBlob": "3qyqYXosR5hDAF5vRoUib9Ex-CDMEXU4ueWZPxHao7w",
+      "durability": "confirmed"
+    }
+  },
+  {
+    "id": "insight_ca761a08",
+    "type": "insight",
+    "title": "Priya’s progress and Tom’s inquiries are blocked until the Q",
+    "body": "Priya’s progress and Tom’s inquiries are blocked until the Q3 deck is completed, creating a bottleneck that affects multiple team members.",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780669707429,
+    "synapses": [
+      {
+        "to": "note_abe71fe4",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "commitment_34d0cd2e",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_ebdd5d38",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_1e39bf96",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_3abc596d",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_a112022c",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_4f9da9e2",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_4cec2e0e",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_b0f9217f",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "commitment_29e2e646",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_2b1fd725",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_3e60c07c",
+        "kind": "reflects_on"
+      }
+    ],
+    "meta": {
+      "importance": 0.85,
+      "reflectedAt": 1780669707429,
+      "memwalBlob": "6tN7Ah_Mf8liSTAi7bFDVHaVy_QgqDOq-zBIvG9BzhE",
+      "durability": "confirmed"
+    }
+  },
+  {
+    "id": "insight_09a20142",
+    "type": "insight",
+    "title": "Sarah is ill but still needs the Q3 deck by Friday, indicati",
+    "body": "Sarah is ill but still needs the Q3 deck by Friday, indicating a risk that she may not be able to review or act on it promptly; consider providing additional support or an early handoff.",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780669727652,
+    "synapses": [
+      {
+        "to": "note_abe71fe4",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "commitment_34d0cd2e",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_ebdd5d38",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_1e39bf96",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_3abc596d",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_a112022c",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_4f9da9e2",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_4cec2e0e",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_b0f9217f",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "commitment_29e2e646",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "person_2b1fd725",
+        "kind": "reflects_on"
+      },
+      {
+        "to": "note_3e60c07c",
+        "kind": "reflects_on"
+      }
+    ],
+    "meta": {
+      "importance": 0.68,
+      "reflectedAt": 1780669727652,
+      "memwalBlob": "PFrNn8Xc_yt16WyPzJfJv5LaI7lx6QkLCheR8JfGiL8",
+      "durability": "confirmed"
     }
   }
 ]

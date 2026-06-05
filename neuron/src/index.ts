@@ -26,11 +26,14 @@ import { surface, type Surfacing, type SurfaceOptions } from "./proactive/surfac
 import { setIntegrity, attest } from "./core/sets";
 import { anchorRoot, type Attestation } from "./integrity/anchor";
 import { localTenant, type Tenant } from "./identity/credentials";
+import { connectTelegram, getNotifyConfig, notify, type NotifyConfig, type NotifyResult } from "./notify";
 import type { Neuron, NeuronType, Trust } from "./core/neuron";
 
 export * from "./identity/credentials";
 export { Vault } from "./identity/vault";
 export { provisionCredentials } from "./identity/provision";
+export { connectTelegram, getNotifyConfig, notify, sendTelegram } from "./notify";
+export type { NotifyConfig, NotifyResult, TelegramTarget } from "./notify";
 
 export interface Passage {
   text: string;
@@ -165,6 +168,26 @@ export class Neurus {
 
   surface(opts?: SurfaceOptions): Promise<Surfacing[]> {
     return surface(this.mem, opts);
+  }
+
+  connectTelegram(chatId: string): Promise<NotifyConfig> {
+    return connectTelegram(chatId, this.tenant);
+  }
+
+  notifyConfig(): Promise<NotifyConfig> {
+    return getNotifyConfig(this.tenant);
+  }
+
+  notify(text: string): Promise<NotifyResult> {
+    return notify(text, this.tenant);
+  }
+
+  async surfaceAndNotify(opts: SurfaceOptions & { notify?: boolean } = {}): Promise<{ surfacings: Surfacing[]; delivered: string[] }> {
+    const surfacings = await surface(this.mem, opts);
+    if (!opts.notify || surfacings.length === 0) return { surfacings, delivered: [] };
+    const lines = surfacings.map((s) => `• ${s.neuron.body}  _(${s.score.toFixed(2)})_`).join("\n");
+    const res = await notify(`*Neurus — ${this.set.name}*\n${lines}`, this.tenant);
+    return { surfacings, delivered: res.delivered };
   }
 
   publish(opts?: { epochs?: number; sealKey?: string }): Promise<string> {

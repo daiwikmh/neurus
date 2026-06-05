@@ -1,5 +1,6 @@
 import { MemWal } from "@mysten-incubation/memwal";
 import { envCredentials, type Credentials } from "../identity/credentials";
+import { withRetry, isNetworkError } from "../util/retry";
 
 export interface MemwalHit {
   blobId: string;
@@ -27,7 +28,11 @@ export class MemwalStore {
   }
 
   async recall(query: string, limit = 20, maxDistance?: number): Promise<MemwalHit[]> {
-    const res = await this.mw.recall({ query, limit, namespace: this.namespace, maxDistance });
+    const res = await withRetry(() => this.mw.recall({ query, limit, namespace: this.namespace, maxDistance }), {
+      label: "memory store (MemWal)",
+      attempts: 3,
+      shouldRetry: isNetworkError,
+    });
     return res.results.map((r: any) => ({ blobId: r.blob_id, text: r.text, distance: r.distance }));
   }
 }

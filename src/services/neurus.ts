@@ -63,6 +63,13 @@ export const neurus = {
   reflect: (set: string) => call<{ insights: { body: string; importance?: number }[] }>("POST", "/reflect", { set }),
   surface: (set: string, context?: string) => call<{ surfacings: { type: string; body: string; score: number }[] }>("POST", "/surface", { set, context }),
   forget: (set: string, id: string) => call<{ forgotten: boolean }>("POST", "/forget", { set, id }),
+  notifyConfig: (set: string) => call<{ config: NotifyConfig }>("GET", `/notify?set=${encodeURIComponent(set)}`).then((r) => r.config),
+  connectTelegram: (set: string, chatId: string) => call<{ config: NotifyConfig }>("POST", "/notify/telegram", { set, chatId }).then((r) => r.config),
+  testNotify: (set: string) => call<{ delivered: string[]; skipped: string[] }>("POST", "/notify/test", { set }),
 };
+
+export interface NotifyConfig {
+  telegram?: { chatId: string };
+}
 
 export const API_BASE = BASE;
