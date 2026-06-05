@@ -1,7 +1,15 @@
+import { createHash } from "node:crypto";
+
 export interface Credentials {
   accountId: string;
   delegateKey: string;
   serverUrl?: string;
+}
+
+export function safeTenantId(raw: string): string {
+  const trimmed = raw.trim();
+  if (/^[a-zA-Z0-9_-]{1,80}$/.test(trimmed) && trimmed !== "local") return trimmed;
+  return "u_" + createHash("sha256").update(trimmed).digest("hex").slice(0, 24);
 }
 
 export function envCredentials(): Credentials | undefined {

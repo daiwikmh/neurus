@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { dashboardNav } from "../config";
 import { useSets } from "./SetContext";
@@ -15,6 +16,7 @@ function Icon({ name }: { name: string }) {
     brain: "M9 3a3 3 0 0 0-3 3 3 3 0 0 0-1 5.8A3 3 0 0 0 7 17a3 3 0 0 0 5 1 3 3 0 0 0 5-1 3 3 0 0 0 2-5.2A3 3 0 0 0 18 6a3 3 0 0 0-3-3 3 3 0 0 0-3 1.5A3 3 0 0 0 9 3z",
     layers: "M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
     plug: "M9 2v6M15 2v6M7 8h10v3a5 5 0 0 1-10 0zM12 16v6",
+    database: "M4 6c0 1.7 3.6 3 8 3s8-1.3 8-3-3.6-3-8-3-8 1.3-8 3zM4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6",
   };
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-[20px] w-[20px] shrink-0">
@@ -73,10 +75,7 @@ export function Sidebar() {
     <aside className={`relative flex shrink-0 flex-col border-r border-white/10 bg-[#0a0b0e] transition-[width] duration-200 ${collapsed ? "w-16" : "w-60"}`}>
       <div className={`flex items-center py-4 ${collapsed ? "justify-center px-0" : "justify-between px-5"}`}>
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex items-end gap-[3px]">
-            <span className="block h-4 w-[3px] -skew-x-12 rounded-full bg-white" />
-            <span className="block h-3 w-[3px] -skew-x-12 rounded-full bg-white" />
-          </span>
+          <Image src="/neurus_clean-removebg-preview.png" alt="Neurus" width={28} height={28} />
           {!collapsed && <span className="text-sm font-semibold tracking-tight">Neurus</span>}
         </Link>
       </div>

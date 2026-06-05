@@ -2,19 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSets } from "./SetContext";
+import { TelegramConnect } from "./TelegramConnect";
+import { WalletConnect } from "./WalletConnect";
 
 const user = {
   name: "Daiwik",
-  email: "daiwik@neurus.dev",
-  plan: "Starter",
 };
 
-const menu = [
-  { label: "Account settings", href: "/dashboard/connect" },
-  { label: "API keys", href: "/dashboard/connect" },
-  { label: "Documentation", href: "#" },
-  { label: "Sign out", href: "/", danger: true },
-];
+const menu = [{ label: "Sign out", href: "/", danger: true }];
 
 function Avatar({ size = 32 }: { size?: number }) {
   return (
@@ -30,10 +26,13 @@ function Avatar({ size = 32 }: { size?: number }) {
 export function ProfileMenu({ collapsed }: { collapsed: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const { active } = useSets();
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Element;
+      if (t.closest?.("[data-dapp-kit]")) return;
+      if (ref.current && !ref.current.contains(t)) setOpen(false);
     };
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
@@ -48,10 +47,22 @@ export function ProfileMenu({ collapsed }: { collapsed: boolean }) {
               <Avatar size={34} />
               <div className="min-w-0">
                 <div className="truncate text-sm font-medium text-white">{user.name}</div>
-                <div className="truncate text-[11px] text-white/40">{user.email}</div>
               </div>
             </div>
-            <span className="mt-2.5 inline-block rounded-full bg-[#9aa8f0]/15 px-2 py-0.5 text-[10px] font-medium text-[#9aa8f0]">{user.plan} plan</span>
+          </div>
+          <div className="border-b border-white/10 px-3.5 py-3">
+            <div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-white/35">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 text-[#9aa8f0]"><path d="M3 7h18v12H3zM3 7l3-4h12l3 4M16 13h.01" /></svg>
+              Sui wallet
+            </div>
+            <WalletConnect />
+          </div>
+          <div className="border-b border-white/10 px-3.5 py-3">
+            <div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-white/35">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5 text-[#26a5e4]"><path d="M21.94 4.6 18.9 19.2c-.23 1-.83 1.26-1.68.78l-4.64-3.42-2.24 2.16c-.25.25-.46.46-.94.46l.33-4.73 8.6-7.77c.37-.33-.08-.52-.58-.19L7.43 13.4l-4.57-1.43c-.99-.31-1.01-.99.21-1.47l17.86-6.88c.83-.3 1.55.19 1.01 1.48z"/></svg>
+              Telegram alerts
+            </div>
+            <TelegramConnect set={active} compact />
           </div>
           <div className="py-1">
             {menu.map((m) => (
@@ -78,7 +89,6 @@ export function ProfileMenu({ collapsed }: { collapsed: boolean }) {
           <>
             <div className="min-w-0 flex-1 text-left">
               <div className="truncate text-[13px] font-medium text-white">{user.name}</div>
-              <div className="truncate text-[11px] text-white/40">{user.email}</div>
             </div>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-white/40">
               <path d="M8 9l4-4 4 4M16 15l-4 4-4-4" />

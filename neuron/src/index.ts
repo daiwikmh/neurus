@@ -5,7 +5,7 @@ export { ingestFile, type IngestedFile } from "./ingest/file";
 export { ingestNote, type NoteResult } from "./ingest/note";
 export { ingestWalrusBlob, type WalrusIngestOptions } from "./ingest/walrus";
 export { ingestDir, listIngestible, type DirResult } from "./ingest/dir";
-export { answer, type Answer } from "./reason/answer";
+export { answer, answerStream, type Answer } from "./reason/answer";
 export { brief, type Brief } from "./reason/brief";
 export { reflect, type ReflectResult } from "./proactive/reflect";
 export { surface, type Surfacing, type SurfaceOptions } from "./proactive/surface";
@@ -16,7 +16,14 @@ export { anchorRoot, type Attestation } from "./integrity/anchor";
 import { Memory, type RankedNeuron, type RecallOptions } from "./core/memory";
 import { resolveSet, openSet, type KnowledgeSet } from "./core/sets";
 import { ingestNote, type NoteResult } from "./ingest/note";
-import { ingestFile } from "./ingest/file";
+import { ingestFile, ingestBuffer } from "./ingest/file";
+import { ingestSite, type CrawlOptions, type CrawlResult } from "./ingest/web";
+import { fetchRepoFiles } from "./ingest/github";
+import type { DatasetKind } from "./core/datasets";
+import { createWidget, listWidgets, deleteWidget, getWidget, type Widget } from "./core/widgets";
+import { addDataset, listDatasets, updateDataset, getDataset, type Dataset } from "./core/datasets";
+import { blobHealth, type BlobHealth } from "./integrity/health";
+import { getBlob, putBlobInfo } from "./storage/walrus";
 import { ingestWalrusBlob, type WalrusIngestOptions } from "./ingest/walrus";
 import { ingestDir, type DirResult } from "./ingest/dir";
 import { answer, type Answer } from "./reason/answer";
@@ -34,6 +41,9 @@ export { Vault } from "./identity/vault";
 export { provisionCredentials } from "./identity/provision";
 export { connectTelegram, getNotifyConfig, notify, sendTelegram } from "./notify";
 export type { NotifyConfig, NotifyResult, TelegramTarget } from "./notify";
+export { listDatasets, type Dataset, type DatasetKind } from "./core/datasets";
+export { blobHealth, currentWalrusEpoch, type BlobHealth } from "./integrity/health";
+export { getWidget, type Widget } from "./core/widgets";
 
 export interface Passage {
   text: string;
@@ -196,5 +206,106 @@ export class Neurus {
 
   restore(blobId: string, opts?: { sealKey?: string }): Promise<number> {
     return this.mem.restoreFrom(blobId, opts);
+  }
+
+  async addUpload(name: string, contentBase64: string): Promise<{ file: Neuron; dataset: Dataset }> {
+    const raw = Buffer.from(contentBase64, "base64");
+    const { file, chunks } = await ingestBuffer(name, raw, { store: true });
+    await this.mem.ingest(file, chunks, { behind: this.behind });
+    const dataset = await addDataset(
+      {
+        set: this.set.id,
+        kind: "file",
+        title: name,
+        blobId: file.blobId!,
+        objectId: file.meta?.walrusObject as string | undefined,
+        endEpoch: file.meta?.endEpoch as number | undefined,
+        bytes: file.meta?.bytes as number | undefined,
+      },
+      this.tenant,
+    );
+    return { file, dataset };
+  }
+
+  async publishDataset(opts?: { sealKey?: string }): Promise<Dataset> {
+    const info = await this.mem.publishInfo(opts);
+    return addDataset(
+      { set: this.set.id, kind: "snapshot", title: `${this.set.name} snapshot`, blobId: info.blobId, objectId: info.objectId, endEpoch: info.endEpoch },
+      this.tenant,
+    );
+  }
+
+  async importDataset(blobId: string, title?: string): Promise<Dataset> {
+    const source = await this.indexWalrus(blobId, { title });
+    return addDataset({ set: this.set.id, kind: "import", title: title ?? source.title, blobId }, this.tenant);
+  }
+
+  async addSite(url: string, opts?: CrawlOptions): Promise<{ dataset: Dataset; pages: number; failed: number; skipped: number }> {
+    const res: CrawlResult = await ingestSite(url, opts);
+    if (res.pages === 0) {
+      throw new Error(`no readable pages found at ${url} — the site may be JS-rendered (try a direct page URL) or blocked by robots.txt`);
+    }
+    for (const { source, chunks } of res.ingested) await this.mem.ingest(source, chunks, { behind: this.behind });
+    const dataset = await addDataset(
+      { set: this.set.id, kind: "web", title: res.host, url: res.root, pages: res.pages },
+      this.tenant,
+    );
+    return { dataset, pages: res.pages, failed: res.failed.length, skipped: res.skipped };
+  }
+
+  private async ingestStructure(kind: DatasetKind, title: string, url: string | undefined, items: { name: string; bytes: Buffer }[]): Promise<{ dataset: Dataset; files: number; failed: number }> {
+    let files = 0;
+    let failed = 0;
+    for (const it of items) {
+      try {
+        const { file, chunks } = await ingestBuffer(it.name, it.bytes, { store: false });
+        await this.mem.ingest(file, chunks, { behind: this.behind });
+        files++;
+      } catch {
+        failed++;
+      }
+    }
+    if (files === 0) throw new Error(`no ingestible files found in "${title}" (need md/txt/csv/json/log/pdf/docx)`);
+    const dataset = await addDataset({ set: this.set.id, kind, title, url, pages: files }, this.tenant);
+    return { dataset, files, failed };
+  }
+
+  async addRepo(repoUrl: string, opts?: { max?: number }): Promise<{ dataset: Dataset; files: number; failed: number }> {
+    const { items, repo, url } = await fetchRepoFiles(repoUrl, opts);
+    if (items.length === 0) throw new Error(`no ingestible docs found in ${repo}`);
+    return this.ingestStructure("github", repo, url, items);
+  }
+
+  async addFolder(name: string, files: { path: string; content: string }[]): Promise<{ dataset: Dataset; files: number; failed: number }> {
+    const items = files.map((f) => ({ name: f.path, bytes: Buffer.from(f.content, "base64") }));
+    return this.ingestStructure("folder", name, undefined, items);
+  }
+
+  datasets(): Promise<Dataset[]> {
+    return listDatasets(this.set.id, this.tenant);
+  }
+
+  datasetHealth(objectId: string): Promise<BlobHealth> {
+    return blobHealth(objectId);
+  }
+
+  async renewDataset(id: string, epochs = 5): Promise<Dataset | undefined> {
+    const d = await getDataset(id, this.tenant);
+    if (!d || !d.blobId) return undefined;
+    const bytes = await getBlob(d.blobId);
+    const info = await putBlobInfo(bytes, epochs);
+    return updateDataset(id, { blobId: info.blobId, objectId: info.objectId, endEpoch: info.endEpoch }, this.tenant);
+  }
+
+  createWidget(name: string, origins: string[] = []): Promise<Widget> {
+    return createWidget(this.tenant, this.set.id, name, origins);
+  }
+
+  widgets(): Promise<Widget[]> {
+    return listWidgets(this.tenant, this.set.id);
+  }
+
+  deleteWidget(id: string): Promise<boolean> {
+    return deleteWidget(id, this.tenant);
   }
 }

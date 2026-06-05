@@ -30,7 +30,7 @@ function Content({ copied, copy }: { copied: boolean; copy: () => void }) {
         <a href="/dashboard" className="rounded-full bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:bg-white/90">
           Get Started
         </a>
-        <button
+        {/* <button
           onClick={copy}
           className="group flex items-center gap-2.5 rounded-full border border-white/15 bg-white/[0.06] py-2 pl-2 pr-3.5 font-mono text-sm text-white/85 backdrop-blur-sm transition hover:border-white/30"
         >
@@ -38,7 +38,7 @@ function Content({ copied, copy }: { copied: boolean; copy: () => void }) {
           npm install neuron
           <CopyIcon className="h-3.5 w-3.5 text-white/40 group-hover:text-white/70" />
           {copied && <span className="text-xs text-emerald-400">✓</span>}
-        </button>
+        </button> */}
       </div>
     </div>
   );

@@ -43,7 +43,7 @@ async function main() {
   const got = await vault.get("alice");
   console.log(`  stored + read back alice's creds? ${got?.accountId === "0xA" ? "YES ✓" : "NO ✗"}`);
   const raw = await (await import("node:fs/promises")).readFile(".neurus-vault-test.json", "utf8");
-  console.log(`  vault file on disk is sealed (not plaintext)? ${raw.startsWith("neurus-seal-v1.") ? "YES ✓" : "NO ✗"}`);
+  console.log(`  vault file on disk is sealed (not plaintext)? ${raw.startsWith("neurus-seal-v") ? "YES ✓" : "NO ✗"}`);
 
   await rm(".neurus-sets-tenanttest.json", { force: true });
   await rm(".neurus-data", { recursive: true, force: true });

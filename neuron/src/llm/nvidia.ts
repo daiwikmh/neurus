@@ -53,6 +53,67 @@ export async function chat(system: string, user: string, opts: ChatOptions = {})
   });
 }
 
+async function openStream(system: string, user: string, opts: ChatOptions): Promise<Response> {
+  const key = process.env.NVIDIA_API_KEY;
+  if (!key) throw new Error("Missing NVIDIA_API_KEY in environment");
+  const res = await fetch(NVIDIA_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", Accept: "text/event-stream" },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      max_tokens: opts.maxTokens ?? 700,
+      temperature: opts.temperature ?? 0.3,
+      stream: true,
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    if (res.status === 429 || res.status >= 500) throw new RetryableError(`NVIDIA API HTTP ${res.status}: ${body}`);
+    throw new Error(`NVIDIA API HTTP ${res.status}: ${body}`);
+  }
+  if (!res.body) throw new RetryableError("NVIDIA stream: no response body");
+  return res;
+}
+
+export async function chatStream(system: string, user: string, onToken: (t: string) => void, opts: ChatOptions = {}): Promise<string> {
+  const res = await withRetry(() => openStream(system, user, opts), {
+    label: "LLM (NVIDIA) stream",
+    attempts: 3,
+    shouldRetry: (e) => e instanceof RetryableError || isNetworkError(e),
+  });
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  let full = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    const lines = buf.split("\n");
+    buf = lines.pop() ?? "";
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data:")) continue;
+      const data = trimmed.slice(5).trim();
+      if (data === "[DONE]") return full;
+      try {
+        const tok = JSON.parse(data).choices?.[0]?.delta?.content;
+        if (tok) {
+          full += tok;
+          onToken(tok);
+        }
+      } catch {
+        /* keepalive / partial line */
+      }
+    }
+  }
+  return full;
+}
+
 export async function chatJSON<T>(
   system: string,
   user: string,

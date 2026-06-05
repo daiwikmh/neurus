@@ -3,7 +3,7 @@ import { basename, extname } from "node:path";
 import { createNeuron, link, type Neuron } from "../core/neuron";
 import { chunkText } from "./chunk";
 import { contextualize } from "./context";
-import { putBlob } from "../storage/walrus";
+import { putBlobInfo } from "../storage/walrus";
 
 const TEXT_EXT = new Set([".txt", ".md", ".markdown", ".csv", ".json", ".log", ".text"]);
 const DOC_EXT = new Set([".pdf", ".docx"]);
@@ -34,24 +34,27 @@ export interface IngestOptions {
   contextual?: boolean;
 }
 
-export async function ingestFile(path: string, opts: IngestOptions = {}): Promise<IngestedFile> {
-  const ext = extname(path).toLowerCase();
+export async function ingestBuffer(name: string, raw: Buffer, opts: IngestOptions = {}): Promise<IngestedFile> {
+  const ext = extname(name).toLowerCase();
   if (!TEXT_EXT.has(ext) && !DOC_EXT.has(ext)) {
     throw new Error(`unsupported file type "${ext}" — text/markdown/csv/json/log/pdf/docx supported`);
   }
 
-  const raw = await readFile(path);
   const text = await extractText(raw, ext);
-  const name = basename(path);
-
-  const blobId = opts.store === false ? undefined : await putBlob(raw, opts.epochs ?? 5);
+  const stored = opts.store === false ? undefined : await putBlobInfo(raw, opts.epochs ?? 5);
 
   const file = createNeuron({
     type: "file",
     title: name,
     body: summarize(text),
-    blobId,
-    meta: { mime: mimeFor(ext), bytes: raw.length, ext },
+    blobId: stored?.blobId,
+    meta: {
+      mime: mimeFor(ext),
+      bytes: raw.length,
+      ext,
+      ...(stored?.objectId ? { walrusObject: stored.objectId } : {}),
+      ...(stored?.endEpoch != null ? { endEpoch: stored.endEpoch } : {}),
+    },
   });
 
   const pieces = chunkText(text, { maxChars: opts.maxChars, overlapChars: opts.overlapChars });
@@ -69,6 +72,10 @@ export async function ingestFile(path: string, opts: IngestOptions = {}): Promis
   });
 
   return { file, chunks };
+}
+
+export async function ingestFile(path: string, opts: IngestOptions = {}): Promise<IngestedFile> {
+  return ingestBuffer(basename(path), await readFile(path), opts);
 }
 
 function summarize(text: string): string {

@@ -5,7 +5,7 @@ import { ingestFile } from "./file";
 
 const SKIP_DIRS = new Set(["node_modules", ".next", ".git", "dist", "build", "out", ".turbo", "coverage", ".cache", ".vercel"]);
 const SKIP_FILES = new Set(["package-lock.json", "pnpm-lock.yaml", "yarn.lock", "tsconfig.tsbuildinfo"]);
-const OK_EXT = new Set([".txt", ".md", ".markdown", ".csv", ".json", ".log", ".text", ".pdf", ".docx"]);
+export const OK_EXT = new Set([".txt", ".md", ".markdown", ".csv", ".json", ".log", ".text", ".pdf", ".docx"]);
 
 export async function listIngestible(dir: string, max = 50): Promise<string[]> {
   const out: string[] = [];

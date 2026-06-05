@@ -24,7 +24,7 @@ export function TrustedBy() {
         teams building serious agents
       </h2>
 
-      <div className="relative mt-16 min-h-[160px]">
+      {/* <div className="relative mt-16 min-h-[160px]">
         <AnimatePresence mode="wait">
           <motion.div
             key={i}
@@ -41,13 +41,7 @@ export function TrustedBy() {
             ))}
           </motion.div>
         </AnimatePresence>
-      </div>
-
-      <div className="mt-16 flex items-center justify-center gap-3">
-        <a href="#" className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10">
-          View Docs
-        </a>
-      </div>
+      </div> */}
     </Container>
   );
 }

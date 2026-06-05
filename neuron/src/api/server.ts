@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { Neurus, answer, listSets, createSet, Vault, localTenant, type Tenant } from "../index";
+import { Neurus, answer, answerStream, listSets, createSet, Vault, localTenant, safeTenantId, getWidget, type Tenant } from "../index";
 import type { RankedNeuron } from "../core/memory";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -10,8 +10,38 @@ const vault = new Vault();
 
 async function resolveTenant(userId?: string): Promise<Tenant> {
   if (!userId) return localTenant();
-  const credentials = await vault.get(userId);
-  return { id: userId, root: join(".neurus-data", userId), credentials };
+  const id = safeTenantId(userId);
+  const credentials = await vault.get(id);
+  return { id, root: join(".neurus-data", id), credentials };
+}
+
+async function tenantById(id: string): Promise<Tenant> {
+  if (id === "local") return localTenant();
+  const credentials = await vault.get(id);
+  return { id, root: join(".neurus-data", id), credentials };
+}
+
+const rate = new Map<string, number[]>();
+function allowRate(key: string, max = 30, windowMs = 60_000): boolean {
+  const now = Date.now();
+  const hits = (rate.get(key) ?? []).filter((t) => now - t < windowMs);
+  if (hits.length >= max) {
+    rate.set(key, hits);
+    return false;
+  }
+  hits.push(now);
+  rate.set(key, hits);
+  return true;
+}
+
+function originAllowed(origin: string, allow: string[]): boolean {
+  if (allow.length === 0 || !origin) return true;
+  try {
+    const host = new URL(origin).host;
+    return allow.some((a) => a === origin || a === host || host.endsWith(a.replace(/^https?:\/\//, "")));
+  } catch {
+    return false;
+  }
 }
 
 try { process.loadEnvFile(".env.local"); } catch { /* noop */ }
@@ -20,7 +50,7 @@ const PORT = Number(process.env.NEURUS_API_PORT ?? 4318);
 
 const CORS = {
   "access-control-allow-origin": "*",
-  "access-control-allow-headers": "content-type",
+  "access-control-allow-headers": "content-type, x-neurus-user",
   "access-control-allow-methods": "GET,POST,OPTIONS",
 };
 
@@ -50,6 +80,7 @@ const span = (h: RankedNeuron) => ({
   trust: h.neuron.source.trust,
   relevance: Number(h.relevance.toFixed(3)),
   score: Number(h.score.toFixed(2)),
+  preview: h.neuron.body.replace(/\s+/g, " ").slice(0, 180),
 });
 
 async function handle(method: string, path: string, q: URLSearchParams, body: any, tenant: Tenant): Promise<any> {
@@ -131,6 +162,30 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
           })),
       };
     }
+    case "GET /v1/datasets":
+      return { datasets: await nx.datasets() };
+    case "POST /v1/datasets/upload":
+      return { dataset: (await nx.addUpload(String(body.name), String(body.content))).dataset };
+    case "POST /v1/datasets/publish":
+      return { dataset: await nx.publishDataset(body.seal ? { sealKey: body.seal } : {}) };
+    case "POST /v1/datasets/import":
+      return { dataset: await nx.importDataset(String(body.blobId), body.title) };
+    case "POST /v1/datasets/web":
+      return nx.addSite(String(body.url), { max: body.max, pathPrefix: body.pathPrefix });
+    case "POST /v1/datasets/github":
+      return nx.addRepo(String(body.repo), { max: body.max });
+    case "POST /v1/datasets/folder":
+      return nx.addFolder(String(body.name), body.files ?? []);
+    case "POST /v1/datasets/health":
+      return { health: await nx.datasetHealth(String(body.objectId)) };
+    case "POST /v1/datasets/renew":
+      return { dataset: await nx.renewDataset(String(body.id), body.epochs) };
+    case "GET /v1/widgets":
+      return { widgets: await nx.widgets() };
+    case "POST /v1/widgets":
+      return { widget: await nx.createWidget(String(body.name), body.origins ?? []) };
+    case "POST /v1/widgets/delete":
+      return { deleted: await nx.deleteWidget(String(body.id)) };
     case "POST /v1/forget":
       return { forgotten: await nx.forget(String(body.id)) };
     case "POST /v1/publish":
@@ -156,6 +211,53 @@ const server = createServer(async (req, res) => {
     const html = await readFile(join(here, "inspector.html"), "utf8");
     res.writeHead(200, { "content-type": "text/html" });
     res.end(html);
+    return;
+  }
+  if (req.method === "GET" && url.pathname === "/v1/public/widget") {
+    const w = await getWidget(url.searchParams.get("id")?.trim() ?? "");
+    if (!w) { send(res, 404, { error: "unknown widget" }); return; }
+    send(res, 200, { id: w.id, name: w.name });
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/v1/public/ask/stream") {
+    try {
+      const body = await readBody(req);
+      const w = await getWidget(String(body.widget ?? ""));
+      if (!w) { send(res, 404, { error: "unknown widget" }); return; }
+      const origin = (req.headers.origin as string) || (req.headers.referer as string) || "";
+      if (!originAllowed(origin, w.origins)) { send(res, 403, { error: "origin not allowed for this widget" }); return; }
+      if (!allowRate(w.id)) { send(res, 429, { error: "rate limit exceeded, slow down" }); return; }
+      const tenant = await tenantById(w.tenantId);
+      const nx = await Neurus.open(w.set, { behind: true, tenant });
+      const hits = await nx.recall(String(body.question), { limit: 5 });
+      res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive", ...CORS });
+      const sse = (event: string, data: unknown) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+      sse("spans", { spans: hits.map(span) });
+      const a = await answerStream(String(body.question), hits, (t) => sse("token", { t }));
+      sse("done", { answer: a.text, sources: a.sources });
+      res.end();
+    } catch (e: any) {
+      res.write(`event: error\ndata: ${JSON.stringify({ error: e?.message ?? String(e) })}\n\n`);
+      res.end();
+    }
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/v1/ask/stream") {
+    try {
+      const body = await readBody(req);
+      const tenant = await resolveTenant((req.headers["x-neurus-user"] as string | undefined)?.trim() || undefined);
+      const nx = await Neurus.open(body.set ?? "default", { behind: true, tenant });
+      const hits = await nx.recall(String(body.question), { limit: body.limit ?? 5 });
+      res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive", ...CORS });
+      const sse = (event: string, data: unknown) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+      sse("spans", { spans: hits.map(span) });
+      const a = await answerStream(String(body.question), hits, (t) => sse("token", { t }));
+      sse("done", { answer: a.text, sources: a.sources });
+      res.end();
+    } catch (e: any) {
+      res.write(`event: error\ndata: ${JSON.stringify({ error: e?.message ?? String(e) })}\n\n`);
+      res.end();
+    }
     return;
   }
   try {

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSets } from "../components/SetContext";
 import { neurus, type NeuronRow, type NeuronType } from "@/services/neurus";
 import { neuronColor, trustColor, durabilityColor } from "../config";
+import { NeuronGraph } from "../components/NeuronGraph";
 
 const TYPES: (NeuronType | "all")[] = ["all", "person", "note", "file", "chunk", "insight", "commitment"];
 
@@ -17,6 +18,7 @@ export default function NeuronsPage() {
   const { active, online } = useSets();
   const [rows, setRows] = useState<NeuronRow[]>([]);
   const [filter, setFilter] = useState<NeuronType | "all">("all");
+  const [view, setView] = useState<"list" | "graph">("list");
   const [loading, setLoading] = useState(true);
 
   const load = () => {
@@ -40,7 +42,20 @@ export default function NeuronsPage() {
           <h1 className="text-xl font-semibold tracking-tight">Neurons</h1>
           <p className="mt-1 text-sm text-white/45">Every memory written to <span className="font-mono text-white/70">{active}</span>, live on Walrus.</p>
         </div>
-        <button onClick={load} className="rounded-lg border border-white/10 px-3 py-1.5 text-[13px] text-white/50 transition hover:text-white">Refresh</button>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg border border-white/10 p-0.5">
+            {(["list", "graph"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                className={`rounded-md px-2.5 py-1 text-[12.5px] capitalize transition ${view === v ? "bg-white/10 text-white" : "text-white/40 hover:text-white/70"}`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+          <button onClick={load} className="rounded-lg border border-white/10 px-3 py-1.5 text-[13px] text-white/50 transition hover:text-white">Refresh</button>
+        </div>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-1.5">
@@ -58,15 +73,20 @@ export default function NeuronsPage() {
         ))}
       </div>
 
-      <div className="mt-5 overflow-hidden rounded-2xl border border-white/10">
-        {loading ? (
-          <div className="px-5 py-10 text-center text-sm text-white/40">loading neurons…</div>
-        ) : !online ? (
-          <div className="px-5 py-10 text-center text-sm text-white/40">Engine offline — run npm run api in neuron/.</div>
-        ) : shown.length === 0 ? (
-          <div className="px-5 py-10 text-center text-sm text-white/40">No neurons yet. Capture one in Second Brain, or connect an agent.</div>
-        ) : (
-          shown.map((n) => (
+      {view === "graph" && online && !loading && shown.length > 0 ? (
+        <div className="mt-5">
+          <NeuronGraph neurons={shown} />
+        </div>
+      ) : (
+        <div className="mt-5 overflow-hidden rounded-2xl border border-white/10">
+          {loading ? (
+            <div className="px-5 py-10 text-center text-sm text-white/40">loading neurons…</div>
+          ) : !online ? (
+            <div className="px-5 py-10 text-center text-sm text-white/40">Engine offline — run npm run api in neuron/.</div>
+          ) : shown.length === 0 ? (
+            <div className="px-5 py-10 text-center text-sm text-white/40">No neurons yet. Capture one in Second Brain, or connect an agent.</div>
+          ) : (
+            shown.map((n) => (
             <div key={n.id} className="group flex items-center gap-3 border-b border-white/[0.06] px-4 py-3 last:border-b-0 hover:bg-white/[0.02]">
               <span className="rounded px-1.5 py-0.5 font-mono text-[10px] uppercase" style={{ background: `${neuronColor[n.type]}22`, color: neuronColor[n.type] }}>
                 {n.type}
@@ -86,9 +106,10 @@ export default function NeuronsPage() {
                 forget
               </button>
             </div>
-          ))
-        )}
-      </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

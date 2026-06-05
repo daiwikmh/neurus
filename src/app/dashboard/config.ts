@@ -6,6 +6,7 @@ export const dashboardNav = [
   { label: "Ask", href: "/dashboard/ask", icon: "spark" },
   { label: "Second Brain", href: "/dashboard/brain", icon: "brain" },
   { label: "Sets", href: "/dashboard/sets", icon: "layers" },
+  { label: "Datasets", href: "/dashboard/datasets", icon: "database" },
   { label: "Connect", href: "/dashboard/connect", icon: "plug" },
 ] as const;
 

@@ -23,8 +23,10 @@ export class Vault {
   }
 
   private async write(all: Record<string, Credentials>): Promise<void> {
-    const json = JSON.stringify(all, null, 2);
-    await writeFile(this.path, this.masterKey ? seal(json, this.masterKey) : json);
+    if (!this.masterKey) {
+      throw new Error("NEURUS_VAULT_KEY is required to write the credential vault — refusing to store delegate keys in plaintext");
+    }
+    await writeFile(this.path, seal(JSON.stringify(all, null, 2), this.masterKey));
   }
 
   async get(userId: string): Promise<Credentials | undefined> {

@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { createNeuron, type Neuron, type NeuronType, type Trust } from "./neuron";
 import { MemwalStore } from "../storage/memwal";
-import { putBlob, getBlobText } from "../storage/walrus";
+import { putBlobInfo, getBlobText, type BlobInfo } from "../storage/walrus";
 import { seal, unseal, isSealed } from "../access/seal";
 import { rerank } from "../retrieval/rerank";
 import { mmrSelect } from "../retrieval/mmr";
@@ -259,11 +259,15 @@ export class Memory {
     return [...out.values()];
   }
 
-  async publish(opts: { epochs?: number; sealKey?: string } = {}): Promise<string> {
+  async publishInfo(opts: { epochs?: number; sealKey?: string } = {}): Promise<BlobInfo> {
     await this.load();
     const json = JSON.stringify([...this.neurons.values()]);
     const body = opts.sealKey ? seal(json, opts.sealKey) : json;
-    return putBlob(body, opts.epochs ?? 5);
+    return putBlobInfo(body, opts.epochs ?? 5);
+  }
+
+  async publish(opts: { epochs?: number; sealKey?: string } = {}): Promise<string> {
+    return (await this.publishInfo(opts)).blobId;
   }
 
   async restoreFrom(blobId: string, opts: { sealKey?: string } = {}): Promise<number> {

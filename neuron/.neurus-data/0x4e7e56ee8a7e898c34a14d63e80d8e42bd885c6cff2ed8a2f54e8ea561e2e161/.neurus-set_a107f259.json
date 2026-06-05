@@ -1,38 +1,118 @@
 [
   {
-    "id": "note_aea3d596",
-    "type": "note",
-    "title": "i am daiwik maheshwari",
-    "body": "i am daiwik maheshwari",
+    "id": "file_41d44ef1",
+    "type": "file",
+    "title": "Daiwik.pdf",
+    "body": "Daiwik Maheshwari Envelope daiwikmahesh@gmail.com | LINKEDIN daiwik | Github daiwikmh | Twitter @daiwikmhi | Map-marker-alt Jaipur EXPERIENCE unrealai Aug. 2025 – Nov. 2025 Full Stack Developer Remote • Engineered a browser-based terminal interface that unified core platform wor…",
+    "blobId": "mg8CP8OG0UDzlBoYjxvTVdd1tSSOTLmozqEI29OXl00",
     "source": {
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780592189034,
-    "synapses": [
-      {
-        "to": "person_50660f87",
-        "kind": "about"
-      }
-    ],
+    "createdAt": 1780694430864,
+    "synapses": [],
     "meta": {
-      "memwalBlob": "EZ3McvniDo_AQw7ohrLZTt_3R2qVE5MvgzGeJxEogpc"
+      "mime": "application/pdf",
+      "bytes": 92345,
+      "ext": ".pdf",
+      "walrusObject": "0x31e58122f03f6424f13267b9584feecaa77cd03d70bbf5787bd9554cc4032eea",
+      "endEpoch": 425
     }
   },
   {
-    "id": "person_50660f87",
-    "type": "person",
-    "title": "Daiwik Maheshwari",
-    "body": "Daiwik Maheshwari\nthe writer is Daiwik Maheshwari",
+    "id": "chunk_39e977ac",
+    "type": "chunk",
+    "title": "Daiwik.pdf#1",
+    "body": "Daiwik Maheshwari Envelope daiwikmahesh@gmail.com | LINKEDIN daiwik | Github daiwikmh | Twitter @daiwikmhi | Map-marker-alt Jaipur EXPERIENCE unrealai Aug. 2025 – Nov. 2025 Full Stack Developer Remote • Engineered a browser-based terminal interface that unified core platform workflows into a single command-driven environment, improving usability and cutting navigation overhead for power users. • Architected and integrated a blockchain-based credit system enabling trustless on-chain transactions that meter and provision AI service access and compute resource allocation. • Owned the end-to-end stack across a Next.js frontend, Node.js services, and Solidity contracts, including wallet connection, transaction lifecycle handling, and real-time state sync. SoBro June. 2025 – Aug. 2025 Blockchain Developer Jaipur • Designed and deployed smart contracts powering a decentralized tourism and social ecosystem for crypto nomads, with secure on-chain registration of user data and shared experiences",
     "source": {
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780592220901,
-    "synapses": []
+    "createdAt": 1780694430864,
+    "synapses": [
+      {
+        "to": "file_41d44ef1",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 0,
+      "file": "file_41d44ef1",
+      "durability": "confirmed",
+      "memwalBlob": "TTQ45MvuGvBkcOdSW4l2RHNV1AmxcZr58BTM_WPpK4U"
+    }
   },
   {
-    "id": "file_e058328a",
+    "id": "chunk_18af2eb1",
+    "type": "chunk",
+    "title": "Daiwik.pdf#2",
+    "body": "ntracts powering a decentralized tourism and social ecosystem for crypto nomads, with secure on-chain registration of user data and shared experiences. • Implemented on-chain minting logic that converts user-generated content into permanent, tradable NFTs, handling metadata pinning and ownership transfer. • Integrated crypto-native payment and identity flows that let users connect and settle in crypto; the build won the Camp Network track prize. PROJECTS OWL | 1st, OpenWallet Hackathon March 2026 • Engineered multi-agent coordination infrastructure on top of the Open Wallet Standard, delivered as a CLI tool that lets multiple autonomous agents safely share terminal wallets. • Developed an agent-native interface and a secure key-management layer where private keys never leave the host while supporting complex multi-agent execution workflows. Nyx | 2nd, Polkadot Hackathon March 2026 • Architected a fully on-chain Central Limit Order Book leveraging PolkaVM RISC-V execution and a native R",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780694430865,
+    "synapses": [
+      {
+        "to": "file_41d44ef1",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 1,
+      "file": "file_41d44ef1",
+      "durability": "confirmed",
+      "memwalBlob": "dlGXry7IbOqVJHFkWOs2rok39oeBTJJb-tQAbkmDXKQ"
+    }
+  },
+  {
+    "id": "chunk_8e513ee1",
+    "type": "chunk",
+    "title": "Daiwik.pdf#3",
+    "body": "s. Nyx | 2nd, Polkadot Hackathon March 2026 • Architected a fully on-chain Central Limit Order Book leveraging PolkaVM RISC-V execution and a native Rust-based matching engine for deterministic, gas-efficient order matching. • Implemented Solidity interfaces that interact seamlessly with the low-level matching logic deployed on Polkadot Asset Hub. Brahma | 2nd, LI.FI Vibeathon Feb. 2026 • Built an autonomous DeFi operations suite featuring a cross-chain USDC yielder that uses LI.FI bridges and Aave V3 for non-custodial, automated capital deployment across chains. • Designed an “LP Guardian” strategy that continuously monitors Uniswap V3 positions and automatically evacuates liquidity into safer assets when real-time on-chain risk thresholds are breached. SKILLS Languages:Go, Rust, Python, Solidity, TypeScript, SQL (PostgreSQL), MongoDB Frameworks & Tools: Anchor (Solana), Uniswap V3/V4 Hooks, Foundry, Next.js, Node.js, React Protocols: Solana, Ethereum, Stellar, Polkadot Asset Hub Spec",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780694430865,
+    "synapses": [
+      {
+        "to": "file_41d44ef1",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 2,
+      "file": "file_41d44ef1",
+      "durability": "confirmed",
+      "memwalBlob": "fxxFTFSFyZNHUBuiqLIcxtnUgZtwpIr3rtMU2JhpEXg"
+    }
+  },
+  {
+    "id": "chunk_3f88e884",
+    "type": "chunk",
+    "title": "Daiwik.pdf#4",
+    "body": "ameworks & Tools: Anchor (Solana), Uniswap V3/V4 Hooks, Foundry, Next.js, Node.js, React Protocols: Solana, Ethereum, Stellar, Polkadot Asset Hub Specializations: Autonomous AI Agents, DeFi Infrastructure, AMM Design, Cross-chain Ops, Agent-native Wallets EDUCATION Poornima University Aug. 2023 – May 2027 Bachelor of Technology in CS Jaipur, IN • Coursework: Data Structures, Algorithms, Databases, Machine Learning • Certification: Uniswap Hook Incubator Alumni",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1780694430865,
+    "synapses": [
+      {
+        "to": "file_41d44ef1",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 3,
+      "file": "file_41d44ef1",
+      "durability": "confirmed",
+      "memwalBlob": "EhEZxPT0lnnX5_ycLVEtV8acmrHGwoiMmW9I3uJCpzU"
+    }
+  },
+  {
+    "id": "file_cf09a824",
     "type": "file",
     "title": "README.md",
     "body": "# Quant-trading &nbsp; ## Intro &nbsp; > We’re right 50.75 percent of the time... but we’re 100 percent right 50.75 percent of the time, you can make billions that way. <br><br> > --- Robert Mercer, co-CEO of Renaissance Technologies > If you trade a lot, you only need to be rig…",
@@ -41,18 +121,18 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168029,
     "synapses": [],
     "meta": {
       "mime": "text/markdown",
       "bytes": 31556,
       "ext": ".md",
-      "walrusObject": "0x79b4fd85b51d0e9a96b46bcc23386df689fb331a5d8084eca4bb68c580049e30",
+      "walrusObject": "0xa76dd3e04c2fd735cde582c7afba065a66afb5e7b13e20e16ebb6b82db202492",
       "endEpoch": 425
     }
   },
   {
-    "id": "chunk_5cb86453",
+    "id": "chunk_f6f5d8f1",
     "type": "chunk",
     "title": "README.md#1",
     "body": "# Quant-trading\n\n&nbsp;\n\n## Intro\n\n&nbsp;\n\n> We’re right 50.75 percent of the time... but we’re 100 percent right 50.75 percent of the time, you can make billions that way. <br><br>\n> --- Robert Mercer, co-CEO of Renaissance Technologies\n\n> If you trade a lot, you only need to be right 51 percent of the time, we need a smaller edge on each trade. <br><br>\n> --- Elwyn Berlekamp, co-Founder of Combinatorial Game Theory\n\n###### *The quotes above come from a book by Gregory Zuckerman, a book every quant must read, THE MAN WHO SOLVED THE MARKET.*\n\n&nbsp;",
@@ -60,22 +140,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 0,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "confirmed",
-      "memwalBlob": "L5y7ciVYjsJ08RKPMAfSbIOkZkTXO9JR_I7-vumSve4"
+      "memwalBlob": "hhZouO8fBEdMYz6zFi0fZe_o7qM3_YMku2tmxdPOEa8"
     }
   },
   {
-    "id": "chunk_611e6755",
+    "id": "chunk_e8944ba1",
     "type": "chunk",
     "title": "README.md#2",
     "body": "Most scripts inside this repository are technical indicator automated trading. These scripts include various types of momentum trading, opening range breakout, reversal of support & resistance and statistical arbitrage strategies. Yet, quantitative trading is not only about technical analysis. It can refer to computational finance to exploit derivative price mismatch, pattern recognition on alternative datasets to generate alphas or low latency order execution in the market microstructure. Hence, there are a few ongoing projects inside this repository. These projects are mostly quantamental analysis on some strange ideas I come up with to beat the market (or so I thought). There is no HFT strategy simply because ultra high frequency data are very expensive to acquire (even consider platforms like Quantopian or Quandl). Additionally, please note that, all scripts are historical data backtesting/forward testing (basically via Python, not C++, maybe Julia in the near future). The assumpti",
@@ -83,22 +163,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 1,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "confirmed",
-      "memwalBlob": "h697nn78bC2qRieNu-eL9In_PekyHjt6G8RYaFDHQjM"
+      "memwalBlob": "ZTRQ3lWgrq_jEFIL5IIg-tQghV6HVouJrumHqsz5hJk"
     }
   },
   {
-    "id": "chunk_9f07de46",
+    "id": "chunk_b7e49d11",
     "type": "chunk",
     "title": "README.md#3",
     "body": "e note that, all scripts are historical data backtesting/forward testing (basically via Python, not C++, maybe Julia in the near future). The assumption is that all trades are frictionless. No slippage, no surcharge, no illiquidity. Last but not least, all scripts contain a global function named main so that you can embed the scripts directly into you trading system (although too lazy to write docstring).",
@@ -106,21 +186,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 2,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "Vy49K4LQ2xsQNKQcGNVVxSiRRmPJXle5cpmFKcctYQE"
     }
   },
   {
-    "id": "chunk_a736aa2e",
+    "id": "chunk_d25aca97",
     "type": "chunk",
     "title": "README.md#4",
     "body": "### Table of Contents\n\n&nbsp;\n\n#### Options Strategy\n\n* <a href=https://github.com/je-suis-tm/quant-trading#12-options-straddle>Options Straddle</a>\n* <a href=https://github.com/je-suis-tm/quant-trading#15-vix-calculator>VIX Calculator</a>\n\n&nbsp;\n\n#### Quantamental Analysis\n\n* <a href=https://github.com/je-suis-tm/quant-trading#11-monte-carlo-project>Monte Carlo Project</a>\n\n* <a href=https://github.com/je-suis-tm/quant-trading#6-oil-money-project>Oil Money Project</a>\n\n* <a href=https://github.com/je-suis-tm/quant-trading#2-pair-trading>Pair Trading</a>\n\n* <a href=https://github.com/je-suis-tm/quant-trading#13-portfolio-optimization-project>Portfolio Optimization Project</a>\n\n* <a href=https://github.com/je-suis-tm/quant-trading#14-smart-farmers-project>Smart Farmers Project</a>\n\n* <a href=https://github.com/je-suis-tm/quant-trading#16-wisdom-of-crowds-project>Wisdom of Crowd Project</a>\n\n&nbsp;\n\n#### Technical Indicators",
@@ -128,21 +209,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 3,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "zILa3pWy2xZjhiR9zwXjdQtqlDhbZ_wSLDaOgI8bMhw"
     }
   },
   {
-    "id": "chunk_10c13bfe",
+    "id": "chunk_72a906f6",
     "type": "chunk",
     "title": "README.md#5",
     "body": "</a>\n\n* <a href=https://github.com/je-suis-tm/quant-trading#16-wisdom-of-crowds-project>Wisdom of Crowd Project</a>\n\n&nbsp;\n\n#### Technical Indicators\n\n* <a href=https://github.com/je-suis-tm/quant-trading#5-awesome-oscillator>Awesome Oscillator</a>\n\n* <a href=https://github.com/je-suis-tm/quant-trading#9-bollinger-bands-pattern-recognition>Bollinger Bands Pattern Recognition</a>\n\n* <a href=https://github.com/je-suis-tm/quant-trading#7-dual-thrust>Dual Thrust</a>\n\n* <a href=https://github.com/je-suis-tm/quant-trading#3-heikin-ashi-candlestick>Heikin-Ashi Candlestick</a>\n\n* <a href=https://github.com/je-suis-tm/quant-trading#4-london-breakout>London Breakout</a>\n\n* <a href=https://github.com/je-suis-tm/quant-trading#1-macd-oscillator>MACD Oscillator</a>\n\n* <a href=https://github.com/je-suis-tm/quant-trading#8-parabolic-sar>Parabolic SAR</a>",
@@ -150,21 +232,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 4,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "aT4aJx0_Xfms2xGqa8bgEbvX3khoIzY6U8w-0R6qe5s"
     }
   },
   {
-    "id": "chunk_8d4d0db3",
+    "id": "chunk_63d7cac1",
     "type": "chunk",
     "title": "README.md#6",
     "body": "e-suis-tm/quant-trading#1-macd-oscillator>MACD Oscillator</a>\n\n* <a href=https://github.com/je-suis-tm/quant-trading#8-parabolic-sar>Parabolic SAR</a>\n\n* <a href=https://github.com/je-suis-tm/quant-trading#10-relative-strength-index-pattern-recognition>Relative Strength Index Pattern Recognition</a>\n\n* <a href=https://github.com/je-suis-tm/quant-trading#17-shooting-star>Shooting Star</a>\n\n&nbsp;\n\n### Data Source\n\n* Bloomberg/Eikon\n\n* <a href=https://github.com/je-suis-tm/web-scraping/blob/master/CME3.py>CME</a>/<a href=https://github.com/je-suis-tm/web-scraping/blob/master/LME.py>LME</a>\n\n* <a href=https://www.histdata.com/>Histdata</a>/<a href=https://fxhistoricaldata.com>FX Historical Data</a>\n\n* <a href=https://github.com/je-suis-tm/web-scraping/blob/master/Macrotrends.py>Macrotrends</a>\n\n* <a href=https://stooq.com>Stooq</a>/<a href=https://www.quandl.com>Quandl</a>\n\n* <a href=https://github.com/je-suis-tm/web-scraping/blob/master/WallStreetBets.py>Reddit WallStreetBets</a>",
@@ -172,21 +255,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 5,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "iEN3eaWR0ZzOykM58thEeuzEvrP9PBUU3ieVzooFCj4"
     }
   },
   {
-    "id": "chunk_a315ac24",
+    "id": "chunk_6593a5b0",
     "type": "chunk",
     "title": "README.md#7",
     "body": "a href=https://www.quandl.com>Quandl</a>\n\n* <a href=https://github.com/je-suis-tm/web-scraping/blob/master/WallStreetBets.py>Reddit WallStreetBets</a>\n\n* <a href=https://github.com/je-suis-tm/web-scraping>Web Scraping</a>\n\n* <a href=https://finance.yahoo.com>Yahoo Finance</a>/<a href=https://pypi.org/project/fix-yahoo-finance>fix_yahoo_finance package</a>/<a href=https://pypi.org/project/yfinance>yfinance package</a>\n\n<br>\n\n## Strategies:\n\n### 1. MACD oscillator",
@@ -194,21 +278,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 6,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "m6WQhMDg3iKle2nSxsKCc1fYPHrs0vB-t1K8E4ldE7M"
     }
   },
   {
-    "id": "chunk_c12ca529",
+    "id": "chunk_a9425f86",
     "type": "chunk",
     "title": "README.md#8",
     "body": "hoo-finance>fix_yahoo_finance package</a>/<a href=https://pypi.org/project/yfinance>yfinance package</a>\n\n<br>\n\n## Strategies:\n\n### 1. MACD oscillator\n\nMACD oscillator is trading strategy 101. MACD refers to Moving Average Convergence/Divergence. It is a momentum trading strategy which holds the belief that upward/downward momentum has more impact on short term moving average than long term moving average. It only takes 5 minutes for any bloke with no background in finance to trade with MACD signals. Regarding the simplicity of MACD oscillator, it is the most common strategy among the non-professionals in the market. In behavioral economics, the more people believe in the strategy, the more effective the strategy becomes (not always true, e.g. 2008). Therefore, we should not underestimate the power of MACD oscillator.",
@@ -216,21 +301,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 7,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "UljpJVAhjuHKkRay4qPf-CbiZGpCwUsvKFg8BoPG6Xk"
     }
   },
   {
-    "id": "chunk_0424de76",
+    "id": "chunk_407bc40a",
     "type": "chunk",
     "title": "README.md#9",
     "body": "e strategy, the more effective the strategy becomes (not always true, e.g. 2008). Therefore, we should not underestimate the power of MACD oscillator.\n\nFor the strategy itself, we compute long term moving average and short term moving average on the close price of a given stock. To generate the trading signal, we implement a comparison between the moving averages of different time horizons. When short term moving average is above long term moving average, we long the given stock accordingly. Vice versa.\n\n*Click <a href=https://github.com/je-suis-tm/quant-trading/blob/master/MACD%20Oscillator%20backtest.py>here</a> to be redirected to the script.*\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/macd%20positions.png)\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/macd%20oscillator.png)\n\n### 2. Pair trading",
@@ -238,21 +324,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 8,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "vjhfM9aCTzSjsVjHWN_QS5uT5RKh_1jqMv-vMs7yS7c"
     }
   },
   {
-    "id": "chunk_4277cbc0",
+    "id": "chunk_6a50cf42",
     "type": "chunk",
     "title": "README.md#10",
     "body": "preview/macd%20positions.png)\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/macd%20oscillator.png)\n\n### 2. Pair trading\n\nPair trading is the basic form of statistics arbitrage. It relies on the assumption that two cointegrated stocks would not drift too far away from each other. First step, we select two stocks and run <a href=https://en.wikipedia.org/wiki/Error_correction_model#Engle_and_Granger_2-step_approach>Engle-Granger two step analysis</a>. Once the criteria of cointegration is met, we standardize the residual and set one sigma away (two tailed) as the threshold. After that, we compute the current standardized residual of the selected stocks accordingly. When the standardized residual exceeds the threshold, it generates the trading signal. The simple rule is we always long the cheap stock and short the expensive stock.",
@@ -260,21 +347,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 9,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "pV45wiFYdGXhMmzocNBo4sYjV-Y8YIvaQoqBfTkczF0"
     }
   },
   {
-    "id": "chunk_ff7e28d3",
+    "id": "chunk_d184d8d7",
     "type": "chunk",
     "title": "README.md#11",
     "body": "ized residual exceeds the threshold, it generates the trading signal. The simple rule is we always long the cheap stock and short the expensive stock.\n\nThe core idea of pair trading is <a href=https://en.wikipedia.org/wiki/Cointegration>cointegration</a>. Metaphorically speaking, cointegration is like a couple in a clingy relationship where two parties are crazy-glued together. Yet, most relationships break sooner or later, and only the very few can make it to the marriage (from a statistics perspective, not being pessimistic). Hence, it is important to frequently check on the status quo of cointegration before any pair trading order execution (the same applies to relationships).\n\n*Click <a href=https://github.com/je-suis-tm/quant-trading/blob/master/Pair%20trading%20backtest.py>here</a> to be redirected to the script.*\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/pair%20trading%20positions.png)",
@@ -282,21 +370,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 10,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "fgtVdG5B49pmDVzTnO9ZDUlyhNUxKfNrLK1cO7sCKww"
     }
   },
   {
-    "id": "chunk_2fa7f47e",
+    "id": "chunk_51b17166",
     "type": "chunk",
     "title": "README.md#12",
     "body": "here</a> to be redirected to the script.*\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/pair%20trading%20positions.png)\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/pair%20trading%20asset.png)\n\n### 3. Heikin-Ashi candlestick\n\nHeikin-Ashi, the exotic name actually referring to 'Average Bar' in Japanese, is an alternative style of candlestick chart. The sophisticated rules of Heiki-Ashi are designed to filter out the noise for momentum trading. Hence, Heikin-Ashi shows more consecutive bars in contrast to the standard candlestick, which makes price momentum and reverse points more distinguishable in figures. Arguably it should outperform the standard candlestick in sideways and choppy markets.",
@@ -304,21 +393,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 11,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "VME5x-JPRidSRwIpaTGSRx-0PDXF3xpbPlJu1qLwyBk"
     }
   },
   {
-    "id": "chunk_8eef51b1",
+    "id": "chunk_170b3e71",
     "type": "chunk",
     "title": "README.md#13",
     "body": "ce momentum and reverse points more distinguishable in figures. Arguably it should outperform the standard candlestick in sideways and choppy markets.\n\nFor the strategy itself, initially we make a few transformations on four vital benchmarks - Open, Close, High, Low. The next step is to apply unique Heikin-Ashi rules on Heikin-Ashi Open, Close, High, Low to generate trading signals. The downside of Heikin-Ashi (or any momentum trading strategies) is the slow response. Thus, we should set up the stop loss position accordingly so that we don't get caught up in any flash crash.\n\nThe rules of Heikin-Ashi can be found in <a href=https://quantiacs.com/Blog/Intro-to-Algorithmic-Trading-with-Heikin-Ashi.aspx>Quantiacs</a>.\n\n*Click <a href=https://github.com/je-suis-tm/quant-trading/blob/master/Heikin-Ashi%20backtest.py>here</a> to be redirected to the script.*\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/heikin-ashi%20positions.png)",
@@ -326,21 +416,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 12,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "O_cnqIv1L7xSbjcW0-ljPvJy15osayVuxXPpAp-_PdE"
     }
   },
   {
-    "id": "chunk_3dd96118",
+    "id": "chunk_265dc8e4",
     "type": "chunk",
     "title": "README.md#14",
     "body": "py>here</a> to be redirected to the script.*\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/heikin-ashi%20positions.png)\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/heikin-ashi%20asset%20value.png)\n\n### 4. London Breakout\n\nTo one of my favourite cities in the world! Proud to be a Londoner!\n\nLondon Breakout is an intra daily opening range breakout strategy. Basically, it is a fascinating information arbitrage across different markets in different time zones. FX market runs 24/7 globally. For instance, you cannot long the stock of Ford in ASX simply because Ford is listed in NYSE. As FX market is decentralised, you can long any currency pair in any market as long as the market is open. That leaves a door to take a peek at the activity in a closed foreign FX market before the opening of domestic FX market.",
@@ -348,21 +439,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 13,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "aYNDaomyVsET0n6L1GlmvUl1RxMj7kSnTs7CIhLxOsk"
     }
   },
   {
-    "id": "chunk_0849e8d1",
+    "id": "chunk_67a54919",
     "type": "chunk",
     "title": "README.md#15",
     "body": " long as the market is open. That leaves a door to take a peek at the activity in a closed foreign FX market before the opening of domestic FX market.\n\nBack to London Breakout, London and Tokyo are two of the largest FX markets in the world. Tokyo FX trading hour is GMT 0:00 a.m. - GMT 8:59am. London FX trading hour (no summer daylight saving) begins at GMT 8:00 a.m. Even though there is an hour of overlap, the crucial timeframe of London Breakout is GMT 7:00 a.m. - GMT 7:59 a.m. a.k.a. the last trading hour before the opening of London market. The price movement of the crucial timeframe incorporates the information of all the overnight activities of financial market (from the perspective of the current time zone).",
@@ -370,21 +462,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 14,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "roSjAfxPHcni7MihxLzlCPNWnIUAFyY54JUe9riD9Yc"
     }
   },
   {
-    "id": "chunk_8efa6988",
+    "id": "chunk_50be4153",
     "type": "chunk",
     "title": "README.md#16",
     "body": "he crucial timeframe incorporates the information of all the overnight activities of financial market (from the perspective of the current time zone).\n\nFor the strategy itself, we establish upper and lower thresholds prior to the high and low of the crucial timeframe. Once London FX market opens, we spend the first couple of minutes to check if the price would breach the preset boundaries. If it is above threshold, we long the currency pair accordingly. Vice versa. Nevertheless, we should set up a limit to prevent us from trading in the case of abnormal opening volatility. Normally, we clear our positions based on our target stop loss or stop profit respectively. By the end of the trading hour (still from the perspective of the current time zone), if there are any open positions, we clear them out.\n\n*Click <a href=https://github.com/je-suis-tm/quant-trading/blob/master/London%20Breakout%20backtest.py>here</a> to be redirected to the script.*",
@@ -392,21 +485,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 15,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "AS3mp6onoRGFx-UA_KAEcIDuepYKCfkFJfICsgGnkKI"
     }
   },
   {
-    "id": "chunk_366680c7",
+    "id": "chunk_44b5b88f",
     "type": "chunk",
     "title": "README.md#17",
     "body": "out.\n\n*Click <a href=https://github.com/je-suis-tm/quant-trading/blob/master/London%20Breakout%20backtest.py>here</a> to be redirected to the script.*\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/london%20breakout%20positions.png)\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/london%20breakout%20thresholds.png)\n\n### 5. Awesome oscillator\n\nAwesome oscillator is an upgraded version of MACD oscillator. It is one of those momentum strategies focusing on the game of moving average. Instead of taking simple moving average on close price, awesome moving average is derived from the mean of high and low price. Similar to MACD oscillator, it takes both short term and long term moving averages to construct the oscillator.",
@@ -414,21 +508,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 16,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "IQNearTl2i-Lqo9mGnA7P9Suqblf_wYTSsEqI-LiKMI"
     }
   },
   {
-    "id": "chunk_37a3d733",
+    "id": "chunk_3a26068d",
     "type": "chunk",
     "title": "README.md#18",
     "body": "d from the mean of high and low price. Similar to MACD oscillator, it takes both short term and long term moving averages to construct the oscillator.\n\nThere are various strategies for awesome oscillator to generate signals, such as traditional moving average divergence, twin peaks and saucer. Twin peaks is just one of the many names of bottom W pattern. The pattern recognition will be covered in another chapter so the main focus of this chapter is saucer. Saucer is slightly more complex to implement than the traditional divergence. In return, saucer has the power to beat the slow response of the traditional divergence. Generally speaking, a faster response may sound awesome, but it does not guarantee a less risky outcome or a more profitable outcome. Hence, we will take MACD oscillator as a control group, to test if awesome oscillator can actually outperform MACD oscillator.",
@@ -436,21 +531,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 17,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "frvJJdGeNWSGzfNrcCW_Kf5vivxnRaK_Fzqqq9l6qYk"
     }
   },
   {
-    "id": "chunk_9daef05d",
+    "id": "chunk_adde1c46",
     "type": "chunk",
     "title": "README.md#19",
     "body": "ore profitable outcome. Hence, we will take MACD oscillator as a control group, to test if awesome oscillator can actually outperform MACD oscillator.\n\nThe rules of awesome oscillator could be found in <a href=https://www.tradingview.com/wiki/Awesome_Oscillator_(AO)>TradingView</a>.\n\n*Click <a href=https://github.com/je-suis-tm/quant-trading/blob/master/Awesome%20Oscillator%20backtest.py>here</a> to be redirected to the script.*\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/awesome%20positions.png)\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/awesome%20oscillator.png)\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/awesome%20ma.png)\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/awesome%20asset.png)\n\n### 6. Oil Money project",
@@ -458,21 +554,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 18,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "NbJCvYK7yihGJSrCVjPH3GRzjNlzeunaeFd-YxwlQv8"
     }
   },
   {
-    "id": "chunk_d8705bd4",
+    "id": "chunk_d3b2ab14",
     "type": "chunk",
     "title": "README.md#20",
     "body": "/preview/awesome%20ma.png)\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/awesome%20asset.png)\n\n### 6. Oil Money project\n\nThis project is inspired by an <a href=https://www.bloomberg.com/news/articles/2018-05-20/crude-oil-s-surge-is-putting-the-petro-back-in-petrocurrencies>article</a> on oil-backed foreign exchange. Amid the bullish outlook for crude oil, the currency exchange of oil producing countries would also bounce back. Does this statement really hold?",
@@ -480,21 +577,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 19,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "rSOr5rpaRW_hC9sx16M62Kx9-a8Vd4COJwD4y4uTIGw"
     }
   },
   {
-    "id": "chunk_1b9a615d",
+    "id": "chunk_32994bf1",
     "type": "chunk",
     "title": "README.md#21",
     "body": "nge. Amid the bullish outlook for crude oil, the currency exchange of oil producing countries would also bounce back. Does this statement really hold?\n\nAccording to the article by Bloomberg (or many other similar research), researchers examine the correlation between petrocurrency and oil price, instead of the causality. But correlation does not equal to causality. Correlation could be a coincidence of a math game. We simply cannot draw the conclusion that oil price moves the currency. Some researchers even use bootstrapping which greatly destroys the autocorrelation of a time series. Thus, it is vital to apply academic analysis and computer simulation on some petrocurrencies to test the causality of oil.",
@@ -502,21 +600,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 20,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "w2dbWPUq1kFau4Ci_J8DlwEBUY9dXqG58zgJ-DMYaD4"
     }
   },
   {
-    "id": "chunk_dca449da",
+    "id": "chunk_b1dde4a4",
     "type": "chunk",
     "title": "README.md#22",
     "body": "rrelation of a time series. Thus, it is vital to apply academic analysis and computer simulation on some petrocurrencies to test the causality of oil.\n\n*For more details, please refer to the <a href=https://github.com/je-suis-tm/quant-trading/blob/master/Oil%20Money%20project/README.md>read me page</a> of a separate directory or <a href=https://je-suis-tm.github.io/quant-trading/oil-money>quant trading section</a> on my personal blog.*\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/Oil%20Money%20project/preview/oil%20production%20bubble%20map.png)\n\n### 7. Dual Thrust\n\nIf you search dual thrust on google, you will end up with results of rocket engine. Don't panic yet, you can rest assured that dual thrust strategy is nowhere near rocket science. It is just an opening range breakout strategy developed by the founder of Universal Technical Systems. The mathematics involved in this strategy is merely primary school level.",
@@ -524,21 +623,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 21,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "TT7QZh5Qnon0DJQyV_EXaRfmRGrGpSxqEEnAcTBadwU"
     }
   },
   {
-    "id": "chunk_db225348",
+    "id": "chunk_d19d44cf",
     "type": "chunk",
     "title": "README.md#23",
     "body": "e breakout strategy developed by the founder of Universal Technical Systems. The mathematics involved in this strategy is merely primary school level.\n\nInitially we establish upper and lower thresholds based on previous days' open, close, high and low. When the market opens and the price exceeds certain thresholds, we would take long/short positions prior to upper/lower thresholds. The strategy is quite useful in intra daily trading. However, there is no stop loss/profit position in this strategy. We reverse our positions when the price goes from one threshold to the other. We need to clear all positions by the end of the day.\n\nRules of dual thrust can be found in <a href=https://www.quantconnect.com/tutorials/dual-thrust-trading-algorithm>QuantConnect</a>.\n\n*Click <a href=https://github.com/je-suis-tm/quant-trading/blob/master/Dual%20Thrust%20backtest.py>here</a> to be redirected to the script.*",
@@ -546,21 +646,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 22,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "HMCPYdKVkefIVjusney1PXToxmDwuN8wb5WMIxuRIP0"
     }
   },
   {
-    "id": "chunk_104419b3",
+    "id": "chunk_bdb3930a",
     "type": "chunk",
     "title": "README.md#24",
     "body": "ect</a>.\n\n*Click <a href=https://github.com/je-suis-tm/quant-trading/blob/master/Dual%20Thrust%20backtest.py>here</a> to be redirected to the script.*\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/dual%20thrust%20positions.png)\n\n### 8. Parabolic SAR\n\nParabolic SAR is an indicator to identify stop and reverse of a trend. Usually, Parabolic SAR is presented as dotted line either above or below the price in charts. When the price is an uptrend, SAR curve would sit below the price. When the price is downtrend, SAR curve would rise above the price. Parabolic SAR is always considered as a symbol of resistance to the price momentum. When SAR curve and the price curve cross over, it is when trade orders are supposed to be executed.",
@@ -568,21 +669,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 23,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "W57FqF9hy3SRckqSNVx8X4N_13O8vL4OetKBnep7YwE"
     }
   },
   {
-    "id": "chunk_0e4282d2",
+    "id": "chunk_7d50e135",
     "type": "chunk",
     "title": "README.md#25",
     "body": "d as a symbol of resistance to the price momentum. When SAR curve and the price curve cross over, it is when trade orders are supposed to be executed.\n\nThe building of this strategy seems very simple, but the construction of the indicator is extremely painful due to the involvement of recursive calculation. Illustration on how to compute Parabolic SAR can be found in <a href=https://en.wikipedia.org/wiki/Parabolic_SAR>Wikipedia</a> but it is not very well explained. To get a clear idea of the calculation, my personal recommendation is to take a look at the <a href=https://www.box.com/s/gbtrjuoktgyag56j6lv0>spreadsheet</a> made by joeu2004.",
@@ -590,21 +692,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 24,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "h4q9OM_YssUfIPg0JuVqHWDCVmlD_pKWvDbKzV54cxI"
     }
   },
   {
-    "id": "chunk_d97aca5f",
+    "id": "chunk_f0c278f2",
     "type": "chunk",
     "title": "README.md#26",
     "body": " calculation, my personal recommendation is to take a look at the <a href=https://www.box.com/s/gbtrjuoktgyag56j6lv0>spreadsheet</a> made by joeu2004.\n\nIt is worth mentioning that SAR and RSI (which will be featured in a later chapter) shares the same founder, Welles Wilder. The guy is a real legend who used to work as mechanical engineer and real estate developer and later became a technical analyst. His book on technical trading system is a must-read for anyone that wants to elevate quant trading system to the next level.\n\n*Click <a href=https://github.com/je-suis-tm/quant-trading/blob/master/Parabolic%20SAR%20backtest.py>here</a> to be redirected to the script.*\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/parabolic%20sar%20positions.png)\n\n### 9. Bollinger Bands Pattern Recognition",
@@ -612,21 +715,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 25,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "VAm2IGB-MSukTZJioY9ZPSCBBR9DwZ0MR_o5-fvtssE"
     }
   },
   {
-    "id": "chunk_0dbe22be",
+    "id": "chunk_37ac72a8",
     "type": "chunk",
     "title": "README.md#27",
     "body": "alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/parabolic%20sar%20positions.png)\n\n### 9. Bollinger Bands Pattern Recognition\n\nBollinger Bands is a very simple but powerful indicator. There are three bands of this indicator. The mid band is the moving average on the price series (usually takes 20 lags). The upper and lower bands are two moving standard deviations away from the mid band. Bollinger Bands can be used to test for various types of strategies.\n\nFor volatility trading, contraction and expansion of the band width are crucial elements. Any distinct momentum clustering (it can take form of either upward or downward) would result in a Bollinger Bands expansion. And the oscillation in a horizontal channel would result in a Bollinger Bands contraction.",
@@ -634,21 +738,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 26,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "CjzyARM0z9KD5Ip1NE4E5H-IiFC3fJBRFI5QXhmb-EU"
     }
   },
   {
-    "id": "chunk_c979d4c0",
+    "id": "chunk_4e9f73f5",
     "type": "chunk",
     "title": "README.md#28",
     "body": "d or downward) would result in a Bollinger Bands expansion. And the oscillation in a horizontal channel would result in a Bollinger Bands contraction.\n\nFor momentum trading, the phenomenon of 'walking the band' indicates the resistance and support level of the underlying asset. In a strong trend, the price constantly attempts to touch or break through the upper/lower band along with Bollinger Bands moving towards the same direction.\n\nFor pattern recognition, Bollinger Bands has the capability of testing bottom W, top M, head-shoulder patterns, etc. With upper and lower bands served as an interval, it is easier to identify the hidden pattern in the historical data.\n\nMore details of Bollinger Bands can be found in <a href=https://www.tradingview.com/wiki/Bollinger_Bands_(BB)>TradingView</a>.\n\n*Click <a href=https://github.com/je-suis-tm/quant-trading/blob/master/Bollinger%20Bands%20Pattern%20Recognition%20backtest.py>here</a> to be redirected to the script.*",
@@ -656,21 +761,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 27,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "rylfyc9FRHJBYG3bvgjP651iIUcWu1lvs064jXuA0FY"
     }
   },
   {
-    "id": "chunk_23982270",
+    "id": "chunk_ede1cee5",
     "type": "chunk",
     "title": "README.md#29",
     "body": "ps://github.com/je-suis-tm/quant-trading/blob/master/Bollinger%20Bands%20Pattern%20Recognition%20backtest.py>here</a> to be redirected to the script.*\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/bollinger%20bands%20positions.png)\n\n### 10. Relative Strength Index Pattern Recognition",
@@ -678,21 +784,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798613,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 28,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "DyEzWFtlgyOs2ilahBsxyfAnbKYyL_-LC5BVChxlQf4"
     }
   },
   {
-    "id": "chunk_b38ffc33",
+    "id": "chunk_9f4ec854",
     "type": "chunk",
     "title": "README.md#30",
     "body": "ttps://github.com/je-suis-tm/quant-trading/blob/master/preview/bollinger%20bands%20positions.png)\n\n### 10. Relative Strength Index Pattern Recognition\n\nRSI (Relative Strength Index) is also a popular indicator. It reflects the current strength/weakness of the stock price momentum. The calculation is pretty straight forward. We use 14 days of smoothed moving average (or other moving average methods) to separately calculate the intra daily uptrend and downtrend. We denote uptrend moving average divided by downtrend moving average as the relative strength. We normalize the relative strength by 100 which becomes an index called RSI. It is commonly believed that RSI above 70 is overbought and RSI below 30 is oversold. This is the simplest way to trade on RSI (as shown in the pictures below). Nonetheless, there could be divergence between RSI momentum and price momentum which will not be covered in the script. The effectiveness of any divergence strategy on RSI is rather debatable.",
@@ -700,21 +807,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 29,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "nCV0jOK3AAFbs5ZVSHOLa1vOQkKnzzFXCaOOz6Sfdow"
     }
   },
   {
-    "id": "chunk_bcfeafd4",
+    "id": "chunk_19d9f5bb",
     "type": "chunk",
     "title": "README.md#31",
     "body": "ween RSI momentum and price momentum which will not be covered in the script. The effectiveness of any divergence strategy on RSI is rather debatable.\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/rsi%20positions.png)\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/rsi%20oscillator.png)\n\nIf you are looking for something slightly more complex, well, we can apply pattern recognition technique to RSI as well. Unlike strategy No.9 Bollinger Bands, we can directly look at the patterns of RSI itself instead of the price. Since we have tested double bottom pattern in Bollinger Bands, we would test head-shoulder pattern on RSI this time.\n\nFor details of head-shoulder pattern, please refer to <a href=https://www.investopedia.com/terms/h/head-shoulders.asp>Investopedia</a>.\n\n*Click <a href=https://github.com/je-suis-tm/quant-trading/blob/master/RSI%20Pattern%20Recognition%20backtest.py>here</a> to be redirected to the script.*",
@@ -722,21 +830,22 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 30,
-      "file": "file_e058328a",
-      "durability": "failed"
+      "file": "file_cf09a824",
+      "durability": "confirmed",
+      "memwalBlob": "0pPvh5YYS25sxWl8vyAp76U_t7wo0jyiwKDzfm3VneI"
     }
   },
   {
-    "id": "chunk_a907992a",
+    "id": "chunk_a4b2a5f4",
     "type": "chunk",
     "title": "README.md#32",
     "body": "ck <a href=https://github.com/je-suis-tm/quant-trading/blob/master/RSI%20Pattern%20Recognition%20backtest.py>here</a> to be redirected to the script.*\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/rsi%20pattern%20positions.png)\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/rsi%20pattern%20oscillator.png)\n\n### 11. Monte Carlo project\n\nMonte Carlo, my first thought on these two words is the grand casino, where you meet Famke Janssen in tuxedo and introduce yourself, 'Bond, James Bond'. Indeed, the simulation is named after the infamous casino. It actually refers to the computer simulation of massive amount of random events. This unconventional mathematical method is extremely powerful in the study of stochastic process.",
@@ -744,21 +853,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 31,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_979dd6b0",
+    "id": "chunk_6a59c29e",
     "type": "chunk",
     "title": "README.md#33",
     "body": "puter simulation of massive amount of random events. This unconventional mathematical method is extremely powerful in the study of stochastic process.\n\nHere comes the argument on Linkedin that caught my eyes the other day. \"Stock price can be seemed as a Wiener Process. Hence, we can use Monte Carlo simulation to predict the stock price.\" said a data science blog. Well, in order to be a Wiener Process, we have to assume the stock price is continuous in time. In reality, the market closes. The overnight volatility exists. But that is not the biggest issue here. The biggest issue is, can we really use Monte Carlo simulation to predict the stock price, even a range or its direction?\n\n*For more details, please refer to the <a href=https://github.com/je-suis-tm/quant-trading/blob/master/Monte%20Carlo%20project/README.md>read me</a> page of a separate directory or <a href=https://je-suis-tm.github.io/quant-trading/monte-carlo>quant trading</a> section on my personal blog.*",
@@ -766,21 +875,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 32,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_2ba21a74",
+    "id": "chunk_be07ea47",
     "type": "chunk",
     "title": "README.md#34",
     "body": " me</a> page of a separate directory or <a href=https://je-suis-tm.github.io/quant-trading/monte-carlo>quant trading</a> section on my personal blog.*\n\n![alt text](https://raw.githubusercontent.com/je-suis-tm/quant-trading/master/Monte%20Carlo%20project/preview/ge%20simulation2.png)\n\n### 12. Options Straddle\n\nHere marks the debut of options strategy in this repository. Straddle refers to the shape of compasses in the payoff diagram of the strategy. A long straddle involves buying a call option and a put option at the same strike price, the same expiration date and preferably the same price. In reality, the same price is not always feasible (call options price higher implies higher upside risk, vice versa). It is recommended to trade when the price disparity between call and put options is converging.",
@@ -788,21 +897,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 33,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_c97bbce2",
+    "id": "chunk_0b884a38",
     "type": "chunk",
     "title": "README.md#35",
     "body": " price higher implies higher upside risk, vice versa). It is recommended to trade when the price disparity between call and put options is converging.\n\nLong straddle is commonly seen in event driven strategy, e.g. political referendum, company earning release. It profits from the uncertainty of both-side risk. For upside risk, the potential profit is unlimited. The potential loss does not come from the downside risk (there is limited gain from downside risk). Instead, it comes from the stagnant price due to insufficient volatility. In this case, short straddle is more suitable for sideways choppy market.",
@@ -810,21 +919,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 34,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_faa3d2e5",
+    "id": "chunk_dd546606",
     "type": "chunk",
     "title": "README.md#36",
     "body": "). Instead, it comes from the stagnant price due to insufficient volatility. In this case, short straddle is more suitable for sideways choppy market.\n\nThe crucial element of options straddle is the selection of the strike price. As the price of options contains the market consensus, the only way to maximize the profit is to find the optimal strike price to shrink the loss bandwidth. This is where the economists kick in and offer base case outlook plus best/worst scenarios. In contrast to the common misunderstanding of quantitative trading, Option Greeks are no silver bullet. Quantitative combined with fundamental in one, so-called quantamental, makes the portfolio impeccable.\n\n*Click <a href=https://github.com/je-suis-tm/quant-trading/blob/master/Options%20Straddle%20backtest.py>here</a> to be redirected to the script.*\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/options%20straddle%20payoff%20diagram.png)\n\n### 13. Portfolio Optimization project",
@@ -832,21 +941,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 35,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_8fd0ff80",
+    "id": "chunk_25e9d981",
     "type": "chunk",
     "title": "README.md#37",
     "body": "xt](https://github.com/je-suis-tm/quant-trading/blob/master/preview/options%20straddle%20payoff%20diagram.png)\n\n### 13. Portfolio Optimization project\n\nModern portfolio theory was introduced in 1952 by Nobel laureate Harry Markowitz. It is part of investment class 101. But I watched a video by <a href=https://www.wolfram.com/training/videos/FIN015>Wolfram</a> recently. It challenged the traditional approach and introduced graph theory to asset diversification. There are plenty of quant shops deploying fancy mathematic tools to solve the market. The real question for us is, as fancy as it sounds, does graph theory work on portfolio optimization?\n\n![alt text](https://github.com/je-suis-tm/graph-theory/blob/master/Portfolio%20Optimization%20project/preview/outta%20sample%20mean%20variance.png)",
@@ -854,21 +963,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 36,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_54088f85",
+    "id": "chunk_5a30bf69",
     "type": "chunk",
     "title": "README.md#38",
     "body": "?\n\n![alt text](https://github.com/je-suis-tm/graph-theory/blob/master/Portfolio%20Optimization%20project/preview/outta%20sample%20mean%20variance.png)\n\n*This project is documented in the repository of <a href=https://github.com/je-suis-tm/graph-theory>Graph Theory</a>. For more details, please refer to the <a href=https://github.com/je-suis-tm/graph-theory/blob/master/Portfolio%20Optimization%20project/README.md>read me</a> page of a separate directory or <a href=https://je-suis-tm.github.io/graph-theory/portfolio-optimization>graph theory</a> section on my personal blog.*\n\n### 14. Smart Farmers project",
@@ -876,21 +985,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 37,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_2ed6aa87",
+    "id": "chunk_1579b01c",
     "type": "chunk",
     "title": "README.md#39",
     "body": "<a href=https://je-suis-tm.github.io/graph-theory/portfolio-optimization>graph theory</a> section on my personal blog.*\n\n### 14. Smart Farmers project\n\nI know a lot of you have complained that this repository isn’t quantitative enough. You are yelling for the ultimate weapon of math destruction such as Poisson process or Jensen’s inequality. Well, the objective of quantitative trading is churning out more :euro: rather than deploying an elegant closed form equation. If you crave for intellectual challenge in mathematics, you are always welcome to check out my <a href=https://github.com/je-suis-tm/graph-theory>Graph Theory</a> repository. Nevertheless, I believe the birth of this project will meet your picky demand. Buon appetito :yum:",
@@ -898,21 +1007,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 38,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_9aebc6a2",
+    "id": "chunk_ca5b942a",
     "type": "chunk",
     "title": "README.md#40",
     "body": "e-suis-tm/graph-theory>Graph Theory</a> repository. Nevertheless, I believe the birth of this project will meet your picky demand. Buon appetito :yum:\n\n:tangerine: :pineapple: :melon: :corn: and :sweet_potato: are something we have been taking for granted. Up until COVID-19, we finally come to senses that farmers are one of our low-paid essential workers. This project is dedicated to the optimal allocation of agricultural resources. By trading agricultural market, we are able to eliminate the inefficiency in the crop market. Ideally no food will be wasted and farmers will be fairly compensated.",
@@ -920,21 +1029,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 39,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_1a98b73d",
+    "id": "chunk_ec80f31e",
     "type": "chunk",
     "title": "README.md#41",
     "body": "icultural market, we are able to eliminate the inefficiency in the crop market. Ideally no food will be wasted and farmers will be fairly compensated.\n\nThe project per se intends to leverage convex optimization to approximate farmers’ plantation planning for different crops. Assuming farmers are Homo Economicus, their end game is to maximize the profit regarding the price impact from supply and demand. Their decision is constrained by arable land area and biological features of crops. We develop this smart model accordingly to acquire a head start in trading :rice: :coffee: and :chocolate_bar:\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/Smart%20Farmers%20project/preview/oil%20palm%20vs%20palm%20oil.png)",
@@ -942,21 +1051,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 40,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_58b3895b",
+    "id": "chunk_9da6c97a",
     "type": "chunk",
     "title": "README.md#42",
     "body": "hocolate_bar:\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/Smart%20Farmers%20project/preview/oil%20palm%20vs%20palm%20oil.png)\n\n*For more details, please refer to the <a href=https://github.com/je-suis-tm/quant-trading/tree/master/Smart%20Farmers%20project/README.md>read me page</a> of a separate directory or <a href=https://je-suis-tm.github.io/quant-trading/smart-farmers>quant trading section</a> on my personal blog.*\n\n### 15. VIX Calculator",
@@ -964,21 +1073,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 41,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_2fdbef8b",
+    "id": "chunk_18bbfc33",
     "type": "chunk",
     "title": "README.md#43",
     "body": " directory or <a href=https://je-suis-tm.github.io/quant-trading/smart-farmers>quant trading section</a> on my personal blog.*\n\n### 15. VIX Calculator\n\nVIX is the fear gauge of S&P 500 index. By using <a href=https://www.mathopenref.com/calcriemann.html>Riemann sum</a> and <a href=https://www.emathhelp.net/notes/calculus-1/taylor-formula>Taylor series expansion</a>, we are able to convert a continuous fair price variance swap to a discrete options volatility index, which is called VIX. VIX is determined by two components, 3-week-ahead weekly S&P 500 options and one-month-ahead monthly S&P 500 options. It is de facto market anticipated volatility of S&P 500 index in 30 days. So far it has been applied to some stock exchange indices and some forex pairs. Since VIX is such a great risk management tool, why don’t we apply it to any asset with options contract? The objective of this script is to create a VIX calculator for any commodity options within any given length of forecast time horizon.",
@@ -986,21 +1095,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 42,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_3dd58696",
+    "id": "chunk_3ba918c7",
     "type": "chunk",
     "title": "README.md#44",
     "body": "tions contract? The objective of this script is to create a VIX calculator for any commodity options within any given length of forecast time horizon.\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/vix%20calculator.PNG)\n\n*Click <a href=https://github.com/je-suis-tm/quant-trading/blob/master/VIX%20Calculator.py>here</a> to be redirected to the script.*\n\n### 16. Wisdom of Crowds Project",
@@ -1008,21 +1117,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 43,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_979f0316",
+    "id": "chunk_fb49b38d",
     "type": "chunk",
     "title": "README.md#45",
     "body": "Every now and then, we read some bulge brackets hit the headline, “XXX will reach 99999€ in 20YY”. Some forecasts hit the bull’s eye but most projections are as accurate as astrology. Price prediction can be easily influenced by the cognitive bias. In the financial market, there is merit to the idea that <a href=https://www.investopedia.com/terms/c/consensusestimate.asp>consensus estimate</a> is the best oracle. By harnessing the power of ensemble learning, we are about to leverage <a href=https://github.com/je-suis-tm/machine-learning/blob/master/Wisdom%20of%20Crowds%20project/dawid%20skene.ipynb>Dawid-Skene model</a> and <a href=https://github.com/je-suis-tm/machine-learning/blob/master/Wisdom%20of%20Crowds%20project/platt%20burges.ipynb>Platt-Burges model</a> to eliminate the idiosyncratic noise associate with each individual judgement. The end game is to reveal the underlying intrinsic value generated by the collective knowledge of research analysts from different investment banks.",
@@ -1030,21 +1139,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168030,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 44,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_db4ff1c2",
+    "id": "chunk_0f4fc3db",
     "type": "chunk",
     "title": "README.md#46",
     "body": ". The end game is to reveal the underlying intrinsic value generated by the collective knowledge of research analysts from different investment banks. Is wisdom of crowds a crystal ball for trading?",
@@ -1052,21 +1161,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168032,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 45,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_e326a9a7",
+    "id": "chunk_963882cd",
     "type": "chunk",
     "title": "README.md#47",
     "body": "![alt text](https://github.com/je-suis-tm/machine-learning/blob/master/Wisdom%20of%20Crowds%20project/preview/y1%20forecast%20bias.png)\n\n*This project is documented in the repository of <a href=https://github.com/je-suis-tm/machine-learning>Machine Learning</a>. For more details, please refer to the <a href=https://github.com/je-suis-tm/machine-learning/blob/master/Wisdom%20of%20Crowds%20project/README.md>read me</a> page of a separate directory or <a href=https://je-suis-tm.github.io/machine-learning/wisdom-of-crowds>machine learning</a> section on my personal blog.*\n\n### 17. Shooting Star\n\n> Can we pretend that airplanes in the night sky are like shooting stars? I could really use a wish right now!<br><br>\n> --- Hayley Williams, Lead Vocalist of Paramore",
@@ -1074,21 +1183,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168032,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 46,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_f5704271",
+    "id": "chunk_f148b5f9",
     "type": "chunk",
     "title": "README.md#48",
     "body": "that airplanes in the night sky are like shooting stars? I could really use a wish right now!<br><br>\n> --- Hayley Williams, Lead Vocalist of Paramore\n\nShooting star, such a poetic name, is merely a simple candlestick pattern. It has a long upper shadow, little lower shadow and a small real body, which resonates the shape of a shooting star. Similar to a real comet, shooting star is a jinxed signal. It indicates the beginning of a bearish momentum after a price uptrend. However, the definition of a shooting star in mathematics is sophisticated. Not many candlesticks can suffice the rigid criteria of shooting star. In practice, people relax the constraint on shooting star in order to trigger the signal.",
@@ -1096,21 +1205,21 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168032,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 47,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
     }
   },
   {
-    "id": "chunk_5be1a375",
+    "id": "chunk_c53ee0b3",
     "type": "chunk",
     "title": "README.md#49",
     "body": "andlesticks can suffice the rigid criteria of shooting star. In practice, people relax the constraint on shooting star in order to trigger the signal.\n\nA sibling of shooting star is called hammer which is effectively a vertical flipped shooting star with bullish outlook. The close price of a hammer is supposed to be higher than the open price. Another sibling of shooting star is called inverted hammer. Inverted hammer shares the same shape with shooting star, but inverted hammer comes with higher close price than open price and usually is an omen of price hike. Nonetheless, there is no \"inverted shooting star\". As malicious as it sounds, the official name is called hanging man...\n\n*Click <a href=https://github.com/je-suis-tm/quant-trading/blob/master/Shooting%20Star%20backtest.py>here</a> to be redirected to the script.*\n\n![alt text](https://github.com/je-suis-tm/quant-trading/blob/master/preview/shooting%20star%20positions.png)\n\n<br>\n\n#### STAY TUNED",
@@ -1118,241 +1227,17 @@
       "author": "self",
       "trust": "owned"
     },
-    "createdAt": 1780695798614,
+    "createdAt": 1780695168032,
     "synapses": [
       {
-        "to": "file_e058328a",
+        "to": "file_cf09a824",
         "kind": "derived_from"
       }
     ],
     "meta": {
       "index": 48,
-      "file": "file_e058328a",
+      "file": "file_cf09a824",
       "durability": "failed"
-    }
-  },
-  {
-    "id": "file_1a77778b",
-    "type": "file",
-    "title": "Daiwik.pdf",
-    "body": "Daiwik Maheshwari Envelope daiwikmahesh@gmail.com | LINKEDIN daiwik | Github daiwikmh | Twitter @daiwikmhi | Map-marker-alt Jaipur EXPERIENCE unrealai Aug. 2025 – Nov. 2025 Full Stack Developer Remote • Engineered a browser-based terminal interface that unified core platform wor…",
-    "blobId": "mg8CP8OG0UDzlBoYjxvTVdd1tSSOTLmozqEI29OXl00",
-    "source": {
-      "author": "self",
-      "trust": "owned"
-    },
-    "createdAt": 1780696001262,
-    "synapses": [],
-    "meta": {
-      "mime": "application/pdf",
-      "bytes": 92345,
-      "ext": ".pdf",
-      "walrusObject": "0x92a3e7b49aa2912c78d71ff117e88d4f2e1972fd02fc473dc4ab7c457d85efe4",
-      "endEpoch": 425
-    }
-  },
-  {
-    "id": "chunk_6157831c",
-    "type": "chunk",
-    "title": "Daiwik.pdf#1",
-    "body": "Daiwik Maheshwari Envelope daiwikmahesh@gmail.com | LINKEDIN daiwik | Github daiwikmh | Twitter @daiwikmhi | Map-marker-alt Jaipur EXPERIENCE unrealai Aug. 2025 – Nov. 2025 Full Stack Developer Remote • Engineered a browser-based terminal interface that unified core platform workflows into a single command-driven environment, improving usability and cutting navigation overhead for power users. • Architected and integrated a blockchain-based credit system enabling trustless on-chain transactions that meter and provision AI service access and compute resource allocation. • Owned the end-to-end stack across a Next.js frontend, Node.js services, and Solidity contracts, including wallet connection, transaction lifecycle handling, and real-time state sync. SoBro June. 2025 – Aug. 2025 Blockchain Developer Jaipur • Designed and deployed smart contracts powering a decentralized tourism and social ecosystem for crypto nomads, with secure on-chain registration of user data and shared experiences",
-    "source": {
-      "author": "self",
-      "trust": "owned"
-    },
-    "createdAt": 1780696001262,
-    "synapses": [
-      {
-        "to": "file_1a77778b",
-        "kind": "derived_from"
-      }
-    ],
-    "meta": {
-      "index": 0,
-      "file": "file_1a77778b",
-      "durability": "confirmed",
-      "memwalBlob": "u9ytQO28n1JdoCY1kvappUiN0pjTs9ybZDPyb7AkfsI"
-    }
-  },
-  {
-    "id": "chunk_79068424",
-    "type": "chunk",
-    "title": "Daiwik.pdf#2",
-    "body": "ntracts powering a decentralized tourism and social ecosystem for crypto nomads, with secure on-chain registration of user data and shared experiences. • Implemented on-chain minting logic that converts user-generated content into permanent, tradable NFTs, handling metadata pinning and ownership transfer. • Integrated crypto-native payment and identity flows that let users connect and settle in crypto; the build won the Camp Network track prize. PROJECTS OWL | 1st, OpenWallet Hackathon March 2026 • Engineered multi-agent coordination infrastructure on top of the Open Wallet Standard, delivered as a CLI tool that lets multiple autonomous agents safely share terminal wallets. • Developed an agent-native interface and a secure key-management layer where private keys never leave the host while supporting complex multi-agent execution workflows. Nyx | 2nd, Polkadot Hackathon March 2026 • Architected a fully on-chain Central Limit Order Book leveraging PolkaVM RISC-V execution and a native R",
-    "source": {
-      "author": "self",
-      "trust": "owned"
-    },
-    "createdAt": 1780696001262,
-    "synapses": [
-      {
-        "to": "file_1a77778b",
-        "kind": "derived_from"
-      }
-    ],
-    "meta": {
-      "index": 1,
-      "file": "file_1a77778b",
-      "durability": "confirmed",
-      "memwalBlob": "0a0fpdlo0yb0rRlThnT0vkof8N4FHTo_QHrguh1Je08"
-    }
-  },
-  {
-    "id": "chunk_4d80723e",
-    "type": "chunk",
-    "title": "Daiwik.pdf#3",
-    "body": "s. Nyx | 2nd, Polkadot Hackathon March 2026 • Architected a fully on-chain Central Limit Order Book leveraging PolkaVM RISC-V execution and a native Rust-based matching engine for deterministic, gas-efficient order matching. • Implemented Solidity interfaces that interact seamlessly with the low-level matching logic deployed on Polkadot Asset Hub. Brahma | 2nd, LI.FI Vibeathon Feb. 2026 • Built an autonomous DeFi operations suite featuring a cross-chain USDC yielder that uses LI.FI bridges and Aave V3 for non-custodial, automated capital deployment across chains. • Designed an “LP Guardian” strategy that continuously monitors Uniswap V3 positions and automatically evacuates liquidity into safer assets when real-time on-chain risk thresholds are breached. SKILLS Languages:Go, Rust, Python, Solidity, TypeScript, SQL (PostgreSQL), MongoDB Frameworks & Tools: Anchor (Solana), Uniswap V3/V4 Hooks, Foundry, Next.js, Node.js, React Protocols: Solana, Ethereum, Stellar, Polkadot Asset Hub Spec",
-    "source": {
-      "author": "self",
-      "trust": "owned"
-    },
-    "createdAt": 1780696001262,
-    "synapses": [
-      {
-        "to": "file_1a77778b",
-        "kind": "derived_from"
-      }
-    ],
-    "meta": {
-      "index": 2,
-      "file": "file_1a77778b",
-      "durability": "confirmed",
-      "memwalBlob": "2pZJcdNMLcgxuP-rUQ_ANYRoBi8UDTdgyDrRaXRJyrM"
-    }
-  },
-  {
-    "id": "chunk_8f42081e",
-    "type": "chunk",
-    "title": "Daiwik.pdf#4",
-    "body": "ameworks & Tools: Anchor (Solana), Uniswap V3/V4 Hooks, Foundry, Next.js, Node.js, React Protocols: Solana, Ethereum, Stellar, Polkadot Asset Hub Specializations: Autonomous AI Agents, DeFi Infrastructure, AMM Design, Cross-chain Ops, Agent-native Wallets EDUCATION Poornima University Aug. 2023 – May 2027 Bachelor of Technology in CS Jaipur, IN • Coursework: Data Structures, Algorithms, Databases, Machine Learning • Certification: Uniswap Hook Incubator Alumni",
-    "source": {
-      "author": "self",
-      "trust": "owned"
-    },
-    "createdAt": 1780696001262,
-    "synapses": [
-      {
-        "to": "file_1a77778b",
-        "kind": "derived_from"
-      }
-    ],
-    "meta": {
-      "index": 3,
-      "file": "file_1a77778b",
-      "durability": "confirmed",
-      "memwalBlob": "5-rumWprSAK96iXx0quux72raOll-0M_bNvG3W1s2SA"
-    }
-  },
-  {
-    "id": "file_d7e70be3",
-    "type": "file",
-    "title": "Daiwik.pdf",
-    "body": "Daiwik Maheshwari Envelope daiwikmahesh@gmail.com | LINKEDIN daiwik | Github daiwikmh | Twitter @daiwikmhi | Map-marker-alt Jaipur EXPERIENCE unrealai Aug. 2025 – Nov. 2025 Full Stack Developer Remote • Engineered a browser-based terminal interface that unified core platform wor…",
-    "blobId": "mg8CP8OG0UDzlBoYjxvTVdd1tSSOTLmozqEI29OXl00",
-    "source": {
-      "author": "self",
-      "trust": "owned"
-    },
-    "createdAt": 1780699111592,
-    "synapses": [],
-    "meta": {
-      "mime": "application/pdf",
-      "bytes": 92345,
-      "ext": ".pdf",
-      "walrusObject": "0xbecf1f10ea19cf3ce7be91754ab644571b2489c2775af6ab20117dd793522642",
-      "endEpoch": 425
-    }
-  },
-  {
-    "id": "chunk_468d68d0",
-    "type": "chunk",
-    "title": "Daiwik.pdf#1",
-    "body": "Daiwik Maheshwari Envelope daiwikmahesh@gmail.com | LINKEDIN daiwik | Github daiwikmh | Twitter @daiwikmhi | Map-marker-alt Jaipur EXPERIENCE unrealai Aug. 2025 – Nov. 2025 Full Stack Developer Remote • Engineered a browser-based terminal interface that unified core platform workflows into a single command-driven environment, improving usability and cutting navigation overhead for power users. • Architected and integrated a blockchain-based credit system enabling trustless on-chain transactions that meter and provision AI service access and compute resource allocation. • Owned the end-to-end stack across a Next.js frontend, Node.js services, and Solidity contracts, including wallet connection, transaction lifecycle handling, and real-time state sync. SoBro June. 2025 – Aug. 2025 Blockchain Developer Jaipur • Designed and deployed smart contracts powering a decentralized tourism and social ecosystem for crypto nomads, with secure on-chain registration of user data and shared experiences",
-    "source": {
-      "author": "self",
-      "trust": "owned"
-    },
-    "createdAt": 1780699111592,
-    "synapses": [
-      {
-        "to": "file_d7e70be3",
-        "kind": "derived_from"
-      }
-    ],
-    "meta": {
-      "index": 0,
-      "file": "file_d7e70be3",
-      "durability": "confirmed",
-      "memwalBlob": "LSbuiOh5JTPm25BLgSzqO4BtSPyPXcyZooxAIjiremw"
-    }
-  },
-  {
-    "id": "chunk_7fce4a5e",
-    "type": "chunk",
-    "title": "Daiwik.pdf#2",
-    "body": "ntracts powering a decentralized tourism and social ecosystem for crypto nomads, with secure on-chain registration of user data and shared experiences. • Implemented on-chain minting logic that converts user-generated content into permanent, tradable NFTs, handling metadata pinning and ownership transfer. • Integrated crypto-native payment and identity flows that let users connect and settle in crypto; the build won the Camp Network track prize. PROJECTS OWL | 1st, OpenWallet Hackathon March 2026 • Engineered multi-agent coordination infrastructure on top of the Open Wallet Standard, delivered as a CLI tool that lets multiple autonomous agents safely share terminal wallets. • Developed an agent-native interface and a secure key-management layer where private keys never leave the host while supporting complex multi-agent execution workflows. Nyx | 2nd, Polkadot Hackathon March 2026 • Architected a fully on-chain Central Limit Order Book leveraging PolkaVM RISC-V execution and a native R",
-    "source": {
-      "author": "self",
-      "trust": "owned"
-    },
-    "createdAt": 1780699111592,
-    "synapses": [
-      {
-        "to": "file_d7e70be3",
-        "kind": "derived_from"
-      }
-    ],
-    "meta": {
-      "index": 1,
-      "file": "file_d7e70be3",
-      "durability": "confirmed",
-      "memwalBlob": "uZYEzqXPACS0dVsyZE2D1zec8W80e2AKmjDNikEHfeE"
-    }
-  },
-  {
-    "id": "chunk_f1c24a4e",
-    "type": "chunk",
-    "title": "Daiwik.pdf#3",
-    "body": "s. Nyx | 2nd, Polkadot Hackathon March 2026 • Architected a fully on-chain Central Limit Order Book leveraging PolkaVM RISC-V execution and a native Rust-based matching engine for deterministic, gas-efficient order matching. • Implemented Solidity interfaces that interact seamlessly with the low-level matching logic deployed on Polkadot Asset Hub. Brahma | 2nd, LI.FI Vibeathon Feb. 2026 • Built an autonomous DeFi operations suite featuring a cross-chain USDC yielder that uses LI.FI bridges and Aave V3 for non-custodial, automated capital deployment across chains. • Designed an “LP Guardian” strategy that continuously monitors Uniswap V3 positions and automatically evacuates liquidity into safer assets when real-time on-chain risk thresholds are breached. SKILLS Languages:Go, Rust, Python, Solidity, TypeScript, SQL (PostgreSQL), MongoDB Frameworks & Tools: Anchor (Solana), Uniswap V3/V4 Hooks, Foundry, Next.js, Node.js, React Protocols: Solana, Ethereum, Stellar, Polkadot Asset Hub Spec",
-    "source": {
-      "author": "self",
-      "trust": "owned"
-    },
-    "createdAt": 1780699111592,
-    "synapses": [
-      {
-        "to": "file_d7e70be3",
-        "kind": "derived_from"
-      }
-    ],
-    "meta": {
-      "index": 2,
-      "file": "file_d7e70be3",
-      "durability": "confirmed",
-      "memwalBlob": "sm7qWsDlSTir_sXQ9LpUNnfgm85fYgGo4alxM2HzB7o"
-    }
-  },
-  {
-    "id": "chunk_6108759f",
-    "type": "chunk",
-    "title": "Daiwik.pdf#4",
-    "body": "ameworks & Tools: Anchor (Solana), Uniswap V3/V4 Hooks, Foundry, Next.js, Node.js, React Protocols: Solana, Ethereum, Stellar, Polkadot Asset Hub Specializations: Autonomous AI Agents, DeFi Infrastructure, AMM Design, Cross-chain Ops, Agent-native Wallets EDUCATION Poornima University Aug. 2023 – May 2027 Bachelor of Technology in CS Jaipur, IN • Coursework: Data Structures, Algorithms, Databases, Machine Learning • Certification: Uniswap Hook Incubator Alumni",
-    "source": {
-      "author": "self",
-      "trust": "owned"
-    },
-    "createdAt": 1780699111592,
-    "synapses": [
-      {
-        "to": "file_d7e70be3",
-        "kind": "derived_from"
-      }
-    ],
-    "meta": {
-      "index": 3,
-      "file": "file_d7e70be3",
-      "durability": "confirmed",
-      "memwalBlob": "r9Nzz5b8o4KFyDvG0EMT3ESh7mKbypqeh0MHp_x8jtE"
     }
   }
 ]
