@@ -6,7 +6,7 @@ export function Footer() {
   return (
     <footer className="border-t border-white/10 px-6 py-16">
       <Container className="flex flex-col gap-10 px-0 sm:flex-row sm:items-start sm:justify-between">
-        <Image src="/logo.png" alt="Neurus" width={36} height={36} />
+        <Image src="/neurus_clean-removebg-preview.png" alt="Neurus" width={50} height={50} />
         <div>
           <h4 className="text-sm font-medium text-white">Connect</h4>
           <ul className="mt-4 space-y-2.5">

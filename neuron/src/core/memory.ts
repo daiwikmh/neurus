@@ -7,6 +7,7 @@ import { rerank } from "../retrieval/rerank";
 import { mmrSelect } from "../retrieval/mmr";
 import { BM25 } from "../retrieval/bm25";
 import { rrf } from "../retrieval/rrf";
+import { standsOut } from "../retrieval/margin";
 import { merkleRoot } from "../integrity/merkle";
 
 const SEARCHABLE: Set<NeuronType> = new Set(["note", "chunk", "insight"]);
@@ -26,6 +27,7 @@ export interface RecallOptions {
   minRelevance?: number;
   mmr?: number;
   hybrid?: boolean;
+  abstain?: number;
 }
 
 export class Memory {
@@ -177,6 +179,7 @@ export class Memory {
       .map((r) => ({ neuron: pool[r.index], score: r.score, relevance: sigmoid(r.score) }))
       .filter((r) => r.relevance >= minRelevance);
     if (trust) out = out.filter((r) => r.neuron.source.trust === trust);
+    if (opts.abstain != null && out.length > 1 && standsOut(out.map((r) => r.score)) < opts.abstain) return [];
     return mmr != null
       ? mmrSelect(out, limit, mmr, (r) => r.neuron.body, (r) => r.relevance)
       : out.slice(0, limit);
