@@ -1,4 +1,5 @@
 import { MemWal } from "@mysten-incubation/memwal";
+import { envCredentials, type Credentials } from "../identity/credentials";
 
 export interface MemwalHit {
   blobId: string;
@@ -9,15 +10,13 @@ export interface MemwalHit {
 export class MemwalStore {
   private mw: MemWal;
 
-  constructor(private namespace: string) {
-    const { MEMWAL_DELEGATE_KEY, MEMWAL_ACCOUNT_ID, MEMWAL_RELAYER_URL } = process.env;
-    if (!MEMWAL_DELEGATE_KEY || !MEMWAL_ACCOUNT_ID) {
-      throw new Error("Missing MEMWAL_DELEGATE_KEY / MEMWAL_ACCOUNT_ID in environment");
-    }
+  constructor(private namespace: string, credentials?: Credentials) {
+    const creds = credentials ?? envCredentials();
+    if (!creds) throw new Error("No MemWal credentials — pass per-user Credentials or set MEMWAL_ACCOUNT_ID / MEMWAL_DELEGATE_KEY");
     this.mw = MemWal.create({
-      key: MEMWAL_DELEGATE_KEY,
-      accountId: MEMWAL_ACCOUNT_ID,
-      serverUrl: MEMWAL_RELAYER_URL,
+      key: creds.delegateKey,
+      accountId: creds.accountId,
+      serverUrl: creds.serverUrl,
       namespace,
     });
   }

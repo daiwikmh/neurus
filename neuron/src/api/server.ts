@@ -2,10 +2,17 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { Neurus, answer, listSets, createSet } from "../index";
+import { Neurus, answer, listSets, createSet, Vault, localTenant, type Tenant } from "../index";
 import type { RankedNeuron } from "../core/memory";
 
 const here = dirname(fileURLToPath(import.meta.url));
+const vault = new Vault();
+
+async function resolveTenant(userId?: string): Promise<Tenant> {
+  if (!userId) return localTenant();
+  const credentials = await vault.get(userId);
+  return { id: userId, root: join(".neurus-data", userId), credentials };
+}
 
 try { process.loadEnvFile(".env.local"); } catch { /* noop */ }
 
@@ -45,13 +52,13 @@ const span = (h: RankedNeuron) => ({
   score: Number(h.score.toFixed(2)),
 });
 
-async function handle(method: string, path: string, q: URLSearchParams, body: any): Promise<any> {
-  if (method === "GET" && path === "/v1/health") return { ok: true, name: "neurus", version: "0.1.0" };
-  if (method === "GET" && path === "/v1/sets") return { sets: await listSets() };
-  if (method === "POST" && path === "/v1/sets") return { set: await createSet(String(body.name), body.visibility) };
+async function handle(method: string, path: string, q: URLSearchParams, body: any, tenant: Tenant): Promise<any> {
+  if (method === "GET" && path === "/v1/health") return { ok: true, name: "neurus", version: "0.1.0", tenant: tenant.id };
+  if (method === "GET" && path === "/v1/sets") return { sets: await listSets(tenant) };
+  if (method === "POST" && path === "/v1/sets") return { set: await createSet(String(body.name), body.visibility, tenant) };
 
   const setName = body.set ?? q.get("set") ?? "default";
-  const nx = await Neurus.open(setName, { behind: true });
+  const nx = await Neurus.open(setName, { behind: true, tenant });
 
   switch (`${method} ${path}`) {
     case "POST /v1/remember":
@@ -147,7 +154,8 @@ const server = createServer(async (req, res) => {
   }
   try {
     const body = req.method === "POST" ? await readBody(req) : {};
-    const out = await handle(req.method ?? "GET", url.pathname, url.searchParams, body);
+    const tenant = await resolveTenant((req.headers["x-neurus-user"] as string | undefined)?.trim() || undefined);
+    const out = await handle(req.method ?? "GET", url.pathname, url.searchParams, body, tenant);
     if (out && out.__notfound) {
       send(res, 404, { error: `no route ${req.method} ${url.pathname}` });
       return;

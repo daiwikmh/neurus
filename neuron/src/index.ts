@@ -25,7 +25,12 @@ import { reflect, type ReflectResult } from "./proactive/reflect";
 import { surface, type Surfacing, type SurfaceOptions } from "./proactive/surface";
 import { setIntegrity, attest } from "./core/sets";
 import { anchorRoot, type Attestation } from "./integrity/anchor";
+import { localTenant, type Tenant } from "./identity/credentials";
 import type { Neuron, NeuronType, Trust } from "./core/neuron";
+
+export * from "./identity/credentials";
+export { Vault } from "./identity/vault";
+export { provisionCredentials } from "./identity/provision";
 
 export interface Passage {
   text: string;
@@ -43,11 +48,12 @@ export interface RetrieveOptions {
 }
 
 export class Neurus {
-  private constructor(public readonly set: KnowledgeSet, private mem: Memory, private behind: boolean) {}
+  private constructor(public readonly set: KnowledgeSet, private mem: Memory, private behind: boolean, private tenant: Tenant) {}
 
-  static async open(setName = "default", opts: { behind?: boolean } = {}): Promise<Neurus> {
-    const set = await resolveSet(setName);
-    return new Neurus(set, openSet(set), opts.behind ?? false);
+  static async open(setName = "default", opts: { behind?: boolean; tenant?: Tenant } = {}): Promise<Neurus> {
+    const tenant = opts.tenant ?? localTenant();
+    const set = await resolveSet(setName, tenant);
+    return new Neurus(set, openSet(set, tenant), opts.behind ?? false, tenant);
   }
 
   get memory(): Memory {
@@ -125,14 +131,14 @@ export class Neurus {
   }
 
   async makeVerified(): Promise<void> {
-    await setIntegrity(this.set.id, "verified");
+    await setIntegrity(this.set.id, "verified", this.tenant);
     this.set.integrity = "verified";
   }
 
   async checkpoint(): Promise<Attestation> {
     const root = await this.mem.root();
     const att = await anchorRoot(root);
-    await attest(this.set.id, root);
+    await attest(this.set.id, root, this.tenant);
     this.set.attestedRoot = root;
     this.set.attestedAt = att.at;
     return att;
