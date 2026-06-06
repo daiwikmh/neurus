@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/nuerus.png" alt="Neurus" width="96" />
+<img src="public/neurus.png" alt="Neurus" width="96" />
 
 # Neurus
 
@@ -27,28 +27,28 @@ LLMs are stateless — they forget everything the moment a conversation ends, an
 
 It ships as two things on the same engine:
 
-- 🧠 **A private second brain** — sign in with Google or a Sui wallet, drop in files and notes, and ask questions that get grounded, cited answers from *your* memory.
-- 🤖 **A memory API for agents** — point any agent at the `/v1` HTTP API (or `npm install neuron`) and give it durable, verifiable long-term memory.
+- **A private second brain** — sign in with Google or a Sui wallet, drop in files and notes, and ask questions that get grounded, cited answers from *your* memory.
+- **A memory API for agents** — point any agent at the `/v1` HTTP API (or `npm install neuron`) and give it durable, verifiable long-term memory.
 
 > **The thesis:** "owning your memory" is only a moat if an agent can *act* on it and anyone can *verify* it. Neurus sits **above** raw storage — it ranks, reasons over, encrypts, and proves the memory, so the data stays yours and stays trustworthy.
 
 ---
 
-## ✨ Features
+## Features
 
 ### For everyone — the second brain
-- 📥 **Drop & Ask** — upload PDFs, docs, Markdown, web pages, or GitHub repos; ask in natural language; get answers grounded in your own content with inline citations.
-- 🔎 **Semantic recall** — find things by *meaning*, not keywords (broad vector recall + a local cross-encoder re-rank).
-- 🪪 **You own it** — sign in with Google (hosted account) **or** a Sui wallet to self-custody your memory on Walrus.
-- 🔔 **Proactive nudges** — reflection generates insight-neurons; Telegram alerts keep you in the loop.
-- 🔐 **Private by construction** — bodies are Seal-encrypted; you can revoke and delete.
+- **Drop & Ask** — upload PDFs, docs, Markdown, web pages, or GitHub repos; ask in natural language; get answers grounded in your own content with inline citations.
+- **Semantic recall** — find things by *meaning*, not keywords (broad vector recall + a local cross-encoder re-rank).
+- **You own it** — sign in with Google (hosted account) **or** a Sui wallet to self-custody your memory on Walrus.
+- **Proactive nudges** — reflection generates insight-neurons; Telegram alerts keep you in the loop.
+- **Private by construction** — bodies are Seal-encrypted; you can revoke and delete.
 
 ### For developers — the agent memory layer
-- ⚡ **Drop-in `/v1` HTTP API** — `remember`, `recall`, `ask` (streaming), `retrieve`, `forget`, and more.
-- 🧩 **Knowledge sets** — namespaced, shareable, optionally verifiable collections of memory.
-- ✅ **Verifiable integrity** — publish a Merkle-rooted manifest, anchor it on Sui, and restore/verify any time.
-- 🌐 **Embeddable widgets** — expose a read-only "ask" widget for a set on your own site.
-- 🤝 **Multi-tenant by design** — every user writes to their *own* MemWal namespace/account; the engine never co-mingles data.
+- **Drop-in `/v1` HTTP API** — `remember`, `recall`, `ask` (streaming), `retrieve`, `forget`, and more.
+- **Knowledge sets** — namespaced, shareable, optionally verifiable collections of memory.
+- **Verifiable integrity** — publish a Merkle-rooted manifest, anchor it on Sui, and restore/verify any time.
+- **Embeddable widgets** — expose a read-only "ask" widget for a set on your own site.
+- **Multi-tenant by design** — every user writes to their *own* MemWal namespace/account; the engine never co-mingles data.
 
 ---
 
@@ -81,7 +81,7 @@ graph TD
 
 ---
 
-## 🧠 How memory works
+## How memory works
 
 ```
 capture ─▶ extract neurons ─▶ embed + encrypt ─▶ store (Walrus / MemWal)
@@ -96,7 +96,7 @@ ask ◀── grounded answer (cited) ◀── re-rank ◀── broad recall (
 
 ---
 
-## 🖥️ The Dashboard
+## The Dashboard
 
 A developer-console-meets-second-brain workspace (think Langfuse/Braintrust, for owned memory).
 
@@ -114,7 +114,7 @@ Plus: split **login** (Google + wallet), profile with **"Own my memory on Walrus
 
 ---
 
-## 🧰 Tech stack
+## Tech stack
 
 **Web** · Next.js 16 (App Router) · React 19 · TypeScript · Tailwind · NextAuth v5 (Google) · `@mysten/dapp-kit` (Sui wallets) · TanStack Query
 
@@ -124,7 +124,7 @@ Plus: split **login** (Google + wallet), profile with **"Own my memory on Walrus
 
 ---
 
-## 📁 Project structure
+## Project structure
 
 ```
 neurus/
@@ -156,7 +156,7 @@ neurus/
 
 ---
 
-## 🔌 API reference (`/v1`)
+## API reference (`/v1`)
 
 | Group | Endpoints |
 |-------|-----------|
