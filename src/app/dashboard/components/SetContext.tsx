@@ -70,14 +70,6 @@ export function SetProvider({ children }: { children: ReactNode }) {
     setSets([]);
     if (!user) return;
     refresh();
-    // Best-effort: provision the user's own MemWal account on first login.
-    // If the hosted provisioner is unavailable, namespace isolation still keeps data per-user.
-    neurus
-      .accountStatus()
-      .then((s) => {
-        if (!s.linked && !s.local) return neurus.provisionAccount().then(() => refresh());
-      })
-      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 

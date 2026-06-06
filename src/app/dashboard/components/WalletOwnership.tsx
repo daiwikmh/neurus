@@ -14,7 +14,7 @@ export function WalletOwnership() {
 
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<AccountStatus | null>(null);
-  const [busy, setBusy] = useState<"claim" | "provision" | "unlink" | null>(null);
+  const [busy, setBusy] = useState<"claim" | "unlink" | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   const addr = account?.address ?? null;
@@ -41,19 +41,6 @@ export function WalletOwnership() {
       const s = await neurus.linkAccount(accountId, delegateKey);
       setStatus(s);
       setMsg("You now own this memory on Walrus.");
-    } catch (e) {
-      setMsg(e instanceof Error ? e.message : "failed");
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const provision = async () => {
-    setBusy("provision");
-    setMsg(null);
-    try {
-      setStatus(await neurus.provisionAccount());
-      setMsg("Account provisioned and linked.");
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "failed");
     } finally {
@@ -117,12 +104,10 @@ export function WalletOwnership() {
               {busy === "claim" ? "Signing…" : "Own my memory on Walrus"}
             </button>
           ) : (
-            <button onClick={provision} disabled={!!busy} className="w-full rounded-lg border border-white/15 py-1.5 text-[12px] text-white/75 transition hover:border-white/30 disabled:opacity-50">
-              {busy === "provision" ? "Provisioning…" : "Provision my account"}
-            </button>
+            <p className="text-[10.5px] leading-tight text-amber-400/70">Wallet ownership isn&apos;t configured yet.</p>
           )}
           <p className="text-[10px] leading-tight text-white/30">
-            Creates a Walrus Memory account you own; Neurus gets a revocable delegate key.
+            Your wallet owns the account on Walrus; Neurus holds a revocable delegate key.
           </p>
         </div>
       )}
