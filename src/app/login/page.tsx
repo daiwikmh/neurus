@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { ConnectModal, useCurrentAccount } from "@mysten/dapp-kit";
 import Image from "next/image";
+import { setLoginMethod } from "@/lib/session-identity";
 
 
 function Logo() {
@@ -26,10 +27,24 @@ function LoginCard() {
   const account = useCurrentAccount();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [intent, setIntent] = useState(false);
 
+  const proceedWallet = () => {
+    setLoginMethod("wallet");
+    router.push("/dashboard");
+  };
+
+  const loginGoogle = () => {
+    setLoginMethod("google");
+    signIn("google", { callbackUrl: "/dashboard" });
+  };
+
+  // Only proceed as a wallet login when the user actively connected one here —
+  // a wallet that merely auto-connected in the background must not hijack the page.
   useEffect(() => {
-    if (account) router.push("/dashboard");
-  }, [account, router]);
+    if (account && intent) proceedWallet();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account, intent]);
 
   return (
     <div
@@ -63,7 +78,7 @@ function LoginCard() {
           <p className="mt-1 text-sm text-white/45">Choose how you want to access your memory.</p>
 
           <button
-            onClick={() => signIn("google", { callbackUrl: "/dashboard" })}
+            onClick={loginGoogle}
             className="mt-6 flex w-full items-center justify-center gap-2.5 rounded-lg border border-white/15 bg-white py-2.5 text-sm font-medium text-[#14152b] transition hover:bg-white/90"
           >
             <GoogleIcon />
@@ -76,15 +91,27 @@ function LoginCard() {
             <span className="h-px flex-1 bg-white/10" />
           </div>
 
-          <ConnectModal
-            open={open}
-            onOpenChange={setOpen}
-            trigger={
-              <button className="flex w-full items-center justify-center gap-2.5 rounded-lg bg-[#9aa8f0] py-2.5 text-sm font-medium text-[#14152b] transition hover:bg-[#aeb9f4]">
-                Connect a wallet
-              </button>
-            }
-          />
+          {account ? (
+            <button
+              onClick={proceedWallet}
+              className="flex w-full items-center justify-center gap-2.5 rounded-lg bg-[#9aa8f0] py-2.5 text-sm font-medium text-[#14152b] transition hover:bg-[#aeb9f4]"
+            >
+              Continue as {account.address.slice(0, 6)}…{account.address.slice(-4)}
+            </button>
+          ) : (
+            <ConnectModal
+              open={open}
+              onOpenChange={(o) => {
+                setOpen(o);
+                if (o) setIntent(true);
+              }}
+              trigger={
+                <button className="flex w-full items-center justify-center gap-2.5 rounded-lg bg-[#9aa8f0] py-2.5 text-sm font-medium text-[#14152b] transition hover:bg-[#aeb9f4]">
+                  Connect a wallet
+                </button>
+              }
+            />
+          )}
 
           <p className="mt-6 text-center text-[11px] leading-relaxed text-white/30">
             Google signs you in to a hosted memory account. A wallet lets you self-custody and own your memory on Walrus.

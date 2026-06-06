@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useCurrentAccount, useAutoConnectWallet } from "@mysten/dapp-kit";
 import { neurus, setNeurusUser, type SetInfo } from "@/services/neurus";
+import { getLoginMethod } from "@/lib/session-identity";
 
 interface Ctx {
   sets: SetInfo[];
@@ -12,6 +13,7 @@ interface Ctx {
   setActive: (name: string) => void;
   online: boolean;
   user: string | null;
+  method: "google" | "wallet" | null;
   refresh: () => void;
 }
 
@@ -21,14 +23,25 @@ export function SetProvider({ children }: { children: ReactNode }) {
   const [sets, setSets] = useState<SetInfo[]>([]);
   const [active, setActive] = useState("default");
   const [online, setOnline] = useState(true);
+  const [method, setMethod] = useState<"google" | "wallet" | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   const account = useCurrentAccount();
   const autoConnect = useAutoConnectWallet();
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Wallet ownership takes precedence; otherwise the Google session identity.
-  const user = account?.address ?? session?.userId ?? null;
+  useEffect(() => {
+    setMethod(getLoginMethod());
+    setLoaded(true);
+  }, []);
+
+  // Identity is the account the user actually logged in WITH this session.
+  // A wallet that merely auto-connected in the background does NOT override a Google login.
+  const user = method === "wallet" ? account?.address ?? null : method === "google" ? session?.userId ?? null : null;
+
+  // Send the per-user header synchronously so child fetches never race an empty identity.
+  setNeurusUser(user);
 
   const refresh = () => {
     neurus
@@ -41,14 +54,18 @@ export function SetProvider({ children }: { children: ReactNode }) {
       .catch(() => setOnline(false));
   };
 
-  // Redirect to /login only once both identity sources have settled.
+  // Redirect to /login only once the chosen identity source has settled.
   useEffect(() => {
-    const settled = status !== "loading" && autoConnect !== "idle";
+    if (!loaded) return;
+    if (method === null) {
+      router.replace("/login");
+      return;
+    }
+    const settled = method === "google" ? status !== "loading" : autoConnect !== "idle";
     if (settled && !user) router.replace("/login");
-  }, [status, autoConnect, user, router]);
+  }, [loaded, method, status, autoConnect, user, router]);
 
   useEffect(() => {
-    setNeurusUser(user);
     setActive("default");
     setSets([]);
     if (!user) return;
@@ -64,7 +81,18 @@ export function SetProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  return <SetCtx.Provider value={{ sets, active, setActive, online, user, refresh }}>{children}</SetCtx.Provider>;
+  // Render children only once the identity is resolved, so every child fetch carries the right header.
+  const ready = loaded && !!user;
+
+  return (
+    <SetCtx.Provider value={{ sets, active, setActive, online, user, method, refresh }}>
+      {ready ? (
+        children
+      ) : (
+        <div className="grid h-screen place-items-center bg-[#0b0c0f] text-sm text-white/40">Loading your memory…</div>
+      )}
+    </SetCtx.Provider>
+  );
 }
 
 export function useSets(): Ctx {

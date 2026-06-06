@@ -2,23 +2,28 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useDisconnectWallet } from "@mysten/dapp-kit";
 import { useSets } from "./SetContext";
 import { TelegramConnect } from "./TelegramConnect";
 import { WalletOwnership } from "./WalletOwnership";
+import { clearLoginMethod } from "@/lib/session-identity";
 
-const user = {
-  name: "Daiwik",
-};
+function shortAddr(a: string): string {
+  return `${a.slice(0, 6)}…${a.slice(-4)}`;
+}
 
-function Avatar({ size = 32 }: { size?: number }) {
+function Avatar({ name, image, size = 32 }: { name: string; image?: string | null; size?: number }) {
+  if (image) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={image} alt={name} width={size} height={size} className="shrink-0 rounded-full" style={{ width: size, height: size }} />;
+  }
   return (
     <span
       className="grid shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#9aa8f0] to-[#a855f7] font-semibold text-[#14152b]"
       style={{ width: size, height: size, fontSize: size * 0.42 }}
     >
-      {user.name[0]}
+      {name.charAt(0).toUpperCase()}
     </span>
   );
 }
@@ -26,12 +31,19 @@ function Avatar({ size = 32 }: { size?: number }) {
 export function ProfileMenu({ collapsed }: { collapsed: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { active } = useSets();
+  const { active, user, method } = useSets();
+  const { data: session } = useSession();
   const { mutateAsync: disconnect } = useDisconnectWallet();
   const router = useRouter();
 
+  const isWallet = method === "wallet";
+  const name = isWallet ? (user ? shortAddr(user) : "Wallet") : session?.user?.name ?? session?.user?.email ?? "Account";
+  const subtitle = isWallet ? "Sui wallet" : session?.user?.email ?? undefined;
+  const image = isWallet ? null : session?.user?.image;
+
   const handleSignOut = async () => {
     setOpen(false);
+    clearLoginMethod();
     try {
       await disconnect();
     } catch {
@@ -57,9 +69,10 @@ export function ProfileMenu({ collapsed }: { collapsed: boolean }) {
         <div className="absolute bottom-[calc(100%+6px)] left-3 right-3 z-20 overflow-hidden rounded-xl border border-white/10 bg-[#121319] shadow-2xl shadow-black/50">
           <div className="border-b border-white/10 px-3.5 py-3">
             <div className="flex items-center gap-2.5">
-              <Avatar size={34} />
+              <Avatar name={name} image={image} size={34} />
               <div className="min-w-0">
-                <div className="truncate text-sm font-medium text-white">{user.name}</div>
+                <div className="truncate text-sm font-medium text-white">{name}</div>
+                {subtitle && <div className="truncate text-[11px] text-white/45">{subtitle}</div>}
               </div>
             </div>
           </div>
@@ -90,14 +103,15 @@ export function ProfileMenu({ collapsed }: { collapsed: boolean }) {
 
       <button
         onClick={() => setOpen((o) => !o)}
-        title={collapsed ? user.name : undefined}
+        title={collapsed ? name : undefined}
         className={`flex w-full items-center rounded-lg py-1.5 transition hover:bg-white/[0.05] ${collapsed ? "justify-center px-0" : "gap-2.5 px-2"}`}
       >
-        <Avatar />
+        <Avatar name={name} image={image} />
         {!collapsed && (
           <>
             <div className="min-w-0 flex-1 text-left">
-              <div className="truncate text-[13px] font-medium text-white">{user.name}</div>
+              <div className="truncate text-[13px] font-medium text-white">{name}</div>
+              {subtitle && <div className="truncate text-[11px] text-white/40">{subtitle}</div>}
             </div>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-white/40">
               <path d="M8 9l4-4 4 4M16 15l-4 4-4-4" />
