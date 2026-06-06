@@ -2,11 +2,12 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { Neurus, answer, answerStream, listSets, createSet, Vault, localTenant, safeTenantId, getWidget, type Tenant } from "../index";
+import { Neurus, answer, answerStream, listSets, createSet, Vault, AccountManager, localTenant, safeTenantId, getWidget, type Tenant } from "../index";
 import type { RankedNeuron } from "../core/memory";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const vault = new Vault();
+const accounts = new AccountManager(vault);
 
 async function resolveTenant(userId?: string): Promise<Tenant> {
   if (!userId) return localTenant();
@@ -87,6 +88,23 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
   if (method === "GET" && path === "/v1/health") return { ok: true, name: "neurus", version: "0.1.0", tenant: tenant.id };
   if (method === "GET" && path === "/v1/sets") return { sets: await listSets(tenant) };
   if (method === "POST" && path === "/v1/sets") return { set: await createSet(String(body.name), body.visibility, tenant) };
+
+  if (method === "GET" && path === "/v1/account") {
+    if (tenant.id === "local") return { linked: false, owned: false, local: true };
+    return accounts.status(tenant.id);
+  }
+  if (method === "POST" && path === "/v1/account/link") {
+    if (tenant.id === "local") throw new Error("connect a wallet before linking an account");
+    return accounts.link(tenant.id, { accountId: String(body.accountId), delegateKey: String(body.delegateKey), serverUrl: body.serverUrl });
+  }
+  if (method === "POST" && path === "/v1/account/provision") {
+    if (tenant.id === "local") throw new Error("connect a wallet before provisioning an account");
+    return accounts.provisionAndLink(tenant.id);
+  }
+  if (method === "POST" && path === "/v1/account/unlink") {
+    if (tenant.id === "local") return { unlinked: false };
+    return accounts.unlink(tenant.id);
+  }
 
   const setName = body.set ?? q.get("set") ?? "default";
   const nx = await Neurus.open(setName, { behind: true, tenant });

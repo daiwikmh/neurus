@@ -21,7 +21,8 @@
     "react-dom": "19.2.4",
     "shiki": "^4.2.0",
     "viem": "^2.52.0",
-    "wagmi": "^3.6.16"
+    "wagmi": "^3.6.16",
+    "@mysten-incubation/memwal": "^0.0.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

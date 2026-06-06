@@ -39,6 +39,7 @@ import type { Neuron, NeuronType, Trust } from "./core/neuron";
 export * from "./identity/credentials";
 export { Vault } from "./identity/vault";
 export { provisionCredentials } from "./identity/provision";
+export { AccountManager, type AccountStatus } from "./identity/account";
 export { connectTelegram, getNotifyConfig, notify, sendTelegram } from "./notify";
 export type { NotifyConfig, NotifyResult, TelegramTarget } from "./notify";
 export { listDatasets, type Dataset, type DatasetKind } from "./core/datasets";

@@ -64,6 +64,13 @@ export interface MapInfo {
   pending: number;
 }
 
+export interface AccountStatus {
+  linked: boolean;
+  accountId?: string;
+  owned: boolean;
+  local?: boolean;
+}
+
 export const neurus = {
   health: () => call<{ ok: boolean; version: string }>("GET", "/health"),
   sets: () => call<{ sets: SetInfo[] }>("GET", "/sets").then((r) => r.sets),
@@ -100,6 +107,10 @@ export const neurus = {
   notifyConfig: (set: string) => call<{ config: NotifyConfig }>("GET", `/notify?set=${encodeURIComponent(set)}`).then((r) => r.config),
   connectTelegram: (set: string, chatId: string) => call<{ config: NotifyConfig }>("POST", "/notify/telegram", { set, chatId }).then((r) => r.config),
   testNotify: (set: string) => call<{ delivered: string[]; skipped: string[] }>("POST", "/notify/test", { set }),
+  accountStatus: () => call<AccountStatus>("GET", "/account"),
+  linkAccount: (accountId: string, delegateKey: string, serverUrl?: string) => call<AccountStatus>("POST", "/account/link", { accountId, delegateKey, serverUrl }),
+  provisionAccount: () => call<AccountStatus>("POST", "/account/provision"),
+  unlinkAccount: () => call<{ unlinked: boolean }>("POST", "/account/unlink"),
 };
 
 export interface NotifyConfig {

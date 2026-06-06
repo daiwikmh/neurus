@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSets } from "./SetContext";
 import { TelegramConnect } from "./TelegramConnect";
-import { WalletConnect } from "./WalletConnect";
+import { WalletOwnership } from "./WalletOwnership";
 
 const user = {
   name: "Daiwik",
@@ -55,7 +55,7 @@ export function ProfileMenu({ collapsed }: { collapsed: boolean }) {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5 text-[#9aa8f0]"><path d="M3 7h18v12H3zM3 7l3-4h12l3 4M16 13h.01" /></svg>
               Sui wallet
             </div>
-            <WalletConnect />
+            <WalletOwnership />
           </div>
           <div className="border-b border-white/10 px-3.5 py-3">
             <div className="mb-2 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-white/35">
