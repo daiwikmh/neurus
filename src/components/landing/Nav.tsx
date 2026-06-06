@@ -7,7 +7,7 @@ import { Container } from "./Container";
 import { site } from "@/lib/site";
 
 function Logo() {
-  return <Image src="/icon.png" alt="Neurus" width={50} height={50} priority />;
+  return <Image src="/dashboard/nuerus.png" alt="Neurus" width={50} height={50} priority />;
 }
 
 export function Nav() {
