@@ -9,7 +9,7 @@ import { setLoginMethod } from "@/lib/session-identity";
 
 
 function Logo() {
-  return <Image src="/neurus_clean.png" alt="Neurus" width={50} height={50} priority />;
+  return <Image src="/icon.png" alt="Neurus" width={50} height={50} priority />;
 }
 
 function GoogleIcon() {
