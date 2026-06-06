@@ -7,7 +7,7 @@ export const dashboardNav = [
   { label: "Second Brain", href: "/dashboard/brain", icon: "brain" },
   { label: "Sets", href: "/dashboard/sets", icon: "layers" },
   { label: "Datasets", href: "/dashboard/datasets", icon: "database" },
-  { label: "Connect", href: "/dashboard/connect", icon: "plug" },
+  // { label: "Connect", href: "/dashboard/connect", icon: "plug" },
 ] as const;
 
 export const neuronColor: Record<NeuronType, string> = {

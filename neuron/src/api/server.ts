@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { Neurus, answer, answerStream, listSets, createSet, Vault, AccountManager, localTenant, safeTenantId, getWidget, type Tenant } from "../index";
+import { Neurus, answer, answerStream, listSets, createSet, Vault, AccountManager, localTenant, safeTenantId, getWidget, getChatBinding, bindChat, sendTelegram, type Tenant } from "../index";
 import type { RankedNeuron } from "../core/memory";
 import { warmup } from "../retrieval/rerank";
 
@@ -219,6 +219,54 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
   }
 }
 
+async function handleTelegramUpdate(update: any): Promise<void> {
+  const token = process.env.TELEGRAM_BOT_TOKEN ?? process.env.TELEGRAM_TOKEN;
+  if (!token) return;
+  const msg = update?.message ?? update?.edited_message;
+  const chatId = msg?.chat?.id != null ? String(msg.chat.id) : null;
+  const text = typeof msg?.text === "string" ? msg.text.trim() : "";
+  if (!chatId || !text) return;
+  const reply = (t: string) => sendTelegram({ token, chatId }, t).catch(() => {});
+
+  const binding = await getChatBinding(chatId);
+  if (!binding) {
+    await reply(`This chat isn't linked yet.\nOpen Neurus → profile → Telegram, paste this chat id (${chatId}), and connect.`);
+    return;
+  }
+  const tenant = await tenantById(binding.user);
+
+  if (text === "/start" || text === "/help") {
+    await reply(`Ask me anything about your memory "${binding.set}".\n\nCommands:\n/sets — list your sets\n/use <name> — switch the set I answer from`);
+    return;
+  }
+  if (text === "/sets") {
+    const sets = await listSets(tenant);
+    await reply(sets.length ? "Your sets:\n" + sets.map((s) => `• ${s.name}`).join("\n") : "No sets yet.");
+    return;
+  }
+  if (text.toLowerCase().startsWith("/use ")) {
+    const name = text.slice(5).trim();
+    const sets = await listSets(tenant);
+    const found = sets.find((s) => s.name.toLowerCase() === name.toLowerCase());
+    if (!found) {
+      await reply(`No set named "${name}". Send /sets to list yours.`);
+      return;
+    }
+    await bindChat(chatId, { user: binding.user, set: found.name });
+    await reply(`Now talking to "${found.name}".`);
+    return;
+  }
+
+  try {
+    const nx = await Neurus.open(binding.set, { behind: true, tenant });
+    const hits = await nx.recall(text, { limit: 5 });
+    const a = await answer(text, hits);
+    await reply(a.text?.trim() || "I couldn't find anything in your memory about that.");
+  } catch {
+    await reply("Something went wrong answering that. Try again in a moment.");
+  }
+}
+
 const server = createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204, CORS);
@@ -277,6 +325,17 @@ const server = createServer(async (req, res) => {
       res.write(`event: error\ndata: ${JSON.stringify({ error: e?.message ?? String(e) })}\n\n`);
       res.end();
     }
+    return;
+  }
+  if (req.method === "POST" && url.pathname === "/v1/telegram/webhook") {
+    const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
+    if (secret && req.headers["x-telegram-bot-api-secret-token"] !== secret) {
+      send(res, 401, { ok: false });
+      return;
+    }
+    const update = await readBody(req);
+    send(res, 200, { ok: true }); // ack Telegram fast; process out of band
+    handleTelegramUpdate(update).catch(() => {});
     return;
   }
   try {

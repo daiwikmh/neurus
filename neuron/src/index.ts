@@ -33,15 +33,15 @@ import { surface, type Surfacing, type SurfaceOptions } from "./proactive/surfac
 import { setIntegrity, attest } from "./core/sets";
 import { anchorRoot, type Attestation } from "./integrity/anchor";
 import { localTenant, type Tenant } from "./identity/credentials";
-import { connectTelegram, getNotifyConfig, notify, type NotifyConfig, type NotifyResult } from "./notify";
+import { connectTelegram, getNotifyConfig, notify, bindChat, type NotifyConfig, type NotifyResult } from "./notify";
 import type { Neuron, NeuronType, Trust } from "./core/neuron";
 
 export * from "./identity/credentials";
 export { Vault } from "./identity/vault";
 export { provisionCredentials } from "./identity/provision";
 export { AccountManager, type AccountStatus } from "./identity/account";
-export { connectTelegram, getNotifyConfig, notify, sendTelegram } from "./notify";
-export type { NotifyConfig, NotifyResult, TelegramTarget } from "./notify";
+export { connectTelegram, getNotifyConfig, notify, sendTelegram, bindChat, getChatBinding } from "./notify";
+export type { NotifyConfig, NotifyResult, TelegramTarget, ChatBinding } from "./notify";
 export { listDatasets, type Dataset, type DatasetKind } from "./core/datasets";
 export { blobHealth, currentWalrusEpoch, type BlobHealth } from "./integrity/health";
 export { getWidget, type Widget } from "./core/widgets";
@@ -181,8 +181,10 @@ export class Neurus {
     return surface(this.mem, opts);
   }
 
-  connectTelegram(chatId: string): Promise<NotifyConfig> {
-    return connectTelegram(chatId, this.tenant);
+  async connectTelegram(chatId: string): Promise<NotifyConfig> {
+    const cfg = await connectTelegram(chatId, this.tenant);
+    await bindChat(chatId, { user: this.tenant.id, set: this.set.name });
+    return cfg;
   }
 
   notifyConfig(): Promise<NotifyConfig> {
