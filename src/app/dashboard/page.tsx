@@ -6,10 +6,10 @@ import { useSets } from "./components/SetContext";
 import { neurus, type MapInfo } from "@/services/neurus";
 import { neuronColor } from "./config";
 
-const STEPS = [
-  { n: 1, title: "Create your API key", body: "Generate a key to connect your agent to its memory.", cta: "Go to Connect", href: "/dashboard/connect" },
-  { n: 2, title: "Point your agent at Neurus", body: "npm install neuron — then open a set and start remembering.", cta: "View SDK", href: "/dashboard/connect" },
-  { n: 3, title: "Watch neurons appear", body: "Every memory your agent writes shows up live, on Walrus.", cta: "Open Neurons", href: "/dashboard/neurons" },
+const ACTIONS = [
+  { title: "Add a note", body: "Capture a thought, a person, or a fact. Neurus extracts and remembers it.", cta: "Open Second Brain", href: "/dashboard/brain" },
+  { title: "Upload a file", body: "Drop a PDF, doc, or text file — chunked, embedded, and stored on Walrus.", cta: "Go to Datasets", href: "/dashboard/datasets" },
+  { title: "Ask your memory", body: "Ask a question and get a grounded answer with citations to your own memories.", cta: "Open Ask", href: "/dashboard/ask" },
 ];
 
 function Stat({ label, value, tint }: { label: string; value: string | number; tint?: string }) {
@@ -24,7 +24,7 @@ function Stat({ label, value, tint }: { label: string; value: string | number; t
 }
 
 export default function Overview() {
-  const { active, online } = useSets();
+  const { active, online, refresh } = useSets();
   const [map, setMap] = useState<MapInfo | null>(null);
 
   useEffect(() => {
@@ -33,7 +33,6 @@ export default function Overview() {
   }, [active, online]);
 
   const total = map ? Object.values(map.counts).reduce((a, b) => a + b, 0) : 0;
-  const empty = !online || total === 0;
 
   return (
     <div className="mx-auto max-w-5xl px-8 py-10">
@@ -49,29 +48,46 @@ export default function Overview() {
         </Link>
       </div>
 
-      {empty ? (
+      {!online ? (
         <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.02] p-8">
-          <h2 className="text-lg font-semibold">Get started in 3 steps</h2>
-          <p className="mt-1 text-sm text-white/45">
-            {online ? "This set is empty — connect an agent or capture your first memory." : "Engine offline — run npm run api, then refresh."}
+          <h2 className="text-lg font-semibold">Can&apos;t reach your memory</h2>
+          <p className="mt-1 max-w-md text-sm text-white/45">
+            We couldn&apos;t connect to the Neurus engine. Check your connection and try again in a moment.
+          </p>
+          <button
+            onClick={refresh}
+            className="mt-6 rounded-lg bg-[#9aa8f0] px-4 py-2 text-sm font-medium text-[#14152b] transition hover:bg-[#aeb9f4]"
+          >
+            Retry
+          </button>
+        </div>
+      ) : total === 0 ? (
+        <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.02] p-8">
+          <h2 className="text-lg font-semibold">Welcome — your memory is empty</h2>
+          <p className="mt-1 max-w-md text-sm text-white/45">
+            Start by capturing something. Everything you add is yours, stored on Walrus.
           </p>
           <div className="mt-7 grid gap-4 sm:grid-cols-3">
-            {STEPS.map((s) => (
-              <div key={s.n} className="flex flex-col rounded-xl border border-white/10 bg-white/[0.02] p-5">
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-[#9aa8f0]/15 text-sm font-semibold text-[#9aa8f0]">{s.n}</span>
-                <h3 className="mt-4 text-sm font-medium">{s.title}</h3>
-                <p className="mt-1 flex-1 text-[13px] leading-relaxed text-white/45">{s.body}</p>
-                <Link href={s.href} className="mt-4 text-[13px] text-[#9aa8f0] transition hover:text-[#bcc6ff]">
-                  {s.cta} →
+            {ACTIONS.map((a) => (
+              <div key={a.title} className="flex flex-col rounded-xl border border-white/10 bg-white/[0.02] p-5">
+                <h3 className="text-sm font-medium">{a.title}</h3>
+                <p className="mt-1 flex-1 text-[13px] leading-relaxed text-white/45">{a.body}</p>
+                <Link href={a.href} className="mt-4 text-[13px] text-[#9aa8f0] transition hover:text-[#bcc6ff]">
+                  {a.cta} →
                 </Link>
               </div>
             ))}
           </div>
-          <div className="mt-6 flex items-center gap-3 border-t border-white/5 pt-6 text-sm">
-            <span className="text-white/40">New to Neurus?</span>
-            <Link href="/dashboard/brain" className="text-[#9aa8f0] hover:text-[#bcc6ff]">
-              Try the Second Brain example →
+          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/5 pt-6 text-sm">
+            <Link href="/dashboard/sets" className="text-[#9aa8f0] hover:text-[#bcc6ff]">
+              Own &amp; verify on Walrus →
             </Link>
+            <span className="text-white/40">
+              Building an agent?{" "}
+              <Link href="/dashboard/connect" className="text-white/60 hover:text-white/90">
+                Connect via SDK →
+              </Link>
+            </span>
           </div>
         </div>
       ) : (
