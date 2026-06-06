@@ -122,6 +122,8 @@ Plus: split **login** (Google + wallet), profile with **"Own my memory on Walrus
 
 **Infra** · Vercel (web) · Railway/Render/Fly (engine) · Upstash Redis (cache + vault) · NVIDIA-hosted LLM · Walrus + Sui (testnet/mainnet)
 
+**RPC** · [Tatum](https://tatum.io/) is the official RPC provider for all Sui on-chain interactions. On-chain reads behind integrity and Memory Health — blob certification status, object fields, dynamic fields, epoch/expiry — go through Tatum's Sui gateway (`sui-{network}.gateway.tatum.io`) with retries (`neuron/src/integrity/tatum.ts`).
+
 ---
 
 ## Project structure
