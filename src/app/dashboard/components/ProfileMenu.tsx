@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useDisconnectWallet } from "@mysten/dapp-kit";
+import BoringAvatar from "boring-avatars";
 import { useSets } from "./SetContext";
 import { TelegramConnect } from "./TelegramConnect";
 import { WalletOwnership } from "./WalletOwnership";
@@ -13,19 +14,14 @@ function shortAddr(a: string): string {
   return `${a.slice(0, 6)}…${a.slice(-4)}`;
 }
 
+const AVATAR_COLORS = ["#9aa8f0", "#a855f7", "#6366f1", "#22d3ee", "#f472b6"];
+
 function Avatar({ name, image, size = 32 }: { name: string; image?: string | null; size?: number }) {
   if (image) {
     // eslint-disable-next-line @next/next/no-img-element
     return <img src={image} alt={name} width={size} height={size} className="shrink-0 rounded-full" style={{ width: size, height: size }} />;
   }
-  return (
-    <span
-      className="grid shrink-0 place-items-center rounded-full bg-gradient-to-br from-[#9aa8f0] to-[#a855f7] font-semibold text-[#14152b]"
-      style={{ width: size, height: size, fontSize: size * 0.42 }}
-    >
-      {name.charAt(0).toUpperCase()}
-    </span>
-  );
+  return <BoringAvatar size={size} name={name} variant="beam" colors={AVATAR_COLORS} className="shrink-0" />;
 }
 
 export function ProfileMenu({ collapsed }: { collapsed: boolean }) {
