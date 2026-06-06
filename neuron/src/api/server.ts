@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { Neurus, answer, answerStream, listSets, createSet, Vault, AccountManager, localTenant, safeTenantId, getWidget, getChatBinding, bindChat, sendTelegram, type Tenant } from "../index";
+import { Neurus, answer, answerStream, listSets, createSet, Vault, AccountManager, localTenant, safeTenantId, getWidget, getChatBinding, bindChat, sendTelegram, envCredentials, type Tenant } from "../index";
 import type { RankedNeuron } from "../core/memory";
 import { warmup } from "../retrieval/rerank";
 
@@ -101,6 +101,12 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
   if (method === "POST" && path === "/v1/account/provision") {
     if (tenant.id === "local") throw new Error("connect a wallet before provisioning an account");
     return accounts.provisionAndLink(tenant.id);
+  }
+  if (method === "POST" && path === "/v1/account/adopt-env") {
+    if (tenant.id === "local") throw new Error("connect a wallet first");
+    const creds = envCredentials();
+    if (!creds) throw new Error("no env MemWal account configured (MEMWAL_ACCOUNT_ID / MEMWAL_DELEGATE_KEY)");
+    return accounts.link(tenant.id, creds);
   }
   if (method === "POST" && path === "/v1/account/unlink") {
     if (tenant.id === "local") return { unlinked: false };

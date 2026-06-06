@@ -110,6 +110,7 @@ export const neurus = {
   accountStatus: () => call<AccountStatus>("GET", "/account"),
   linkAccount: (accountId: string, delegateKey: string, serverUrl?: string) => call<AccountStatus>("POST", "/account/link", { accountId, delegateKey, serverUrl }),
   provisionAccount: () => call<AccountStatus>("POST", "/account/provision"),
+  adoptEnvAccount: () => call<AccountStatus>("POST", "/account/adopt-env"),
   unlinkAccount: () => call<{ unlinked: boolean }>("POST", "/account/unlink"),
 };
 
