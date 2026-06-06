@@ -40,7 +40,7 @@ export default function SecondBrain() {
     <div className="mx-auto max-w-3xl px-8 py-8">
       <h1 className="text-xl font-semibold tracking-tight">Second Brain</h1>
       <p className="mt-1 text-sm text-white/45">Dump anything in plain language — people, files, commitments. Neurus files it into neurons you own.</p>
-      {!online && <p className="mt-2 text-[12px] text-amber-400/80">Engine offline — run npm run api in neuron/.</p>}
+      {!online && <p className="mt-2 text-[12px] text-amber-400/80">Can&apos;t reach your memory engine — check your connection.</p>}
 
       <div className="mt-7 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
         <textarea

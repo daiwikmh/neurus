@@ -110,7 +110,7 @@ export default function DatasetsPage() {
         Put data on Walrus, watch it certify on Sui, and make it askable in <span className="font-mono text-white/70">{active}</span>.
       </p>
 
-      {!online && <div className="mt-4 text-[12px] text-amber-400/80">Engine offline — run npm run api in the neuron/ folder.</div>}
+      {!online && <div className="mt-4 text-[12px] text-amber-400/80">Can&apos;t reach your memory engine — check your connection.</div>}
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         <button

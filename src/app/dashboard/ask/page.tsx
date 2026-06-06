@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useSets } from "../components/SetContext";
 import { neurus, type Span } from "@/services/neurus";
 import { neuronColor, trustColor } from "../config";
@@ -26,26 +28,67 @@ function grounding(spans: Span[]): { label: string; color: string } {
 }
 
 function AnswerBody({ text, spans, onCite, streaming }: { text: string; spans: Span[]; onCite: (n: number) => void; streaming?: boolean }) {
-  const parts = text.split(/(\[\d+\])/g);
+  // Turn [n] citations into links we intercept, so markdown renders normally and citations stay clickable.
+  const md = text.replace(/\[(\d+)\]/g, (full, d: string) => {
+    const n = Number(d);
+    return n >= 1 && n <= spans.length ? `[${d}](#cite-${d})` : full;
+  });
+
+  const components: Components = {
+    a({ href, children }) {
+      const m = typeof href === "string" ? href.match(/^#cite-(\d+)$/) : null;
+      if (m) {
+        const n = Number(m[1]);
+        return (
+          <button
+            onClick={() => onCite(n)}
+            className="mx-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[5px] bg-[#9aa8f0]/20 px-1 align-text-top text-[10px] font-semibold text-[#aeb9f4] transition hover:bg-[#9aa8f0]/40"
+            title={spans[n - 1]?.title}
+          >
+            {n}
+          </button>
+        );
+      }
+      return (
+        <a href={href} target="_blank" rel="noreferrer" className="text-[#aeb9f4] underline underline-offset-2 transition hover:text-[#c4ccf7]">
+          {children}
+        </a>
+      );
+    },
+    p: ({ children }) => <p className="my-2 first:mt-0 last:mb-0">{children}</p>,
+    ul: ({ children }) => <ul className="my-2 list-disc space-y-1 pl-5 marker:text-white/30">{children}</ul>,
+    ol: ({ children }) => <ol className="my-2 list-decimal space-y-1 pl-5 marker:text-white/30">{children}</ol>,
+    li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+    strong: ({ children }) => <strong className="font-semibold text-white">{children}</strong>,
+    em: ({ children }) => <em className="italic">{children}</em>,
+    h1: ({ children }) => <h1 className="mb-2 mt-3 text-base font-semibold text-white first:mt-0">{children}</h1>,
+    h2: ({ children }) => <h2 className="mb-2 mt-3 text-[15px] font-semibold text-white first:mt-0">{children}</h2>,
+    h3: ({ children }) => <h3 className="mb-1.5 mt-2.5 text-sm font-semibold text-white/90 first:mt-0">{children}</h3>,
+    code: ({ className, children }) => {
+      const block = /language-/.test(className ?? "");
+      return block ? (
+        <code className={className}>{children}</code>
+      ) : (
+        <code className="rounded bg-white/10 px-1 py-0.5 font-mono text-[12.5px] text-[#d7defb]">{children}</code>
+      );
+    },
+    pre: ({ children }) => <pre className="my-2 overflow-x-auto rounded-lg bg-black/40 p-3 font-mono text-[12.5px] leading-relaxed text-white/80">{children}</pre>,
+    blockquote: ({ children }) => <blockquote className="my-2 border-l-2 border-[#9aa8f0]/40 pl-3 text-white/60">{children}</blockquote>,
+    hr: () => <hr className="my-3 border-white/10" />,
+    table: ({ children }) => (
+      <div className="my-2 overflow-x-auto">
+        <table className="w-full border-collapse text-[13px]">{children}</table>
+      </div>
+    ),
+    th: ({ children }) => <th className="border border-white/10 bg-white/[0.04] px-2 py-1 text-left font-medium">{children}</th>,
+    td: ({ children }) => <td className="border border-white/10 px-2 py-1">{children}</td>,
+  };
+
   return (
-    <div className="whitespace-pre-wrap text-[14.5px] leading-relaxed text-white/85">
-      {parts.map((p, i) => {
-        const m = p.match(/^\[(\d+)\]$/);
-        const n = m ? Number(m[1]) : 0;
-        if (n >= 1 && n <= spans.length) {
-          return (
-            <button
-              key={i}
-              onClick={() => onCite(n)}
-              className="mx-0.5 inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-[5px] bg-[#9aa8f0]/20 px-1 align-text-top text-[10px] font-semibold text-[#aeb9f4] transition hover:bg-[#9aa8f0]/40"
-              title={spans[n - 1].title}
-            >
-              {n}
-            </button>
-          );
-        }
-        return <span key={i}>{p}</span>;
-      })}
+    <div className="text-[14.5px] leading-relaxed text-white/85">
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+        {md}
+      </ReactMarkdown>
       {streaming && <span className="ml-0.5 inline-block h-[15px] w-[7px] translate-y-[2px] animate-pulse rounded-[2px] bg-[#9aa8f0]" />}
     </div>
   );
@@ -200,7 +243,7 @@ export default function AskPage() {
       </div>
 
       <div className="mt-2">
-        {!online && <div className="mb-2 text-[12px] text-amber-400/80">Engine offline — run npm run api in the neuron/ folder.</div>}
+        {!online && <div className="mb-2 text-[12px] text-amber-400/80">Can&apos;t reach your memory engine — check your connection.</div>}
         <div className="flex gap-2">
           <input
             value={input}

@@ -82,7 +82,7 @@ export default function NeuronsPage() {
           {loading ? (
             <div className="px-5 py-10 text-center text-sm text-white/40">loading neurons…</div>
           ) : !online ? (
-            <div className="px-5 py-10 text-center text-sm text-white/40">Engine offline — run npm run api in neuron/.</div>
+            <div className="px-5 py-10 text-center text-sm text-white/40">Can&apos;t reach your memory engine — check your connection.</div>
           ) : shown.length === 0 ? (
             <div className="px-5 py-10 text-center text-sm text-white/40">No neurons yet. Capture one in Second Brain, or connect an agent.</div>
           ) : (

@@ -45,7 +45,7 @@ export default function SetsPage() {
     <div className="mx-auto max-w-4xl px-8 py-8">
       <h1 className="text-xl font-semibold tracking-tight">Knowledge sets</h1>
       <p className="mt-1 text-sm text-white/45">Each set is a namespace of neurons with its own visibility and integrity tier — owned on Walrus.</p>
-      {!online && <p className="mt-2 text-[12px] text-amber-400/80">Engine offline — run npm run api in neuron/.</p>}
+      {!online && <p className="mt-2 text-[12px] text-amber-400/80">Can&apos;t reach your memory engine — check your connection.</p>}
 
       <div className="mt-7 grid gap-3 sm:grid-cols-2">
         <div className="flex gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-2">
