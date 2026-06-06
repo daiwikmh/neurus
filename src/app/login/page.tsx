@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { ConnectModal, useCurrentAccount } from "@mysten/dapp-kit";
+import Image from "next/image";
+
+
+function Logo() {
+  return <Image src="/neurus_clean-removebg-preview.png" alt="Neurus" width={50} height={50} priority />;
+}
 
 function GoogleIcon() {
   return (
@@ -32,7 +38,10 @@ function LoginCard() {
     >
       <div className="hidden flex-1 flex-col justify-between p-12 lg:flex">
         <div className="flex items-center gap-2 text-lg font-semibold">
-          <span className="grid h-7 w-7 place-items-center rounded-md bg-[#9aa8f0] text-[#14152b]">◳</span>
+          <span className="grid h-15 w-15 place-items-center rounded-md text-[#14152b]">
+            <Logo />
+
+          </span>
           Neurus
         </div>
         <div>
