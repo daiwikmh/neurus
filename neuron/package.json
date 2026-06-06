@@ -8,15 +8,19 @@
     "cli": "tsx bin/neurus.ts",
     "web": "tsx src/web/server.ts",
     "api": "tsx src/api/server.ts",
+    "start": "tsx src/api/server.ts",
     "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=22"
   },
   "devDependencies": {
     "@types/jsdom": "^28.0.3",
     "@types/turndown": "^5.0.6",
-    "tsx": "^4.19.0",
     "typescript": "^5.6.0"
   },
   "dependencies": {
+    "tsx": "^4.19.0",
     "@huggingface/transformers": "^4.2.0",
     "@mozilla/readability": "^0.6.0",
     "@mysten-incubation/memwal": "^0.0.7",

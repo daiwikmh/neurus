@@ -11,6 +11,10 @@ async function load() {
   model = await AutoModelForSequenceClassification.from_pretrained(MODEL_ID, { dtype: "fp32" });
 }
 
+export async function warmup(): Promise<void> {
+  await rerank("warmup", ["warmup"]);
+}
+
 export interface Ranked {
   index: number;
   score: number;

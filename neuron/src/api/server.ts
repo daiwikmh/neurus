@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { Neurus, answer, answerStream, listSets, createSet, Vault, AccountManager, localTenant, safeTenantId, getWidget, type Tenant } from "../index";
 import type { RankedNeuron } from "../core/memory";
+import { warmup } from "../retrieval/rerank";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const vault = new Vault();
@@ -47,7 +48,7 @@ function originAllowed(origin: string, allow: string[]): boolean {
 
 try { process.loadEnvFile(".env.local"); } catch { /* noop */ }
 
-const PORT = Number(process.env.NEURUS_API_PORT ?? 4318);
+const PORT = Number(process.env.PORT ?? process.env.NEURUS_API_PORT ?? 4318);
 
 const CORS = {
   "access-control-allow-origin": "*",
@@ -292,4 +293,9 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => console.log(`\n  Neurus API  →  http://localhost:${PORT}/v1\n`));
+server.listen(PORT, () => {
+  console.log(`\n  Neurus API  →  http://localhost:${PORT}/v1\n`);
+  warmup()
+    .then(() => console.log("  reranker warm — first Ask is instant"))
+    .catch(() => console.log("  reranker warmup skipped (will load on first Ask)"));
+});
