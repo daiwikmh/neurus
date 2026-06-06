@@ -75,7 +75,7 @@ export function Sidebar() {
     <aside className={`relative flex shrink-0 flex-col border-r border-white/10 bg-[#0a0b0e] transition-[width] duration-200 ${collapsed ? "w-16" : "w-60"}`}>
       <div className={`flex items-center py-4 ${collapsed ? "justify-center px-0" : "justify-between px-5"}`}>
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/neurus_clean-removebg-preview.png" alt="Neurus" width={28} height={28} />
+          <Image src="/neurus_clean.png" alt="Neurus" width={28} height={28} />
           {!collapsed && <span className="text-sm font-semibold tracking-tight">Neurus</span>}
         </Link>
       </div>
