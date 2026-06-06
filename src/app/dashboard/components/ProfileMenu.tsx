@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
+import { useDisconnectWallet } from "@mysten/dapp-kit";
 import { useSets } from "./SetContext";
 import { TelegramConnect } from "./TelegramConnect";
 import { WalletOwnership } from "./WalletOwnership";
@@ -9,8 +11,6 @@ import { WalletOwnership } from "./WalletOwnership";
 const user = {
   name: "Daiwik",
 };
-
-const menu = [{ label: "Sign out", href: "/", danger: true }];
 
 function Avatar({ size = 32 }: { size?: number }) {
   return (
@@ -27,6 +27,19 @@ export function ProfileMenu({ collapsed }: { collapsed: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { active } = useSets();
+  const { mutateAsync: disconnect } = useDisconnectWallet();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    setOpen(false);
+    try {
+      await disconnect();
+    } catch {
+      /* no wallet connected */
+    }
+    await signOut({ redirect: false });
+    router.replace("/login");
+  };
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -65,16 +78,12 @@ export function ProfileMenu({ collapsed }: { collapsed: boolean }) {
             <TelegramConnect set={active} compact />
           </div>
           <div className="py-1">
-            {menu.map((m) => (
-              <Link
-                key={m.label}
-                href={m.href}
-                onClick={() => setOpen(false)}
-                className={`block px-3.5 py-2 text-[13px] transition hover:bg-white/[0.05] ${m.danger ? "text-red-400" : "text-white/70"}`}
-              >
-                {m.label}
-              </Link>
-            ))}
+            <button
+              onClick={handleSignOut}
+              className="block w-full px-3.5 py-2 text-left text-[13px] text-red-400 transition hover:bg-white/[0.05]"
+            >
+              Sign out
+            </button>
           </div>
         </div>
       )}

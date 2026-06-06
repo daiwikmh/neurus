@@ -60,7 +60,7 @@ export function Nav() {
             Contact
           </a>
           <Link
-            href="/dashboard"
+            href="/login"
             className="rounded-full bg-[#9aa8f0] px-4 py-1.5 text-[13px] font-medium text-[#14152b] transition hover:bg-[#aeb9f4]"
           >
             Get Started

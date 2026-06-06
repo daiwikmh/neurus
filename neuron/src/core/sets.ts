@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { Memory } from "./memory";
 import { MemwalStore } from "../storage/memwal";
 import { localTenant, type Tenant } from "../identity/credentials";
+import { kvEnabled, kvGet, kvSet } from "../storage/kv";
 
 export type Visibility = "private" | "shared";
 export type Integrity = "none" | "verified";
@@ -25,11 +26,23 @@ function registryPath(tenant: Tenant): string {
   return tenant.id === "local" ? process.env.NEURUS_SETS ?? ".neurus-sets.json" : join(tenant.root, "sets.json");
 }
 
+function useKv(tenant: Tenant): boolean {
+  return kvEnabled() && tenant.id !== "local";
+}
+
+function setsKey(tenant: Tenant): string {
+  return `neurus:sets:${tenant.id}`;
+}
+
 function manifestPath(tenant: Tenant, set: KnowledgeSet): string {
   return tenant.id === "local" ? set.manifestPath : join(tenant.root, set.manifestPath);
 }
 
 export async function listSets(tenant: Tenant = localTenant()): Promise<KnowledgeSet[]> {
+  if (useKv(tenant)) {
+    const raw = await kvGet(setsKey(tenant));
+    return raw ? JSON.parse(raw) : [];
+  }
   try {
     return JSON.parse(await readFile(registryPath(tenant), "utf8"));
   } catch {
@@ -38,6 +51,10 @@ export async function listSets(tenant: Tenant = localTenant()): Promise<Knowledg
 }
 
 async function saveSets(sets: KnowledgeSet[], tenant: Tenant): Promise<void> {
+  if (useKv(tenant)) {
+    await kvSet(setsKey(tenant), JSON.stringify(sets));
+    return;
+  }
   if (tenant.id !== "local") await mkdir(tenant.root, { recursive: true });
   await writeFile(registryPath(tenant), JSON.stringify(sets, null, 2));
 }
