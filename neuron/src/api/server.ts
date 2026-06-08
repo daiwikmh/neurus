@@ -320,7 +320,7 @@ const server = createServer(async (req, res) => {
       const body = await readBody(req);
       const tenant = await resolveTenant((req.headers["x-neurus-user"] as string | undefined)?.trim() || undefined);
       const nx = await Neurus.open(body.set ?? "default", { behind: true, tenant });
-      const hits = await nx.recall(String(body.question), { limit: body.limit ?? 5 });
+      const hits = await nx.recall(String(body.question), { limit: body.limit ?? 5 }).catch(() => nx.recall(String(body.question), { limit: body.limit ?? 5 }));
       res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive", ...CORS });
       const sse = (event: string, data: unknown) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
       sse("spans", { spans: hits.map(span) });
