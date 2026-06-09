@@ -5,10 +5,27 @@ import { dirname, join } from "node:path";
 import { Neurus, answer, answerStream, listSets, createSet, Vault, AccountManager, localTenant, safeTenantId, getWidget, getChatBinding, bindChat, sendTelegram, envCredentials, type Tenant } from "../index";
 import type { RankedNeuron } from "../core/memory";
 import { warmup } from "../retrieval/rerank";
+import { NetHub } from "../net/hub";
+import type { Op } from "../crdt/oplog";
+import { MemwalStore } from "../storage/memwal";
+import { WorkflowRunner, type WorkflowConfig } from "../net/workflow";
+import { compileWorkflow } from "../net/compile";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const vault = new Vault();
 const accounts = new AccountManager(vault);
+
+const memIndex = new Map<string, MemwalStore>();
+const net = new NetHub(async (setId, neuron) => {
+  let store = memIndex.get(setId);
+  if (!store) {
+    store = new MemwalStore(`net_${setId}`);
+    memIndex.set(setId, store);
+  }
+  await store.remember((neuron.meta?.embedText as string | undefined) ?? neuron.body);
+});
+
+const workflows = new Map<string, WorkflowRunner>();
 
 async function resolveTenant(userId?: string): Promise<Tenant> {
   if (!userId) return localTenant();
@@ -111,6 +128,70 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
   if (method === "POST" && path === "/v1/account/unlink") {
     if (tenant.id === "local") return { unlinked: false };
     return accounts.unlink(tenant.id);
+  }
+
+  if (method === "POST" && path === "/v1/net/op") return net.submit(String(body.set ?? "default"), body.op as Op);
+  if (method === "GET" && path === "/v1/net/state") return net.snapshot(q.get("set") ?? "default");
+  if (method === "GET" && path === "/v1/net/ops") return { ops: net.opsSince(q.get("set") ?? "default", Number(q.get("since") ?? 0)) };
+  if (method === "POST" && path === "/v1/net/grant") {
+    net.grant(String(body.set ?? "default"), String(body.actor), String(body.secret), body.can === "read" ? "read" : "write");
+    return net.snapshot(String(body.set ?? "default"));
+  }
+  if (method === "POST" && path === "/v1/net/revoke") {
+    net.revoke(String(body.set ?? "default"), String(body.actor));
+    return net.snapshot(String(body.set ?? "default"));
+  }
+  if (method === "POST" && path === "/v1/net/checkpoint") return { checkpointed: await net.checkpoint() };
+  if (method === "POST" && path === "/v1/net/seed") {
+    const seedSet = String(body.set ?? "default");
+    const nx = await Neurus.open(seedSet, { tenant });
+    const added = await net.seed(seedSet, await nx.neurons());
+    return { added, ...net.snapshot(seedSet) };
+  }
+  if (method === "POST" && path === "/v1/net/compile") {
+    const sets = (await listSets(tenant)).map((s) => s.name);
+    return { spec: await compileWorkflow(String(body.prompt ?? ""), { sets }) };
+  }
+  if (method === "POST" && path === "/v1/net/workflow") {
+    const wfSet = String(body.set ?? "default");
+    workflows.get(wfSet)?.stop();
+    const token = process.env.TELEGRAM_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+    const protocols = Array.isArray(body.protocols) ? body.protocols.map(String) : Array.isArray(body.feeds) ? body.feeds.map(String) : [];
+    const assets = Array.isArray(body.assets) ? body.assets.map(String) : [];
+    const cfg: WorkflowConfig = {
+      set: wfSet,
+      feeds: protocols.length || assets.length ? protocols : ["aave", "uniswap", "lido"],
+      assets,
+      intervalMs: Math.max(2000, Number(body.intervalMs ?? 5000)),
+      threshold: Number(body.threshold ?? 0.5),
+      reportEvery: Math.max(1, Number(body.reportEvery ?? 3)),
+      strategySet: body.strategySet ? String(body.strategySet) : undefined,
+      instruction: body.instruction ? String(body.instruction) : undefined,
+      durationDays: body.durationDays ? Number(body.durationDays) : undefined,
+      telegram: token && chatId ? { token, chatId } : undefined,
+      autoReport: body.telegram !== false,
+      tenant,
+    };
+    const wf = new WorkflowRunner(net, cfg);
+    workflows.set(wfSet, wf);
+    wf.start();
+    return wf.status();
+  }
+  if (method === "POST" && path === "/v1/net/workflow/stop") {
+    const wfSet = String(body.set ?? "default");
+    workflows.get(wfSet)?.stop();
+    return workflows.get(wfSet)?.status() ?? { running: false, set: wfSet, feeds: [], assets: [], intervalMs: 0, threshold: 0, ticks: 0 };
+  }
+  if (method === "GET" && path === "/v1/net/workflow") {
+    const wfSet = q.get("set") ?? "default";
+    return workflows.get(wfSet)?.status() ?? { running: false, set: wfSet, feeds: [], assets: [], intervalMs: 0, threshold: 0, ticks: 0 };
+  }
+  if (method === "POST" && path === "/v1/net/workflow/report") {
+    const wfSet = String(body.set ?? "default");
+    const wf = workflows.get(wfSet);
+    if (!wf) return { sent: false, error: "no running workflow for this set" };
+    return wf.report();
   }
 
   const setName = body.set ?? q.get("set") ?? "default";
@@ -286,6 +367,15 @@ const server = createServer(async (req, res) => {
     res.end(html);
     return;
   }
+  if (req.method === "GET" && url.pathname === "/v1/net/stream") {
+    const set = url.searchParams.get("set")?.trim() || "default";
+    res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive", ...CORS });
+    const sse = (event: string, data: unknown) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    sse("state", net.snapshot(set));
+    const unsub = net.subscribe(set, (event, data) => sse(event, data));
+    req.on("close", () => unsub());
+    return;
+  }
   if (req.method === "GET" && url.pathname === "/v1/public/widget") {
     const w = await getWidget(url.searchParams.get("id")?.trim() ?? "");
     if (!w) { send(res, 404, { error: "unknown widget" }); return; }
@@ -358,9 +448,21 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`\n  Neurus API  →  http://localhost:${PORT}/v1\n`);
-  warmup()
-    .then(() => console.log("  reranker warm — first Ask is instant"))
-    .catch(() => console.log("  reranker warmup skipped (will load on first Ask)"));
-});
+async function boot() {
+  try {
+    const restored = await net.restore();
+    if (restored.length) console.log(`  restored ${restored.length} net set(s) from Walrus`);
+  } catch {
+    console.log("  net restore skipped");
+  }
+  setInterval(() => {
+    net.checkpoint().catch(() => {});
+  }, 15_000);
+  server.listen(PORT, () => {
+    console.log(`\n  Neurus API  →  http://localhost:${PORT}/v1\n`);
+    warmup()
+      .then(() => console.log("  reranker warm — first Ask is instant"))
+      .catch(() => console.log("  reranker warmup skipped (will load on first Ask)"));
+  });
+}
+boot();

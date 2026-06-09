@@ -68,7 +68,7 @@ function simulate(nodes: GNode[], edges: GEdge[], byId: Map<string, GNode>, alph
   }
 }
 
-export function NeuronGraph({ neurons }: { neurons: NeuronRow[] }) {
+export function NeuronGraph({ neurons, colorOf, legend }: { neurons: NeuronRow[]; colorOf?: (id: string) => string; legend?: { label: string; color: string }[] }) {
   const { nodes, edges, neighbors, truncated } = useMemo(() => build(neurons), [neurons]);
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const [, setFrame] = useState(0);
@@ -160,7 +160,7 @@ export function NeuronGraph({ neurons }: { neurons: NeuronRow[] }) {
           const on = lit(n.id);
           return (
             <g key={n.id} opacity={on ? 1 : 0.18} style={{ cursor: "grab" }} onPointerDown={onDown(n.id)} onPointerEnter={() => setHover(n.id)} onPointerLeave={() => setHover(null)}>
-              <circle cx={n.x} cy={n.y} r={r} fill={neuronColor[n.type]} filter={hover === n.id ? "url(#glow)" : undefined} stroke={hover === n.id ? "#fff" : "none"} strokeWidth={1.5} />
+              <circle cx={n.x} cy={n.y} r={r} fill={colorOf ? colorOf(n.id) : neuronColor[n.type]} filter={hover === n.id ? "url(#glow)" : undefined} stroke={hover === n.id ? "#fff" : "none"} strokeWidth={1.5} />
               {(hover === n.id || (hover && neighbors.get(hover)?.has(n.id))) && (
                 <text x={n.x + r + 4} y={n.y + 3.5} fill="#fff" fillOpacity={0.85} fontSize={10} className="font-medium">
                   {n.title.length > 26 ? n.title.slice(0, 26) + "…" : n.title}
@@ -172,10 +172,10 @@ export function NeuronGraph({ neurons }: { neurons: NeuronRow[] }) {
       </svg>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-white/10 px-4 py-2.5 text-[11px] text-white/40">
-        {present.map((t) => (
-          <span key={t} className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ background: neuronColor[t] }} />
-            {t}
+        {(legend ?? present.map((t) => ({ label: t, color: neuronColor[t] }))).map((l) => (
+          <span key={l.label} className="inline-flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full" style={{ background: l.color }} />
+            {l.label}
           </span>
         ))}
         <span className="ml-auto text-white/25">{nodes.length} neurons · {edges.length} synapses · hover to focus, drag to move{truncated ? ` · showing first ${MAX}` : ""}</span>

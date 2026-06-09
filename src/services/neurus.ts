@@ -112,7 +112,47 @@ export const neurus = {
   provisionAccount: () => call<AccountStatus>("POST", "/account/provision"),
   adoptEnvAccount: () => call<AccountStatus>("POST", "/account/adopt-env"),
   unlinkAccount: () => call<{ unlinked: boolean }>("POST", "/account/unlink"),
+  netState: (set: string) => call<NetSnapshot>("GET", `/net/state?set=${encodeURIComponent(set)}`),
+  netGrant: (set: string, actor: string, secret: string, can: "read" | "write" = "write") =>
+    call<NetSnapshot>("POST", "/net/grant", { set, actor, secret, can }),
+  netRevoke: (set: string, actor: string) => call<NetSnapshot>("POST", "/net/revoke", { set, actor }),
+  submitOp: (set: string, op: unknown) =>
+    call<{ ok: boolean; reason?: string; root: string; lamport: number }>("POST", "/net/op", { set, op }),
+  seedNet: (set: string) => call<NetSnapshot & { added: number }>("POST", "/net/seed", { set }),
+  compileWorkflow: (set: string, prompt: string) => call<{ spec: WorkflowSpec }>("POST", "/net/compile", { set, prompt }).then((r) => r.spec),
+  startWorkflow: (
+    set: string,
+    opts: { feeds?: string[]; protocols?: string[]; assets?: string[]; strategySet?: string; instruction?: string; durationDays?: number; intervalMs?: number; threshold?: number; reportEvery?: number; telegram?: boolean },
+  ) => call<WorkflowStatus>("POST", "/net/workflow", { set, ...opts }),
+  stopWorkflow: (set: string) => call<WorkflowStatus>("POST", "/net/workflow/stop", { set }),
+  workflowStatus: (set: string) => call<WorkflowStatus>("GET", `/net/workflow?set=${encodeURIComponent(set)}`),
+  reportNow: (set: string) => call<{ sent: boolean; report?: string; error?: string }>("POST", "/net/workflow/report", { set }),
 };
+
+export interface WorkflowSpec {
+  strategySet: string | null;
+  assets: string[];
+  protocols: string[];
+  intervalMs: number;
+  durationDays: number;
+  instruction: string;
+  telegram: boolean;
+}
+
+export interface WorkflowStatus {
+  running: boolean;
+  set: string;
+  feeds: string[];
+  assets: string[];
+  intervalMs: number;
+  threshold: number;
+  strategySet?: string;
+  instruction?: string;
+  durationDays?: number;
+  endsAt?: number;
+  ticks: number;
+  lastReport?: string;
+}
 
 export interface NotifyConfig {
   telegram?: { chatId: string };
@@ -197,4 +237,35 @@ export async function publicAskStream(widget: string, question: string, onEvent:
   });
   if (!res.ok || !res.body) throw new Error(`Neurus ${res.status}: ${await res.text().catch(() => "")}`);
   await readSSE(res, onEvent);
+}
+
+export interface NetNeuron {
+  id: string;
+  type: NeuronType;
+  title: string;
+  body: string;
+  blobId?: string;
+  source: { author: string; trust: Trust };
+  createdAt: number;
+  synapses: { to: string; kind: string }[];
+  meta?: Record<string, unknown>;
+}
+
+export interface RosterEntry {
+  actor: string;
+  can: "read" | "write";
+}
+
+export interface NetSnapshot {
+  neurons: NetNeuron[];
+  root: string;
+  roster: RosterEntry[];
+}
+
+export function netStream(set: string, onEvent: (e: { event: string; data: any }) => void): () => void {
+  const es = new EventSource(`${BASE}/v1/net/stream?set=${encodeURIComponent(set)}`);
+  for (const ev of ["op", "state", "roster"]) {
+    es.addEventListener(ev, (m) => onEvent({ event: ev, data: JSON.parse((m as MessageEvent).data) }));
+  }
+  return () => es.close();
 }

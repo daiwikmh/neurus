@@ -111,5 +111,15 @@
     "createdAt": 1780606334711,
     "attestedRoot": "8dadb276efe49cb19186f52957a1c73a7d913853e26496a9f095aa088dbcbfbe",
     "attestedAt": 1780606387889
+  },
+  {
+    "id": "set_31e76e4c",
+    "name": "wftest",
+    "namespace": "neurus_local_set_31e76e4c",
+    "manifestPath": ".neurus-set_31e76e4c.json",
+    "visibility": "private",
+    "integrity": "none",
+    "sharedWith": [],
+    "createdAt": 1781012497655
   }
 ]
