@@ -24,6 +24,12 @@ export class SharedReplica {
     return op;
   }
 
+  update(neuron: Neuron): Op {
+    const op = makeOp({ type: "update", actor: this.actor, secret: this.secret, lamport: this.tick(), neuronId: neuron.id, tag: `${this.actor}-${randomUUID().slice(0, 8)}`, neuron });
+    this.ops.push(op);
+    return op;
+  }
+
   remove(neuronId: string): Op[] {
     const liveTags = this.ops.filter((o) => o.neuronId === neuronId && (o.type === "add" || o.type === "update")).map((o) => o.tag);
     return liveTags.map((tag) => {

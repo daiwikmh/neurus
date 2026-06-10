@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useSets } from "../components/SetContext";
-import { neurus, netStream, type NetNeuron, type RosterEntry, type NeuronRow, type Durability } from "@/services/neurus";
+import { neurus, netStream, type NetNeuron, type RosterEntry, type NeuronRow, type Durability, type NetAnswer, type PlayRow } from "@/services/neurus";
 import { NeuronGraph } from "../components/NeuronGraph";
 import { NetworkCanvas } from "../components/NetworkCanvas";
+import { Section, Card, Labeled, Dot, fieldCls as field, btnPrimary, btnPrimarySm, btnGhost, btnDanger, panelCls, microLabel } from "../components/ui";
 import { merkleRoot } from "./merkle";
 
 const AGENT_COLORS = ["#9aa8f0", "#34d399", "#f59e0b", "#f472b6", "#22d3ee", "#a78bfa", "#fb7185", "#4ade80"];
@@ -16,10 +17,6 @@ interface FeedItem {
   title?: string;
   ok: boolean;
   reason?: string;
-}
-
-function Section({ label }: { label: string }) {
-  return <div className="mb-2 mt-7 text-[11px] uppercase tracking-[0.16em] text-white/30">{label}</div>;
 }
 
 export default function NetworkPage() {
@@ -36,6 +33,8 @@ export default function NetworkPage() {
   const [imported, setImported] = useState(false);
   const [wfFeeds, setWfFeeds] = useState("aave,uniswap,lido");
   const [wfAssets, setWfAssets] = useState("");
+  const [wfWallets, setWfWallets] = useState("");
+  const [wfDeepbook, setWfDeepbook] = useState(false);
   const [wfStrategy, setWfStrategy] = useState("");
   const [wfInstruction, setWfInstruction] = useState("");
   const [wfDuration, setWfDuration] = useState("5");
@@ -48,6 +47,19 @@ export default function NetworkPage() {
   const [grantMsg, setGrantMsg] = useState("");
   const [view, setView] = useState<"canvas" | "graph">("canvas");
   const [wfReportMsg, setWfReportMsg] = useState("");
+  const [askQ, setAskQ] = useState("");
+  const [askA, setAskA] = useState<NetAnswer | null>(null);
+  const [asking, setAsking] = useState(false);
+  const [plays, setPlays] = useState<PlayRow[]>([]);
+  const [pAsset, setPAsset] = useState("");
+  const [pDir, setPDir] = useState<"long" | "short">("long");
+  const [pEntry, setPEntry] = useState("");
+  const [pTarget, setPTarget] = useState("");
+  const [pStop, setPStop] = useState("");
+  const [pThesis, setPThesis] = useState("");
+  const [playMsg, setPlayMsg] = useState("");
+
+  const loadPlays = () => neurus.listPlays(active).then(setPlays).catch(() => {});
 
   useEffect(() => {
     let closed = false;
@@ -94,6 +106,11 @@ export default function NetworkPage() {
   }, [neurons]);
 
   useEffect(() => {
+    loadPlays();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
+
+  useEffect(() => {
     neurus
       .workflowStatus(active)
       .then((s) => {
@@ -101,6 +118,8 @@ export default function NetworkPage() {
         if (s.running) {
           if (s.feeds.length) setWfFeeds(s.feeds.join(","));
           if (s.assets?.length) setWfAssets(s.assets.join(","));
+          if (s.wallets?.length) setWfWallets(s.wallets.join(","));
+          setWfDeepbook(!!s.deepbook);
           if (s.strategySet) setWfStrategy(s.strategySet);
           if (s.instruction) setWfInstruction(s.instruction);
           if (s.durationDays) setWfDuration(String(s.durationDays));
@@ -158,11 +177,13 @@ export default function NetworkPage() {
       .then((spec) => {
         setWfFeeds(spec.protocols.join(","));
         setWfAssets(spec.assets.join(","));
+        setWfWallets(spec.wallets.join(","));
+        setWfDeepbook(spec.deepbook);
         setWfStrategy(spec.strategySet ?? "");
         setWfInstruction(spec.instruction);
         setWfDuration(String(spec.durationDays));
         setWfInterval(String(Math.round(spec.intervalMs / 1000)));
-        setCompileMsg(`built — ${spec.assets.length} asset(s), ${spec.protocols.length} protocol(s)${spec.strategySet ? `, grounded in “${spec.strategySet}”` : ""}. Review and run.`);
+        setCompileMsg(`built — ${spec.assets.length} asset(s), ${spec.protocols.length} protocol(s), ${spec.wallets.length} wallet(s)${spec.strategySet ? `, grounded in “${spec.strategySet}”` : ""}. Review and run.`);
       })
       .catch((e) => setCompileMsg(`failed: ${(e as Error)?.message ?? "error"}`))
       .finally(() => setCompiling(false));
@@ -171,6 +192,8 @@ export default function NetworkPage() {
   const wfPayload = () => ({
     protocols: wfFeeds.split(",").map((f) => f.trim()).filter(Boolean),
     assets: wfAssets.split(",").map((a) => a.trim().toLowerCase()).filter(Boolean),
+    wallets: wfWallets.split(",").map((w) => w.trim()).filter(Boolean),
+    deepbook: wfDeepbook,
     strategySet: wfStrategy.trim() || undefined,
     instruction: wfInstruction.trim() || undefined,
     durationDays: Number(wfDuration) || undefined,
@@ -200,11 +223,72 @@ export default function NetworkPage() {
       .catch(() => setWfReportMsg("failed"));
   };
 
+  const sendBrief = () => {
+    setWfReportMsg("composing brief…");
+    neurus
+      .briefNow(active)
+      .then((r) => setWfReportMsg(r.brief ? (r.sent ? "daily brief sent to Telegram ✓" : "brief written (no Telegram)") : r.error ?? "nothing to brief yet"))
+      .catch(() => setWfReportMsg("failed"));
+  };
+
   const runFlow = (cfg: { feeds: string[]; telegram: boolean }) => {
     neurus
       .startWorkflow(active, { ...wfPayload(), protocols: cfg.feeds, telegram: cfg.telegram })
       .then((s) => setWfRunning(s.running))
       .catch(() => {});
+  };
+
+  const ask = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = askQ.trim();
+    if (!q || asking) return;
+    setAsking(true);
+    setAskA(null);
+    neurus
+      .netAsk(active, q)
+      .then(setAskA)
+      .catch((err) => setAskA({ text: `failed: ${(err as Error)?.message ?? "request error"}`, sources: [], spans: [] }))
+      .finally(() => setAsking(false));
+  };
+
+  const logPlay = (e: React.FormEvent) => {
+    e.preventDefault();
+    const entry = Number(pEntry);
+    if (!pAsset.trim() || !Number.isFinite(entry) || entry <= 0) {
+      setPlayMsg("asset and a positive entry price are required");
+      return;
+    }
+    setPlayMsg("logging…");
+    neurus
+      .logPlay(active, {
+        asset: pAsset.trim().toLowerCase(),
+        direction: pDir,
+        entry,
+        target: Number(pTarget) > 0 ? Number(pTarget) : undefined,
+        stop: Number(pStop) > 0 ? Number(pStop) : undefined,
+        thesis: pThesis.trim() || undefined,
+      })
+      .then(() => {
+        setPAsset("");
+        setPEntry("");
+        setPTarget("");
+        setPStop("");
+        setPThesis("");
+        setPlayMsg("logged");
+        loadPlays();
+      })
+      .catch((err) => setPlayMsg(`failed: ${(err as Error)?.message ?? "error"}`));
+  };
+
+  const closePlay = (id: string) => {
+    setPlayMsg("closing…");
+    neurus
+      .closePlay(active, id)
+      .then(() => {
+        setPlayMsg("closed — post-mortem written");
+        loadPlays();
+      })
+      .catch((err) => setPlayMsg(`failed: ${(err as Error)?.message ?? "error"}`));
   };
 
   const grant = (e: React.FormEvent) => {
@@ -225,8 +309,6 @@ export default function NetworkPage() {
       })
       .catch((err) => setGrantMsg(`failed: ${(err as Error)?.message ?? "error"}`));
   };
-
-  const field = "rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[12.5px] outline-none focus:border-[#9aa8f0]/50 disabled:opacity-50";
 
   return (
     <div className="mx-auto max-w-6xl px-8 py-8">
@@ -256,7 +338,7 @@ export default function NetworkPage() {
       <div className="rounded-2xl border border-[#9aa8f0]/25 bg-[#9aa8f0]/[0.04] p-5">
         <h2 className="text-sm font-medium text-white/85">Describe a workflow</h2>
         <p className="mt-1 text-[12.5px] leading-relaxed text-white/45">
-          Say what you want in plain English — Neurus compiles it into agents on the canvas, grounded in your knowledge sets and live data.
+          Say what you want in plain English — Neurus compiles it into agents on the canvas, grounded in your knowledge sets, wallets, and live data.
         </p>
         <textarea
           value={wfPrompt}
@@ -266,11 +348,7 @@ export default function NetworkPage() {
           className="mt-3 w-full resize-none rounded-lg border border-white/10 bg-[#0c0d12] px-3 py-2 text-[13px] text-white outline-none placeholder:text-white/25 focus:border-[#9aa8f0]/50"
         />
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <button
-            onClick={compile}
-            disabled={compiling || !wfPrompt.trim()}
-            className="rounded-lg bg-[#9aa8f0] px-4 py-2 text-[13px] font-medium text-[#14152b] transition hover:bg-[#aeb9f4] disabled:opacity-40"
-          >
+          <button onClick={compile} disabled={compiling || !wfPrompt.trim()} className={btnPrimary}>
             {compiling ? "Building…" : "Build workflow"}
           </button>
           {compileMsg && <span className="text-[12px] text-white/55">{compileMsg}</span>}
@@ -278,47 +356,47 @@ export default function NetworkPage() {
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-          <h2 className="text-sm font-medium text-white/80">Workflow</h2>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-white/40">Agents track DefiLlama protocols + asset prices over time; the analyst reports — grounded in your strategy set — to Telegram.</p>
+        <Card title="Workflow" sub="Agents track DefiLlama protocols, asset prices, and wallets over time; the analyst reports — grounded in your strategy set — to Telegram.">
           <div className="mt-4 space-y-3">
             <div className="flex gap-3">
-              <label className="block flex-1">
-                <span className="text-[11px] uppercase tracking-wide text-white/35">Protocols (TVL)</span>
+              <Labeled label="Protocols (TVL)" className="flex-1">
                 <input value={wfFeeds} onChange={(e) => setWfFeeds(e.target.value)} disabled={wfRunning} placeholder="aave,uniswap" className={`mt-1 w-full ${field}`} />
-              </label>
-              <label className="block flex-1">
-                <span className="text-[11px] uppercase tracking-wide text-white/35">Assets (price)</span>
+              </Labeled>
+              <Labeled label="Assets (price)" className="flex-1">
                 <input value={wfAssets} onChange={(e) => setWfAssets(e.target.value)} disabled={wfRunning} placeholder="sui,ethereum" className={`mt-1 w-full ${field}`} />
-              </label>
+              </Labeled>
             </div>
-            <label className="block">
-              <span className="text-[11px] uppercase tracking-wide text-white/35">Strategy set (grounding)</span>
-              <input value={wfStrategy} onChange={(e) => setWfStrategy(e.target.value)} disabled={wfRunning} placeholder="trading-rules" className={`mt-1 w-full ${field}`} />
+            <Labeled label="Wallets (Sui address, watch-only)">
+              <input value={wfWallets} onChange={(e) => setWfWallets(e.target.value)} disabled={wfRunning} placeholder="0x…" className={`mt-1 w-full ${field}`} />
+            </Labeled>
+            <label className="flex items-center gap-2 text-[12.5px] text-white/65">
+              <input type="checkbox" checked={wfDeepbook} onChange={(e) => setWfDeepbook(e.target.checked)} disabled={wfRunning} className="accent-[#9aa8f0]" />
+              Read & grade my DeepBook trades (for owned balance managers on the watched wallets)
             </label>
+            <Labeled label="Strategy set (grounding)">
+              <input value={wfStrategy} onChange={(e) => setWfStrategy(e.target.value)} disabled={wfRunning} placeholder="trading-rules" className={`mt-1 w-full ${field}`} />
+            </Labeled>
             <div className="flex items-end gap-3">
-              <label className="block">
-                <span className="text-[11px] uppercase tracking-wide text-white/35">Every (s)</span>
+              <Labeled label="Every (s)">
                 <input value={wfInterval} onChange={(e) => setWfInterval(e.target.value)} disabled={wfRunning} className={`mt-1 w-20 ${field}`} />
-              </label>
-              <label className="block">
-                <span className="text-[11px] uppercase tracking-wide text-white/35">For (days)</span>
+              </Labeled>
+              <Labeled label="For (days)">
                 <input value={wfDuration} onChange={(e) => setWfDuration(e.target.value)} disabled={wfRunning} className={`mt-1 w-20 ${field}`} />
-              </label>
-              <label className="block">
-                <span className="text-[11px] uppercase tracking-wide text-white/35">Anomaly &gt;= (%)</span>
+              </Labeled>
+              <Labeled label="Anomaly >= (%)">
                 <input value={wfThreshold} onChange={(e) => setWfThreshold(e.target.value)} disabled={wfRunning} className={`mt-1 w-20 ${field}`} />
-              </label>
+              </Labeled>
             </div>
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             {wfRunning ? (
               <>
-                <button onClick={stopWorkflow} className="rounded-lg border border-red-400/40 px-4 py-2 text-[13px] text-red-300 transition hover:bg-red-500/10">Stop</button>
-                <button onClick={sendReport} className="rounded-lg border border-white/15 px-4 py-2 text-[13px] text-white/70 transition hover:bg-white/[0.06]">Send report now</button>
+                <button onClick={stopWorkflow} className={btnDanger}>Stop</button>
+                <button onClick={sendReport} className={btnGhost}>Send report now</button>
+                <button onClick={sendBrief} className={btnGhost}>Send brief now</button>
               </>
             ) : (
-              <button onClick={runWorkflow} className="rounded-lg bg-[#9aa8f0] px-4 py-2 text-[13px] font-medium text-[#14152b] transition hover:bg-[#aeb9f4]">Run workflow</button>
+              <button onClick={runWorkflow} className={btnPrimary}>Run workflow</button>
             )}
             <span className={`inline-flex items-center gap-1.5 text-[12px] ${wfRunning ? "text-emerald-300" : "text-white/35"}`}>
               <span className={`h-1.5 w-1.5 rounded-full ${wfRunning ? "bg-emerald-400" : "bg-white/20"}`} />
@@ -326,18 +404,16 @@ export default function NetworkPage() {
             </span>
             {wfReportMsg && <span className="text-[12px] text-white/45">{wfReportMsg}</span>}
           </div>
-        </div>
+        </Card>
 
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-          <h2 className="text-sm font-medium text-white/80">Agents</h2>
-          <p className="mt-1 text-[12.5px] leading-relaxed text-white/40">Who can write to this set&apos;s shared memory. Revoke any agent and its next write bounces.</p>
+        <Card title="Agents" sub="Who can write to this set's shared memory. Revoke any agent and its next write bounces.">
           <div className="mt-3 space-y-1.5">
             {roster.length === 0 ? (
               <div className="rounded-lg border border-dashed border-white/10 px-3 py-4 text-center text-[12.5px] text-white/30">No agents yet — run a workflow or grant one below.</div>
             ) : (
               roster.map((r) => (
                 <div key={r.actor} className="flex items-center gap-2.5 rounded-lg border border-white/8 bg-white/[0.015] px-3 py-1.5 text-[12.5px]">
-                  <span className="h-2 w-2 rounded-full" style={{ background: colorFor(r.actor) }} />
+                  <Dot color={colorFor(r.actor)} />
                   <span className="flex-1 text-white/80">{r.actor}</span>
                   <span className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px] uppercase text-white/40">{r.can}</span>
                   <button onClick={() => neurus.netRevoke(active, r.actor).then((s) => setRoster(s.roster)).catch(() => {})} className="text-white/25 transition hover:text-red-400">
@@ -354,10 +430,53 @@ export default function NetworkPage() {
               <option value="write" className="bg-[#0c0d10]">write</option>
               <option value="read" className="bg-[#0c0d10]">read</option>
             </select>
-            <button type="submit" className="rounded-md bg-[#9aa8f0] px-3 py-1.5 text-[12.5px] font-medium text-[#14152b] transition hover:bg-[#aeb9f4]">grant</button>
+            <button type="submit" className={btnPrimarySm}>grant</button>
           </form>
           {grantMsg && <p className="mt-2 text-[12px] text-white/45">{grantMsg}</p>}
-        </div>
+        </Card>
+
+        <Card title="Plays" sub="Log your positions — the analyst grades each one against your strategy every report cycle and writes a post-mortem when you close." className="lg:col-span-2">
+          <div className="mt-3 space-y-1.5">
+            {plays.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-white/10 px-3 py-4 text-center text-[12.5px] text-white/30">No plays yet — log one below.</div>
+            ) : (
+              plays.map((p) => (
+                <div key={p.id} className={`flex items-center gap-2.5 rounded-lg border border-white/8 bg-white/[0.015] px-3 py-1.5 text-[12.5px] ${p.status === "closed" ? "opacity-50" : ""}`}>
+                  <span className="font-medium text-white/80">{p.asset.toUpperCase()}</span>
+                  <span className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[10px] uppercase text-white/40">{p.direction}</span>
+                  <span className="text-white/45">@ {p.entry}</span>
+                  {p.stop != null && <span className="text-white/30">stop {p.stop}</span>}
+                  {p.target != null && <span className="text-white/30">target {p.target}</span>}
+                  <span className="min-w-0 flex-1 truncate text-white/35">{p.thesis}</span>
+                  {p.plPct != null && (
+                    <span className={`rounded px-1.5 py-0.5 font-mono text-[11px] ${p.plPct >= 0 ? "bg-emerald-400/10 text-emerald-300" : "bg-red-400/10 text-red-300"}`}>
+                      {p.plPct >= 0 ? "+" : ""}
+                      {p.plPct}%
+                    </span>
+                  )}
+                  {p.status === "open" ? (
+                    <button onClick={() => closePlay(p.id)} className="text-white/25 transition hover:text-red-400">close</button>
+                  ) : (
+                    <span className="font-mono text-[10px] uppercase text-white/30">closed</span>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+          <form onSubmit={logPlay} className="mt-3 flex flex-wrap items-center gap-1.5">
+            <input value={pAsset} onChange={(e) => setPAsset(e.target.value)} placeholder="asset (sui)" className={`w-28 ${field}`} />
+            <select value={pDir} onChange={(e) => setPDir(e.target.value as "long" | "short")} className={field}>
+              <option value="long" className="bg-[#0c0d10]">long</option>
+              <option value="short" className="bg-[#0c0d10]">short</option>
+            </select>
+            <input value={pEntry} onChange={(e) => setPEntry(e.target.value)} placeholder="entry" className={`w-24 ${field}`} />
+            <input value={pTarget} onChange={(e) => setPTarget(e.target.value)} placeholder="target" className={`w-24 ${field}`} />
+            <input value={pStop} onChange={(e) => setPStop(e.target.value)} placeholder="stop" className={`w-24 ${field}`} />
+            <input value={pThesis} onChange={(e) => setPThesis(e.target.value)} placeholder="thesis (optional)" className={`min-w-40 flex-1 ${field}`} />
+            <button type="submit" className={btnPrimarySm}>log play</button>
+          </form>
+          {playMsg && <p className="mt-2 text-[12px] text-white/45">{playMsg}</p>}
+        </Card>
       </div>
 
       <Section label="Memory & activity" />
@@ -382,6 +501,8 @@ export default function NetworkPage() {
               datasets={rows.filter((r) => r.type === "file").map((r) => ({ id: r.id, label: r.title }))}
               feeds={wfFeeds.split(",").map((f) => f.trim()).filter(Boolean)}
               assets={wfAssets.split(",").map((a) => a.trim()).filter(Boolean)}
+              wallets={wfWallets.split(",").map((w) => w.trim()).filter(Boolean)}
+              deepbook={wfDeepbook}
               strategy={wfStrategy.trim() || undefined}
               running={wfRunning}
               onRun={runFlow}
@@ -392,15 +513,40 @@ export default function NetworkPage() {
           )}
         </div>
 
-        <div className="flex max-h-[560px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#08090c]">
-          <div className="border-b border-white/10 px-4 py-2.5 text-[11px] uppercase tracking-[0.12em] text-white/35">Live op feed</div>
+        <div className="flex max-h-[560px] flex-col gap-4">
+          <div className={`${panelCls} p-4`}>
+            <div className={microLabel}>Ask the network</div>
+            <form onSubmit={ask} className="mt-2.5 flex items-center gap-1.5">
+              <input value={askQ} onChange={(e) => setAskQ(e.target.value)} placeholder="what changed today?" className={`flex-1 ${field}`} />
+              <button type="submit" disabled={asking} className={btnPrimarySm}>
+                {asking ? "…" : "ask"}
+              </button>
+            </form>
+            {askA && (
+              <div className="mt-3 space-y-2">
+                <p className="whitespace-pre-wrap text-[12.5px] leading-relaxed text-white/80">{askA.text}</p>
+                {askA.spans.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {askA.spans.slice(0, 4).map((s) => (
+                      <span key={s.id} title={s.preview} className="inline-flex items-center gap-1.5 rounded border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[10.5px] text-white/45">
+                        <Dot color={colorFor(s.author)} className="h-1.5 w-1.5" />
+                        {s.author} · {s.ageHours}h
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <div className={`flex min-h-0 flex-1 flex-col overflow-hidden ${panelCls}`}>
+          <div className={`border-b border-white/10 px-4 py-2.5 ${microLabel}`}>Live op feed</div>
           <div className="flex-1 overflow-y-auto">
             {feed.length === 0 ? (
               <div className="px-4 py-10 text-center text-[13px] text-white/30">No activity yet. Run a workflow or grant an agent.</div>
             ) : (
               feed.map((f, i) => (
                 <div key={i} className={`flex items-center gap-2 border-b border-white/[0.05] px-3 py-2 text-[12px] ${f.ok ? "" : "bg-red-500/5"}`}>
-                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: f.ok ? colorFor(f.actor) : "#ef4444" }} />
+                  <Dot color={f.ok ? colorFor(f.actor) : "#ef4444"} />
                   <span className="shrink-0 font-medium text-white/80">{f.actor}</span>
                   <span className={`shrink-0 font-mono text-[10px] uppercase ${f.ok ? "text-white/40" : "text-red-400"}`}>{f.ok ? f.type : "rejected"}</span>
                   <span className="min-w-0 flex-1 truncate text-white/45">{f.title ?? f.reason ?? ""}</span>
@@ -408,6 +554,7 @@ export default function NetworkPage() {
                 </div>
               ))
             )}
+          </div>
           </div>
         </div>
       </div>

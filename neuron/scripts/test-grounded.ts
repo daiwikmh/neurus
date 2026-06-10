@@ -13,6 +13,8 @@ async function main() {
     set: "wftest-grounded",
     feeds: ["aave"],
     assets: ["sui"],
+    wallets: [],
+    epsilon: 0.5,
     intervalMs: 4000,
     threshold: 0.5,
     reportEvery: 99,

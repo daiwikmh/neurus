@@ -4,28 +4,89 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { Neurus, answer, answerStream, listSets, createSet, Vault, AccountManager, localTenant, safeTenantId, getWidget, getChatBinding, bindChat, sendTelegram, envCredentials, type Tenant } from "../index";
 import type { RankedNeuron } from "../core/memory";
-import { warmup } from "../retrieval/rerank";
+import { warmup, rerank } from "../retrieval/rerank";
 import { NetHub } from "../net/hub";
 import type { Op } from "../crdt/oplog";
 import { MemwalStore } from "../storage/memwal";
-import { WorkflowRunner, type WorkflowConfig } from "../net/workflow";
+import { WorkflowRunner, price, type WorkflowConfig } from "../net/workflow";
 import { compileWorkflow } from "../net/compile";
+import { saveRecords, loadRecords, type WorkflowRecord } from "../net/wfpersist";
+import { playMath, describeClose, fmtPrice, type PlayMeta } from "../net/plays";
+import { SharedReplica } from "../crdt/replica";
+import { Capabilities } from "../crdt/oplog";
+import { createNeuron } from "../core/neuron";
+import { chat } from "../llm/nvidia";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const vault = new Vault();
 const accounts = new AccountManager(vault);
 
 const memIndex = new Map<string, MemwalStore>();
-const net = new NetHub(async (setId, neuron) => {
+function netStore(setId: string): MemwalStore {
   let store = memIndex.get(setId);
   if (!store) {
     store = new MemwalStore(`net_${setId}`);
     memIndex.set(setId, store);
   }
-  await store.remember((neuron.meta?.embedText as string | undefined) ?? neuron.body);
+  return store;
+}
+const indexQueue: { setId: string; text: string }[] = [];
+let indexDraining = false;
+async function drainIndex(): Promise<void> {
+  if (indexDraining) return;
+  indexDraining = true;
+  while (indexQueue.length) {
+    const { setId, text } = indexQueue.shift()!;
+    try {
+      await netStore(setId).rememberAsync(text);
+    } catch (e) {
+      console.error("net index:", (e as Error).message);
+    }
+    await new Promise((r) => setTimeout(r, 2500));
+  }
+  indexDraining = false;
+}
+const net = new NetHub(async (setId, neuron) => {
+  indexQueue.push({ setId, text: (neuron.meta?.embedText as string | undefined) ?? neuron.body });
+  void drainIndex();
 });
 
 const workflows = new Map<string, WorkflowRunner>();
+const wfRecords = new Map<string, WorkflowRecord>();
+
+function persistWorkflows(): void {
+  saveRecords([...wfRecords.values()]).catch((e) => console.error("wf persist:", (e as Error).message));
+}
+
+function recordFromConfig(set: string, tenantId: string, cfg: WorkflowConfig, endsAt: number): WorkflowRecord {
+  const { telegram: _t, tenant: _u, set: _s, ...spec } = cfg;
+  return {
+    id: `wf_${Math.random().toString(16).slice(2, 14)}`,
+    set,
+    tenantId,
+    spec,
+    cursor: { ticksDone: 0, lastTickAt: Date.now() },
+    startedAt: Date.now(),
+    endsAt,
+    status: "active",
+  };
+}
+
+function envTelegram(): { token: string; chatId: string } | undefined {
+  const token = process.env.TELEGRAM_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  return token && chatId ? { token, chatId } : undefined;
+}
+
+function signedReplica(set: string, actor: string, secret: string): SharedReplica {
+  net.grant(set, actor, secret, "write");
+  const r = new SharedReplica(actor, secret, new Capabilities());
+  r.receive(net.opsSince(set, 0));
+  return r;
+}
+
+const POSTMORTEM_SYSTEM = `You write a 2-3 sentence post-mortem of a closed trading play from the FACTS given.
+State what happened and one concrete lesson for next time. Use only the numbers given — never recompute or invent any. No preamble.`;
 
 async function resolveTenant(userId?: string): Promise<Tenant> {
   if (!userId) return localTenant();
@@ -148,6 +209,121 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
     const added = await net.seed(seedSet, await nx.neurons());
     return { added, ...net.snapshot(seedSet) };
   }
+  if (method === "POST" && path === "/v1/net/ask") {
+    const askSet = String(body.set ?? "default");
+    const question = String(body.question ?? "").trim();
+    if (!question) throw new Error("question required");
+    const snap = net.snapshot(askSet);
+    const byText = new Map(snap.neurons.map((n) => [(n.meta?.embedText as string | undefined) ?? n.body, n]));
+    let hits: { text: string }[] = [];
+    try {
+      hits = await netStore(askSet).recall(question, 24);
+    } catch {
+      hits = [];
+    }
+    const seen = new Set<string>();
+    const pool: typeof snap.neurons = [];
+    for (const h of hits) {
+      const n = byText.get(h.text);
+      if (n && !seen.has(n.id)) {
+        seen.add(n.id);
+        pool.push(n);
+      }
+    }
+    const ranked = await rerank(question, pool.map((n) => `${n.title}\n${n.body}`));
+    const cands = ranked.slice(0, 8).map((r) => ({ neuron: pool[r.index], score: r.score, relevance: 1 / (1 + Math.exp(-r.score)) }));
+    const ans = await answer(question, cands, { floor: Number(process.env.NEURUS_NET_ASK_FLOOR ?? -11) });
+    return {
+      ...ans,
+      spans: cands.map((c) => ({
+        id: c.neuron.id,
+        title: c.neuron.title,
+        author: c.neuron.source.author,
+        score: Number(c.score.toFixed(2)),
+        relevance: Number(c.relevance.toFixed(2)),
+        ageHours: Math.round((Date.now() - c.neuron.createdAt) / 3_600_000),
+        preview: c.neuron.body.replace(/\s+/g, " ").slice(0, 140),
+      })),
+    };
+  }
+  if (method === "POST" && path === "/v1/net/play") {
+    const playSet = String(body.set ?? "default");
+    const asset = String(body.asset ?? "").trim().toLowerCase();
+    const entry = Number(body.entry);
+    if (!asset || !Number.isFinite(entry) || entry <= 0) throw new Error("asset and a positive entry price are required");
+    const num = (v: unknown) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : undefined);
+    const meta: PlayMeta = {
+      kind: "play",
+      asset,
+      direction: body.direction === "short" ? "short" : "long",
+      entry,
+      target: num(body.target),
+      stop: num(body.stop),
+      thesis: body.thesis ? String(body.thesis) : undefined,
+      status: "open",
+      openedAt: Date.now(),
+    };
+    const text = `${asset.toUpperCase()} ${meta.direction} @ ${fmtPrice(entry)}${meta.target ? `, target ${fmtPrice(meta.target)}` : ""}${meta.stop ? `, stop ${fmtPrice(meta.stop)}` : ""}${meta.thesis ? ` — ${meta.thesis}` : ""}`;
+    const n = createNeuron({ type: "note", title: `Play: ${asset.toUpperCase()} ${meta.direction}`, body: text, author: "self", meta: meta as unknown as Record<string, unknown> });
+    const res = await net.submit(playSet, signedReplica(playSet, "self", `owner:${playSet}`).add(n));
+    if (!res.ok) throw new Error(res.reason ?? "play rejected");
+    return { play: n, ...net.snapshot(playSet) };
+  }
+  if (method === "POST" && path === "/v1/net/play/close") {
+    const playSet = String(body.set ?? "default");
+    const playId = String(body.playId ?? "");
+    const play = net.snapshot(playSet).neurons.find((n) => n.id === playId && (n.meta as Record<string, unknown> | undefined)?.kind === "play");
+    if (!play) throw new Error("play not found");
+    const meta = play.meta as unknown as PlayMeta;
+    if (meta.status === "closed") throw new Error("play already closed");
+    const exit = Number.isFinite(Number(body.exit)) && Number(body.exit) > 0 ? Number(body.exit) : await price(meta.asset);
+    if (exit == null) throw new Error(`no exit price available for ${meta.asset}`);
+    const sign = meta.direction === "long" ? 1 : -1;
+    const plPct = Number((((exit - meta.entry) / meta.entry) * 100 * sign).toFixed(2));
+    const closed = { ...play, body: describeClose(meta, exit), meta: { ...meta, status: "closed", exit, closedAt: Date.now(), plPct } as unknown as Record<string, unknown> };
+    const res = await net.submit(playSet, signedReplica(playSet, "self", `owner:${playSet}`).update(closed));
+    if (!res.ok) throw new Error(res.reason ?? "close rejected");
+    const m = playMath(meta, exit);
+    const facts = `${describeClose(meta, exit)}${meta.stop != null ? `; stop was ${fmtPrice(meta.stop)}${m.hitStop ? " (hit)" : " (not hit)"}` : ""}${meta.target != null ? `; target was ${fmtPrice(meta.target)}${m.hitTarget ? " (hit)" : " (not hit)"}` : ""}${meta.thesis ? `; thesis: ${meta.thesis}` : ""}`;
+    let lesson = facts;
+    try {
+      lesson = (await chat(POSTMORTEM_SYSTEM, facts, { maxTokens: 180 })).trim() || facts;
+    } catch {
+      void 0;
+    }
+    const pm = createNeuron({
+      type: "insight",
+      title: `Post-mortem: ${meta.asset.toUpperCase()} ${meta.direction}`,
+      body: lesson,
+      author: "analyst",
+      meta: { kind: "postmortem", playId, exit, plPct, hitStop: m.hitStop, hitTarget: m.hitTarget },
+    });
+    await net.submit(playSet, signedReplica(playSet, "analyst", "analyst-secret").add(pm));
+    return { closed, postmortem: pm, ...net.snapshot(playSet) };
+  }
+  if (method === "GET" && path === "/v1/net/plays") {
+    const playSet = q.get("set") ?? "default";
+    const all = net.snapshot(playSet).neurons.filter((n) => (n.meta as Record<string, unknown> | undefined)?.kind === "play");
+    const openAssets = [...new Set(all.filter((n) => (n.meta as unknown as PlayMeta).status === "open").map((n) => (n.meta as unknown as PlayMeta).asset))];
+    const priced = new Map(await Promise.all(openAssets.map(async (a) => [a, await price(a)] as const)));
+    return {
+      plays: all
+        .map((n) => {
+          const meta = n.meta as unknown as PlayMeta;
+          const current = meta.status === "open" ? priced.get(meta.asset) ?? null : null;
+          const math = current != null ? playMath(meta, current) : null;
+          return {
+            id: n.id,
+            ...meta,
+            current,
+            plPct: meta.status === "closed" ? meta.plPct : math ? Number(math.plPct.toFixed(2)) : undefined,
+            distToStop: math?.distToStop != null ? Number(math.distToStop.toFixed(2)) : undefined,
+            distToTarget: math?.distToTarget != null ? Number(math.distToTarget.toFixed(2)) : undefined,
+          };
+        })
+        .sort((a, b) => (a.status === b.status ? b.openedAt - a.openedAt : a.status === "open" ? -1 : 1)),
+    };
+  }
   if (method === "POST" && path === "/v1/net/compile") {
     const sets = (await listSets(tenant)).map((s) => s.name);
     return { spec: await compileWorkflow(String(body.prompt ?? ""), { sets }) };
@@ -155,43 +331,62 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
   if (method === "POST" && path === "/v1/net/workflow") {
     const wfSet = String(body.set ?? "default");
     workflows.get(wfSet)?.stop();
-    const token = process.env.TELEGRAM_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN;
-    const chatId = process.env.TELEGRAM_CHAT_ID;
     const protocols = Array.isArray(body.protocols) ? body.protocols.map(String) : Array.isArray(body.feeds) ? body.feeds.map(String) : [];
     const assets = Array.isArray(body.assets) ? body.assets.map(String) : [];
+    const wallets = Array.isArray(body.wallets) ? body.wallets.map(String) : [];
+    const deepbookManagers = Array.isArray(body.deepbookManagers) ? body.deepbookManagers.map(String) : [];
     const cfg: WorkflowConfig = {
       set: wfSet,
-      feeds: protocols.length || assets.length ? protocols : ["aave", "uniswap", "lido"],
+      feeds: protocols.length || assets.length || wallets.length || body.deepbook || deepbookManagers.length ? protocols : ["aave", "uniswap", "lido"],
       assets,
+      wallets,
+      deepbook: body.deepbook === true,
+      deepbookManagers,
       intervalMs: Math.max(2000, Number(body.intervalMs ?? 5000)),
       threshold: Number(body.threshold ?? 0.5),
+      epsilon: Number(body.epsilon ?? 0.5),
       reportEvery: Math.max(1, Number(body.reportEvery ?? 3)),
+      consolidateEvery: body.consolidateEvery != null ? Math.max(0, Number(body.consolidateEvery)) : undefined,
       strategySet: body.strategySet ? String(body.strategySet) : undefined,
       instruction: body.instruction ? String(body.instruction) : undefined,
       durationDays: body.durationDays ? Number(body.durationDays) : undefined,
-      telegram: token && chatId ? { token, chatId } : undefined,
+      telegram: envTelegram(),
       autoReport: body.telegram !== false,
       tenant,
     };
-    const wf = new WorkflowRunner(net, cfg);
+    const endsAt = Date.now() + (cfg.durationDays ?? 5) * 86_400_000;
+    const wf = new WorkflowRunner(net, cfg, { ticks: 0, endsAt });
     workflows.set(wfSet, wf);
+    wfRecords.set(wfSet, recordFromConfig(wfSet, tenant.id, cfg, endsAt));
+    persistWorkflows();
     wf.start();
     return wf.status();
   }
   if (method === "POST" && path === "/v1/net/workflow/stop") {
     const wfSet = String(body.set ?? "default");
     workflows.get(wfSet)?.stop();
-    return workflows.get(wfSet)?.status() ?? { running: false, set: wfSet, feeds: [], assets: [], intervalMs: 0, threshold: 0, ticks: 0 };
+    const rec = wfRecords.get(wfSet);
+    if (rec && rec.status === "active") {
+      rec.status = "stopped";
+      persistWorkflows();
+    }
+    return workflows.get(wfSet)?.status() ?? { running: false, set: wfSet, feeds: [], assets: [], wallets: [], intervalMs: 0, threshold: 0, ticks: 0 };
   }
   if (method === "GET" && path === "/v1/net/workflow") {
     const wfSet = q.get("set") ?? "default";
-    return workflows.get(wfSet)?.status() ?? { running: false, set: wfSet, feeds: [], assets: [], intervalMs: 0, threshold: 0, ticks: 0 };
+    return workflows.get(wfSet)?.status() ?? { running: false, set: wfSet, feeds: [], assets: [], wallets: [], intervalMs: 0, threshold: 0, ticks: 0 };
   }
   if (method === "POST" && path === "/v1/net/workflow/report") {
     const wfSet = String(body.set ?? "default");
     const wf = workflows.get(wfSet);
     if (!wf) return { sent: false, error: "no running workflow for this set" };
     return wf.report();
+  }
+  if (method === "POST" && path === "/v1/net/workflow/brief") {
+    const wfSet = String(body.set ?? "default");
+    const wf = workflows.get(wfSet);
+    if (!wf) return { sent: false, error: "no running workflow for this set" };
+    return wf.dailyBrief();
   }
 
   const setName = body.set ?? q.get("set") ?? "default";
@@ -448,6 +643,48 @@ const server = createServer(async (req, res) => {
   }
 });
 
+async function resumeWorkflows(): Promise<void> {
+  const records = await loadRecords();
+  let resumed = 0;
+  for (const rec of records) {
+    wfRecords.set(rec.set, rec);
+    if (rec.status !== "active") continue;
+    if (rec.endsAt <= Date.now()) {
+      rec.status = "expired";
+      continue;
+    }
+    try {
+      const tenant = await resolveTenant(rec.tenantId === "local" ? undefined : rec.tenantId);
+      const cfg: WorkflowConfig = { set: rec.set, ...rec.spec, telegram: envTelegram(), tenant };
+      const wf = new WorkflowRunner(net, cfg, { ticks: rec.cursor.ticksDone, endsAt: rec.endsAt });
+      workflows.set(rec.set, wf);
+      wf.start();
+      resumed++;
+    } catch (e) {
+      console.error(`wf resume ${rec.set}:`, (e as Error).message);
+    }
+  }
+  if (resumed) console.log(`  resumed ${resumed} workflow(s) from Walrus`);
+}
+
+function syncWorkflowCursors(): void {
+  let changed = false;
+  for (const [set, rec] of wfRecords) {
+    if (rec.status !== "active") continue;
+    const st = workflows.get(set)?.status();
+    if (!st) continue;
+    if (st.ticks !== rec.cursor.ticksDone) {
+      rec.cursor = { ticksDone: st.ticks, lastTickAt: Date.now() };
+      changed = true;
+    }
+    if (!st.running && rec.endsAt <= Date.now()) {
+      rec.status = "expired";
+      changed = true;
+    }
+  }
+  if (changed) persistWorkflows();
+}
+
 async function boot() {
   try {
     const restored = await net.restore();
@@ -455,9 +692,11 @@ async function boot() {
   } catch {
     console.log("  net restore skipped");
   }
+  await resumeWorkflows().catch((e) => console.error("wf resume:", (e as Error).message));
   setInterval(() => {
     net.checkpoint().catch(() => {});
   }, 15_000);
+  setInterval(syncWorkflowCursors, 60_000);
   server.listen(PORT, () => {
     console.log(`\n  Neurus API  →  http://localhost:${PORT}/v1\n`);
     warmup()

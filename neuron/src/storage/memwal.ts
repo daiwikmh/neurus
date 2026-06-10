@@ -27,6 +27,10 @@ export class MemwalStore {
     return res.blob_id;
   }
 
+  async rememberAsync(text: string): Promise<void> {
+    await this.mw.rememberAsync(text, this.namespace);
+  }
+
   async recall(query: string, limit = 20, maxDistance?: number): Promise<MemwalHit[]> {
     const res = await withRetry(() => this.mw.recall({ query, limit, namespace: this.namespace, maxDistance }), {
       label: "memory store (MemWal)",

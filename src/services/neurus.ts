@@ -119,20 +119,52 @@ export const neurus = {
   submitOp: (set: string, op: unknown) =>
     call<{ ok: boolean; reason?: string; root: string; lamport: number }>("POST", "/net/op", { set, op }),
   seedNet: (set: string) => call<NetSnapshot & { added: number }>("POST", "/net/seed", { set }),
+  netAsk: (set: string, question: string) => call<NetAnswer>("POST", "/net/ask", { set, question }),
+  logPlay: (set: string, p: { asset: string; direction: "long" | "short"; entry: number; target?: number; stop?: number; thesis?: string }) =>
+    call<NetSnapshot & { play: NetNeuron }>("POST", "/net/play", { set, ...p }),
+  closePlay: (set: string, playId: string) => call<NetSnapshot & { closed: NetNeuron; postmortem: NetNeuron }>("POST", "/net/play/close", { set, playId }),
+  listPlays: (set: string) => call<{ plays: PlayRow[] }>("GET", `/net/plays?set=${encodeURIComponent(set)}`).then((r) => r.plays),
   compileWorkflow: (set: string, prompt: string) => call<{ spec: WorkflowSpec }>("POST", "/net/compile", { set, prompt }).then((r) => r.spec),
   startWorkflow: (
     set: string,
-    opts: { feeds?: string[]; protocols?: string[]; assets?: string[]; strategySet?: string; instruction?: string; durationDays?: number; intervalMs?: number; threshold?: number; reportEvery?: number; telegram?: boolean },
+    opts: { feeds?: string[]; protocols?: string[]; assets?: string[]; wallets?: string[]; deepbook?: boolean; deepbookManagers?: string[]; strategySet?: string; instruction?: string; durationDays?: number; intervalMs?: number; threshold?: number; reportEvery?: number; telegram?: boolean },
   ) => call<WorkflowStatus>("POST", "/net/workflow", { set, ...opts }),
   stopWorkflow: (set: string) => call<WorkflowStatus>("POST", "/net/workflow/stop", { set }),
   workflowStatus: (set: string) => call<WorkflowStatus>("GET", `/net/workflow?set=${encodeURIComponent(set)}`),
   reportNow: (set: string) => call<{ sent: boolean; report?: string; error?: string }>("POST", "/net/workflow/report", { set }),
+  briefNow: (set: string) => call<{ sent: boolean; brief?: string; date?: string; error?: string }>("POST", "/net/workflow/brief", { set }),
 };
+
+export interface PlayRow {
+  id: string;
+  asset: string;
+  direction: "long" | "short";
+  entry: number;
+  target?: number;
+  stop?: number;
+  thesis?: string;
+  status: "open" | "closed";
+  openedAt: number;
+  exit?: number;
+  closedAt?: number;
+  current: number | null;
+  plPct?: number;
+  distToStop?: number;
+  distToTarget?: number;
+}
+
+export interface NetAnswer {
+  text: string;
+  sources: string[];
+  spans: { id: string; title: string; author: string; score: number; relevance: number; ageHours: number; preview: string }[];
+}
 
 export interface WorkflowSpec {
   strategySet: string | null;
   assets: string[];
   protocols: string[];
+  wallets: string[];
+  deepbook: boolean;
   intervalMs: number;
   durationDays: number;
   instruction: string;
@@ -144,6 +176,8 @@ export interface WorkflowStatus {
   set: string;
   feeds: string[];
   assets: string[];
+  wallets: string[];
+  deepbook?: boolean;
   intervalMs: number;
   threshold: number;
   strategySet?: string;

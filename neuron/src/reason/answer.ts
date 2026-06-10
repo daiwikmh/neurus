@@ -56,8 +56,8 @@ function degraded(neurons: RankedNeuron[]): Answer {
 const CONVERSE_FALLBACK = "I'm having trouble reaching the model right now — try again in a moment.";
 const promptFor = (question: string, neurons: RankedNeuron[]) => `Memory items:\n${buildContext(neurons)}\n\nQuestion: ${question}`;
 
-export async function answer(question: string, neurons: RankedNeuron[]): Promise<Answer> {
-  if (!hasRelevantContext(neurons)) {
+export async function answer(question: string, neurons: RankedNeuron[], opts: { floor?: number } = {}): Promise<Answer> {
+  if (!hasRelevantContext(neurons, opts.floor ?? FLOOR)) {
     try {
       return { text: (await chat(CONVERSE_SYSTEM, question, { maxTokens: 200 })).trim(), sources: [] };
     } catch {

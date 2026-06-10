@@ -5,7 +5,7 @@ import type { SetSnapshot } from "./manager";
 
 const POINTER = process.env.NEURUS_NET_INDEX ?? ".neurus-net.json";
 
-function vaultKey(): string {
+export function vaultKey(): string {
   const k = process.env.NEURON_VAULT_KEY;
   if (!k) throw new Error("NEURON_VAULT_KEY is required to persist net sets");
   return k;
