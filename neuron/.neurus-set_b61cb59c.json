@@ -1,0 +1,48 @@
+[
+  {
+    "id": "note_9c3ab8ed",
+    "type": "note",
+    "title": "Design review with Sarah",
+    "body": "Design review with Sarah — 12/6/2026, 6:14:18 pm\nLocation: Zoom\nWith: sarah@acme.com",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "validFrom": 1781268258620,
+    "createdAt": 1781181858636,
+    "synapses": [],
+    "meta": {
+      "kind": "calendar_event",
+      "eventId": "evt_1",
+      "start": "2026-06-12T12:44:18.620Z",
+      "attendees": [
+        "sarah@acme.com"
+      ],
+      "location": "Zoom",
+      "source": "google_calendar",
+      "memwalBlob": "yK_mGQMiiyn5zIE7-WCfdAqyZym6onbz5_ZXhVjpkpM",
+      "durability": "confirmed"
+    }
+  },
+  {
+    "id": "note_c3fbfbfe",
+    "type": "note",
+    "title": "SUI strategy sync",
+    "body": "SUI strategy sync — 13/6/2026, 6:14:18 pm\nreview trading-rules and DeepBook fills",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "validFrom": 1781354658620,
+    "createdAt": 1781181888888,
+    "synapses": [],
+    "meta": {
+      "kind": "calendar_event",
+      "eventId": "evt_2",
+      "start": "2026-06-13T12:44:18.620Z",
+      "source": "google_calendar",
+      "memwalBlob": "hc8ISaN1amHv3GiBlRs8ikQT_tCfRmPDWIhmodbKO8g",
+      "durability": "confirmed"
+    }
+  }
+]

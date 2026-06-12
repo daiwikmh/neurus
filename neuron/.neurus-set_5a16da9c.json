@@ -1,0 +1,36 @@
+[
+  {
+    "id": "note_68fcc023",
+    "type": "note",
+    "title": "Solar warranty",
+    "body": "Our solar panels carry a 25-year performance warranty.",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781184425914,
+    "synapses": [],
+    "meta": {
+      "datasetId": "ds_alpha",
+      "memwalBlob": "1lTQxdI7JzKQZ5zYAx314bC3O400-rahXrxYn3UB5hc",
+      "durability": "confirmed"
+    }
+  },
+  {
+    "id": "note_3a9b4e6a",
+    "type": "note",
+    "title": "Returns",
+    "body": "Customers may return unused panels within 30 days for a refund.",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781184451202,
+    "synapses": [],
+    "meta": {
+      "datasetId": "ds_beta",
+      "memwalBlob": "yQBlwLkQvsc_niX9jk88bgBOyWRwnDzGxhLvYEriHnA",
+      "durability": "confirmed"
+    }
+  }
+]

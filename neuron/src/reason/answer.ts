@@ -1,5 +1,17 @@
 import type { RankedNeuron } from "../core/memory";
 import { chat, chatStream } from "../llm/nvidia";
+import { orChat, orChatStream } from "../llm/openrouter";
+
+// A non-empty model routes to OpenRouter (the paid path); empty uses the free NVIDIA default.
+function chatVia(model: string | undefined) {
+  if (!model) return chat;
+  return (system: string, user: string, opts: { maxTokens?: number; temperature?: number } = {}) => orChat(system, user, { ...opts, model });
+}
+function chatStreamVia(model: string | undefined) {
+  if (!model) return chatStream;
+  return (system: string, user: string, onToken: (t: string) => void, opts: { maxTokens?: number; temperature?: number } = {}) =>
+    orChatStream(system, user, onToken, { ...opts, model });
+}
 
 const SYSTEM = `You are the user's private memory. Answer ONLY from the provided memory items.
 Each item is tagged with its source, trust level, and recency.
@@ -56,31 +68,33 @@ function degraded(neurons: RankedNeuron[]): Answer {
 const CONVERSE_FALLBACK = "I'm having trouble reaching the model right now — try again in a moment.";
 const promptFor = (question: string, neurons: RankedNeuron[]) => `Memory items:\n${buildContext(neurons)}\n\nQuestion: ${question}`;
 
-export async function answer(question: string, neurons: RankedNeuron[], opts: { floor?: number } = {}): Promise<Answer> {
+export async function answer(question: string, neurons: RankedNeuron[], opts: { floor?: number; model?: string } = {}): Promise<Answer> {
+  const ask = chatVia(opts.model);
   if (!hasRelevantContext(neurons, opts.floor ?? FLOOR)) {
     try {
-      return { text: (await chat(CONVERSE_SYSTEM, question, { maxTokens: 200 })).trim(), sources: [] };
+      return { text: (await ask(CONVERSE_SYSTEM, question, { maxTokens: 200 })).trim(), sources: [] };
     } catch {
       return { text: CONVERSE_FALLBACK, sources: [] };
     }
   }
   try {
-    return { text: (await chat(SYSTEM, promptFor(question, neurons))).trim(), sources: sourcesOf(neurons) };
+    return { text: (await ask(SYSTEM, promptFor(question, neurons))).trim(), sources: sourcesOf(neurons) };
   } catch {
     return degraded(neurons);
   }
 }
 
-export async function answerStream(question: string, neurons: RankedNeuron[], onToken: (t: string) => void): Promise<Answer> {
+export async function answerStream(question: string, neurons: RankedNeuron[], onToken: (t: string) => void, opts: { model?: string } = {}): Promise<Answer> {
+  const ask = chatStreamVia(opts.model);
   if (!hasRelevantContext(neurons)) {
     try {
-      return { text: (await chatStream(CONVERSE_SYSTEM, question, onToken, { maxTokens: 200 })).trim(), sources: [] };
+      return { text: (await ask(CONVERSE_SYSTEM, question, onToken, { maxTokens: 200 })).trim(), sources: [] };
     } catch {
       return { text: CONVERSE_FALLBACK, sources: [] };
     }
   }
   try {
-    return { text: (await chatStream(SYSTEM, promptFor(question, neurons), onToken)).trim(), sources: sourcesOf(neurons) };
+    return { text: (await ask(SYSTEM, promptFor(question, neurons), onToken)).trim(), sources: sourcesOf(neurons) };
   } catch {
     return degraded(neurons);
   }

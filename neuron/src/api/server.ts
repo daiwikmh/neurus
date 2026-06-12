@@ -11,11 +11,31 @@ import { MemwalStore } from "../storage/memwal";
 import { WorkflowRunner, price, type WorkflowConfig } from "../net/workflow";
 import { compileWorkflow } from "../net/compile";
 import { saveRecords, loadRecords, type WorkflowRecord } from "../net/wfpersist";
+import { publishSealedDataset, fetchSealedDataset } from "../net/share";
+import { createShare, grantReader, revokeReader, shareConfigured } from "../net/share-chain";
+import { createFeed, listFeeds, getFeed, deleteFeed, addGrant, removeGrant } from "../core/feeds";
+import { createAgent, listAgents, deleteAgent, type AgentInput } from "../core/agents";
 import { playMath, describeClose, fmtPrice, type PlayMeta } from "../net/plays";
 import { SharedReplica } from "../crdt/replica";
 import { Capabilities } from "../crdt/oplog";
 import { createNeuron } from "../core/neuron";
 import { chat } from "../llm/nvidia";
+import { scopeKey } from "../net/scope";
+import { extractMeeting } from "../ingest/meeting";
+import { isPaid, markPaid } from "../billing/store";
+import { verifyPayment, priceSui, priceUsd, treasury, billingConfigured } from "../billing/sui";
+
+const PAID_RATE_MAX = Number(process.env.PAID_RATE_PER_MIN ?? 15);
+
+// Resolve the model to use for an answer. Empty -> free NVIDIA default. A chosen model is
+// the paid OpenRouter path: requires an unlocked tenant and is rate-capped per user.
+async function gateModel(tenant: Tenant, requested: unknown): Promise<string | undefined> {
+  const model = String(requested ?? "").trim();
+  if (!model) return undefined;
+  if (!(await isPaid(tenant.id))) throw new Error("This model requires unlocking — pay to use models beyond the free default.");
+  if (!allowRate(`paid:${tenant.id}`, PAID_RATE_MAX, 60_000)) throw new Error("Slow down — too many premium model requests this minute.");
+  return model;
+}
 
 const here = dirname(fileURLToPath(import.meta.url));
 const vault = new Vault();
@@ -59,7 +79,7 @@ function persistWorkflows(): void {
 }
 
 function recordFromConfig(set: string, tenantId: string, cfg: WorkflowConfig, endsAt: number): WorkflowRecord {
-  const { telegram: _t, tenant: _u, set: _s, ...spec } = cfg;
+  const { telegram: _t, tenant: _u, set: _s, netKey: _n, ...spec } = cfg;
   return {
     id: `wf_${Math.random().toString(16).slice(2, 14)}`,
     set,
@@ -191,26 +211,55 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
     return accounts.unlink(tenant.id);
   }
 
-  if (method === "POST" && path === "/v1/net/op") return net.submit(String(body.set ?? "default"), body.op as Op);
-  if (method === "GET" && path === "/v1/net/state") return net.snapshot(q.get("set") ?? "default");
-  if (method === "GET" && path === "/v1/net/ops") return { ops: net.opsSince(q.get("set") ?? "default", Number(q.get("since") ?? 0)) };
+  if (method === "POST" && path === "/v1/extract/meeting") {
+    try {
+      return await extractMeeting(String(body.text ?? ""));
+    } catch {
+      return { isMeeting: false, title: "", start: null, end: null, attendees: [] };
+    }
+  }
+
+  if (method === "GET" && path === "/v1/billing/status") {
+    const paid = await isPaid(tenant.id);
+    if (!billingConfigured()) return { paid, configured: false, priceUsd: priceUsd() };
+    let sui: number | null = null;
+    try { sui = await priceSui(); } catch { sui = null; }
+    return { paid, configured: true, priceUsd: priceUsd(), priceSui: sui, treasury: treasury() };
+  }
+  if (method === "POST" && path === "/v1/billing/verify") {
+    if (tenant.id === "local") throw new Error("connect a wallet to unlock models");
+    if (await isPaid(tenant.id)) return { paid: true, already: true };
+    const digest = String(body.txDigest ?? "").trim();
+    if (!digest) throw new Error("txDigest required");
+    const r = await verifyPayment(digest, tenant.id);
+    if (!r.ok) throw new Error(r.reason ?? "payment could not be verified");
+    await markPaid(tenant.id, { txDigest: digest, amountSui: r.amountSui });
+    return { paid: true, amountSui: r.amountSui };
+  }
+
+  if (method === "POST" && path === "/v1/net/op") return net.submit(scopeKey(tenant.id, String(body.set ?? "default")), body.op as Op);
+  if (method === "GET" && path === "/v1/net/state") return net.snapshot(scopeKey(tenant.id, q.get("set") ?? "default"));
+  if (method === "GET" && path === "/v1/net/ops") return { ops: net.opsSince(scopeKey(tenant.id, q.get("set") ?? "default"), Number(q.get("since") ?? 0)) };
   if (method === "POST" && path === "/v1/net/grant") {
-    net.grant(String(body.set ?? "default"), String(body.actor), String(body.secret), body.can === "read" ? "read" : "write");
-    return net.snapshot(String(body.set ?? "default"));
+    const key = scopeKey(tenant.id, String(body.set ?? "default"));
+    net.grant(key, String(body.actor), String(body.secret), body.can === "read" ? "read" : "write");
+    return net.snapshot(key);
   }
   if (method === "POST" && path === "/v1/net/revoke") {
-    net.revoke(String(body.set ?? "default"), String(body.actor));
-    return net.snapshot(String(body.set ?? "default"));
+    const key = scopeKey(tenant.id, String(body.set ?? "default"));
+    net.revoke(key, String(body.actor));
+    return net.snapshot(key);
   }
   if (method === "POST" && path === "/v1/net/checkpoint") return { checkpointed: await net.checkpoint() };
   if (method === "POST" && path === "/v1/net/seed") {
-    const seedSet = String(body.set ?? "default");
-    const nx = await Neurus.open(seedSet, { tenant });
-    const added = await net.seed(seedSet, await nx.neurons());
-    return { added, ...net.snapshot(seedSet) };
+    const seedName = String(body.set ?? "default");
+    const seedKey = scopeKey(tenant.id, seedName);
+    const nx = await Neurus.open(seedName, { tenant });
+    const added = await net.seed(seedKey, await nx.neurons());
+    return { added, ...net.snapshot(seedKey) };
   }
   if (method === "POST" && path === "/v1/net/ask") {
-    const askSet = String(body.set ?? "default");
+    const askSet = scopeKey(tenant.id, String(body.set ?? "default"));
     const question = String(body.question ?? "").trim();
     if (!question) throw new Error("question required");
     const snap = net.snapshot(askSet);
@@ -230,9 +279,10 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
         pool.push(n);
       }
     }
+    const model = await gateModel(tenant, body.model);
     const ranked = await rerank(question, pool.map((n) => `${n.title}\n${n.body}`));
     const cands = ranked.slice(0, 8).map((r) => ({ neuron: pool[r.index], score: r.score, relevance: 1 / (1 + Math.exp(-r.score)) }));
-    const ans = await answer(question, cands, { floor: Number(process.env.NEURUS_NET_ASK_FLOOR ?? -11) });
+    const ans = await answer(question, cands, { floor: Number(process.env.NEURUS_NET_ASK_FLOOR ?? -11), model });
     return {
       ...ans,
       spans: cands.map((c) => ({
@@ -247,7 +297,7 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
     };
   }
   if (method === "POST" && path === "/v1/net/play") {
-    const playSet = String(body.set ?? "default");
+    const playSet = scopeKey(tenant.id, String(body.set ?? "default"));
     const asset = String(body.asset ?? "").trim().toLowerCase();
     const entry = Number(body.entry);
     if (!asset || !Number.isFinite(entry) || entry <= 0) throw new Error("asset and a positive entry price are required");
@@ -270,7 +320,7 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
     return { play: n, ...net.snapshot(playSet) };
   }
   if (method === "POST" && path === "/v1/net/play/close") {
-    const playSet = String(body.set ?? "default");
+    const playSet = scopeKey(tenant.id, String(body.set ?? "default"));
     const playId = String(body.playId ?? "");
     const play = net.snapshot(playSet).neurons.find((n) => n.id === playId && (n.meta as Record<string, unknown> | undefined)?.kind === "play");
     if (!play) throw new Error("play not found");
@@ -302,7 +352,7 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
     return { closed, postmortem: pm, ...net.snapshot(playSet) };
   }
   if (method === "GET" && path === "/v1/net/plays") {
-    const playSet = q.get("set") ?? "default";
+    const playSet = scopeKey(tenant.id, q.get("set") ?? "default");
     const all = net.snapshot(playSet).neurons.filter((n) => (n.meta as Record<string, unknown> | undefined)?.kind === "play");
     const openAssets = [...new Set(all.filter((n) => (n.meta as unknown as PlayMeta).status === "open").map((n) => (n.meta as unknown as PlayMeta).asset))];
     const priced = new Map(await Promise.all(openAssets.map(async (a) => [a, await price(a)] as const)));
@@ -324,19 +374,114 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
         .sort((a, b) => (a.status === b.status ? b.openedAt - a.openedAt : a.status === "open" ? -1 : 1)),
     };
   }
+  if (method === "POST" && path === "/v1/share/publish") {
+    const shareSet = String(body.set ?? "default");
+    const shareId = String(body.shareId ?? "");
+    if (!/^0x[0-9a-fA-F]{64}$/.test(shareId)) throw new Error("shareId must be a 0x-prefixed Share object id (create one on-chain via neurus_share::share::create)");
+    return publishSealedDataset(shareSet, shareId, tenant);
+  }
+  if (method === "GET" && path === "/v1/share/inspect") {
+    const blobId = q.get("blobId");
+    if (!blobId) throw new Error("blobId required");
+    const { sealedB64: _omit, ...meta } = await fetchSealedDataset(blobId);
+    return meta;
+  }
+  if (method === "POST" && path === "/v1/feeds/create") {
+    const cfg = shareConfigured();
+    if (!cfg.ok) throw new Error(cfg.reason);
+    const set = String(body.set ?? "default");
+    const name = String(body.name ?? set);
+    const { shareId, capId } = await createShare(name, "dataset");
+    const pub = await publishSealedDataset(set, shareId, tenant);
+    const feed = await createFeed(tenant, { set, name, shareId, capId, blobId: pub.blobId, identity: pub.identity, neurons: pub.neurons });
+    return { feed };
+  }
+  if (method === "GET" && path === "/v1/feeds") {
+    return { feeds: await listFeeds(tenant, q.get("set") ?? undefined) };
+  }
+  if (method === "POST" && path === "/v1/feeds/grant") {
+    const feed = await getFeed(String(body.feedId ?? ""), tenant);
+    if (!feed) throw new Error("feed not found");
+    const address = String(body.address ?? "").trim();
+    if (!/^0x[0-9a-fA-F]{64}$/.test(address)) throw new Error("address must be a 0x-prefixed Sui address");
+    await grantReader(feed.shareId, feed.capId, address);
+    return { feed: await addGrant(feed.id, tenant, address) };
+  }
+  if (method === "POST" && path === "/v1/feeds/revoke") {
+    const feed = await getFeed(String(body.feedId ?? ""), tenant);
+    if (!feed) throw new Error("feed not found");
+    const address = String(body.address ?? "").trim();
+    await revokeReader(feed.shareId, feed.capId, address);
+    return { feed: await removeGrant(feed.id, tenant, address) };
+  }
+  if (method === "POST" && path === "/v1/feeds/delete") {
+    return { deleted: await deleteFeed(String(body.feedId ?? ""), tenant) };
+  }
+  if (method === "GET" && path === "/v1/share/fetch") {
+    const blobId = q.get("blobId");
+    if (!blobId) throw new Error("blobId required");
+    return fetchSealedDataset(blobId);
+  }
+  if (method === "POST" && path === "/v1/share/import") {
+    const intoSet = String(body.set ?? "default");
+    const neurons = Array.isArray(body.neurons) ? body.neurons : [];
+    const nx = await Neurus.open(intoSet, { tenant });
+    let imported = 0;
+    for (const n of neurons) {
+      await nx.memory.remember(n as never);
+      imported++;
+    }
+    return { imported };
+  }
+  if (method === "GET" && path === "/v1/agents") {
+    return { agents: await listAgents(tenant) };
+  }
+  if (method === "POST" && path === "/v1/agents") {
+    const s = (v: unknown) => String(v ?? "").trim();
+    const arr = (v: unknown) => (Array.isArray(v) ? v.map((x) => s(x)).filter(Boolean) : s(v).split(",").map((x) => x.trim()).filter(Boolean));
+    const input: AgentInput = {
+      name: s(body.name) || "agent",
+      role: s(body.role),
+      dataset: s(body.dataset),
+      datasetId: s(body.datasetId),
+      feeds: arr(body.feeds),
+      assets: arr(body.assets),
+      wallets: arr(body.wallets),
+      intervalMs: Number(body.intervalMs) || 5000,
+      durationDays: Number(body.durationDays) || 1,
+      threshold: Number(body.threshold) || 0.5,
+      telegram: Boolean(body.telegram),
+    };
+    return { agent: await createAgent(tenant, input) };
+  }
+  if (method === "POST" && path === "/v1/agents/delete") {
+    return { deleted: await deleteAgent(String(body.id ?? ""), tenant) };
+  }
+  if (method === "POST" && path === "/v1/agents/ask") {
+    const set = String(body.dataset ?? body.set ?? "default");
+    const datasetId = body.datasetId ? String(body.datasetId) : undefined;
+    const question = String(body.question ?? "");
+    const model = await gateModel(tenant, body.model);
+    const ax = await Neurus.open(set, { behind: true, tenant });
+    const hits = await ax.recall(question, { limit: body.limit ?? 6, datasetId });
+    const a = await answer(question, hits, { model });
+    return { answer: a.text, sources: a.sources, spans: hits.map(span) };
+  }
   if (method === "POST" && path === "/v1/net/compile") {
     const sets = (await listSets(tenant)).map((s) => s.name);
     return { spec: await compileWorkflow(String(body.prompt ?? ""), { sets }) };
   }
   if (method === "POST" && path === "/v1/net/workflow") {
     const wfSet = String(body.set ?? "default");
-    workflows.get(wfSet)?.stop();
+    const wfKey = scopeKey(tenant.id, wfSet);
+    workflows.get(wfKey)?.stop();
     const protocols = Array.isArray(body.protocols) ? body.protocols.map(String) : Array.isArray(body.feeds) ? body.feeds.map(String) : [];
     const assets = Array.isArray(body.assets) ? body.assets.map(String) : [];
     const wallets = Array.isArray(body.wallets) ? body.wallets.map(String) : [];
     const deepbookManagers = Array.isArray(body.deepbookManagers) ? body.deepbookManagers.map(String) : [];
     const cfg: WorkflowConfig = {
       set: wfSet,
+      netKey: wfKey,
       feeds: protocols.length || assets.length || wallets.length || body.deepbook || deepbookManagers.length ? protocols : ["aave", "uniswap", "lido"],
       assets,
       wallets,
@@ -348,6 +493,7 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
       reportEvery: Math.max(1, Number(body.reportEvery ?? 3)),
       consolidateEvery: body.consolidateEvery != null ? Math.max(0, Number(body.consolidateEvery)) : undefined,
       strategySet: body.strategySet ? String(body.strategySet) : undefined,
+      datasetId: body.datasetId ? String(body.datasetId) : undefined,
       instruction: body.instruction ? String(body.instruction) : undefined,
       durationDays: body.durationDays ? Number(body.durationDays) : undefined,
       telegram: envTelegram(),
@@ -356,35 +502,34 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
     };
     const endsAt = Date.now() + (cfg.durationDays ?? 5) * 86_400_000;
     const wf = new WorkflowRunner(net, cfg, { ticks: 0, endsAt });
-    workflows.set(wfSet, wf);
-    wfRecords.set(wfSet, recordFromConfig(wfSet, tenant.id, cfg, endsAt));
+    workflows.set(wfKey, wf);
+    wfRecords.set(wfKey, recordFromConfig(wfSet, tenant.id, cfg, endsAt));
     persistWorkflows();
     wf.start();
     return wf.status();
   }
   if (method === "POST" && path === "/v1/net/workflow/stop") {
     const wfSet = String(body.set ?? "default");
-    workflows.get(wfSet)?.stop();
-    const rec = wfRecords.get(wfSet);
+    const wfKey = scopeKey(tenant.id, wfSet);
+    workflows.get(wfKey)?.stop();
+    const rec = wfRecords.get(wfKey);
     if (rec && rec.status === "active") {
       rec.status = "stopped";
       persistWorkflows();
     }
-    return workflows.get(wfSet)?.status() ?? { running: false, set: wfSet, feeds: [], assets: [], wallets: [], intervalMs: 0, threshold: 0, ticks: 0 };
+    return workflows.get(wfKey)?.status() ?? { running: false, set: wfSet, feeds: [], assets: [], wallets: [], intervalMs: 0, threshold: 0, ticks: 0 };
   }
   if (method === "GET" && path === "/v1/net/workflow") {
     const wfSet = q.get("set") ?? "default";
-    return workflows.get(wfSet)?.status() ?? { running: false, set: wfSet, feeds: [], assets: [], wallets: [], intervalMs: 0, threshold: 0, ticks: 0 };
+    return workflows.get(scopeKey(tenant.id, wfSet))?.status() ?? { running: false, set: wfSet, feeds: [], assets: [], wallets: [], intervalMs: 0, threshold: 0, ticks: 0 };
   }
   if (method === "POST" && path === "/v1/net/workflow/report") {
-    const wfSet = String(body.set ?? "default");
-    const wf = workflows.get(wfSet);
+    const wf = workflows.get(scopeKey(tenant.id, String(body.set ?? "default")));
     if (!wf) return { sent: false, error: "no running workflow for this set" };
     return wf.report();
   }
   if (method === "POST" && path === "/v1/net/workflow/brief") {
-    const wfSet = String(body.set ?? "default");
-    const wf = workflows.get(wfSet);
+    const wf = workflows.get(scopeKey(tenant.id, String(body.set ?? "default")));
     if (!wf) return { sent: false, error: "no running workflow for this set" };
     return wf.dailyBrief();
   }
@@ -402,8 +547,9 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
     case "POST /v1/retrieve":
       return { passages: await nx.retrieve(String(body.query), { topK: body.topK, minRelevance: body.minRelevance, mmr: body.mmr, type: body.type, trust: body.trust }) };
     case "POST /v1/ask": {
+      const model = await gateModel(tenant, body.model);
       const hits = await nx.recall(String(body.question), { limit: body.limit ?? 5 });
-      const a = await answer(String(body.question), hits);
+      const a = await answer(String(body.question), hits, { model });
       return { answer: a.text, sources: a.sources, spans: hits.map(span) };
     }
     case "POST /v1/ingest/file": {
@@ -412,6 +558,8 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
     }
     case "POST /v1/ingest/dir":
       return nx.addDir(String(body.path), { max: body.max ?? 100 });
+    case "POST /v1/ingest/calendar":
+      return nx.addCalendar(Array.isArray(body.events) ? body.events : []);
     case "POST /v1/ingest/walrus": {
       const s = await nx.indexWalrus(String(body.blobId), { title: body.title });
       return { source: { id: s.id, title: s.title, blobId: s.blobId } };
@@ -484,7 +632,7 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
     case "GET /v1/widgets":
       return { widgets: await nx.widgets() };
     case "POST /v1/widgets":
-      return { widget: await nx.createWidget(String(body.name), body.origins ?? []) };
+      return { widget: await nx.createWidget(String(body.name), body.origins ?? [], body.datasetId ? String(body.datasetId) : undefined) };
     case "POST /v1/widgets/delete":
       return { deleted: await nx.deleteWidget(String(body.id)) };
     case "POST /v1/forget":
@@ -563,7 +711,8 @@ const server = createServer(async (req, res) => {
     return;
   }
   if (req.method === "GET" && url.pathname === "/v1/net/stream") {
-    const set = url.searchParams.get("set")?.trim() || "default";
+    const streamTenant = await resolveTenant((req.headers["x-neurus-user"] as string | undefined)?.trim() || undefined);
+    const set = scopeKey(streamTenant.id, url.searchParams.get("set")?.trim() || "default");
     res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive", ...CORS });
     const sse = (event: string, data: unknown) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
     sse("state", net.snapshot(set));
@@ -587,7 +736,8 @@ const server = createServer(async (req, res) => {
       if (!allowRate(w.id)) { send(res, 429, { error: "rate limit exceeded, slow down" }); return; }
       const tenant = await tenantById(w.tenantId);
       const nx = await Neurus.open(w.set, { behind: true, tenant });
-      const hits = await nx.recall(String(body.question), { limit: 5 });
+      const pool = await nx.recall(String(body.question), { limit: w.datasetId ? 40 : 5 });
+      const hits = w.datasetId ? pool.filter((h) => h.neuron.meta?.datasetId === w.datasetId).slice(0, 5) : pool;
       res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive", ...CORS });
       const sse = (event: string, data: unknown) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
       sse("spans", { spans: hits.map(span) });
@@ -604,12 +754,13 @@ const server = createServer(async (req, res) => {
     try {
       const body = await readBody(req);
       const tenant = await resolveTenant((req.headers["x-neurus-user"] as string | undefined)?.trim() || undefined);
+      const model = await gateModel(tenant, body.model);
       const nx = await Neurus.open(body.set ?? "default", { behind: true, tenant });
       const hits = await nx.recall(String(body.question), { limit: body.limit ?? 5 }).catch(() => nx.recall(String(body.question), { limit: body.limit ?? 5 }));
       res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive", ...CORS });
       const sse = (event: string, data: unknown) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
       sse("spans", { spans: hits.map(span) });
-      const a = await answerStream(String(body.question), hits, (t) => sse("token", { t }));
+      const a = await answerStream(String(body.question), hits, (t) => sse("token", { t }), { model });
       sse("done", { answer: a.text, sources: a.sources });
       res.end();
     } catch (e: any) {
@@ -647,7 +798,8 @@ async function resumeWorkflows(): Promise<void> {
   const records = await loadRecords();
   let resumed = 0;
   for (const rec of records) {
-    wfRecords.set(rec.set, rec);
+    const netKey = scopeKey(rec.tenantId, rec.set);
+    wfRecords.set(netKey, rec);
     if (rec.status !== "active") continue;
     if (rec.endsAt <= Date.now()) {
       rec.status = "expired";
@@ -655,9 +807,9 @@ async function resumeWorkflows(): Promise<void> {
     }
     try {
       const tenant = await resolveTenant(rec.tenantId === "local" ? undefined : rec.tenantId);
-      const cfg: WorkflowConfig = { set: rec.set, ...rec.spec, telegram: envTelegram(), tenant };
+      const cfg: WorkflowConfig = { set: rec.set, netKey, ...rec.spec, telegram: envTelegram(), tenant };
       const wf = new WorkflowRunner(net, cfg, { ticks: rec.cursor.ticksDone, endsAt: rec.endsAt });
-      workflows.set(rec.set, wf);
+      workflows.set(netKey, wf);
       wf.start();
       resumed++;
     } catch (e) {

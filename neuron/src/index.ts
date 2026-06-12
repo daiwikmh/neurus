@@ -26,6 +26,7 @@ import { blobHealth, type BlobHealth } from "./integrity/health";
 import { getBlob, putBlobInfo } from "./storage/walrus";
 import { ingestWalrusBlob, type WalrusIngestOptions } from "./ingest/walrus";
 import { ingestDir, type DirResult } from "./ingest/dir";
+import { ingestCalendarEvents, type CalEvent } from "./ingest/calendar";
 import { answer, type Answer } from "./reason/answer";
 import { brief, type Brief } from "./reason/brief";
 import { reflect, type ReflectResult } from "./proactive/reflect";
@@ -96,6 +97,10 @@ export class Neurus {
 
   addDir(path: string, opts?: { max?: number; store?: boolean }): Promise<DirResult> {
     return ingestDir(this.mem, path, { ...opts, behind: this.behind });
+  }
+
+  addCalendar(events: CalEvent[]): Promise<{ added: number; skipped: number }> {
+    return ingestCalendarEvents(this.mem, events);
   }
 
   recall(query: string, opts?: RecallOptions): Promise<RankedNeuron[]> {
@@ -214,7 +219,6 @@ export class Neurus {
   async addUpload(name: string, contentBase64: string): Promise<{ file: Neuron; dataset: Dataset }> {
     const raw = Buffer.from(contentBase64, "base64");
     const { file, chunks } = await ingestBuffer(name, raw, { store: true });
-    await this.mem.ingest(file, chunks, { behind: this.behind });
     const dataset = await addDataset(
       {
         set: this.set.id,
@@ -227,6 +231,9 @@ export class Neurus {
       },
       this.tenant,
     );
+    file.meta = { ...file.meta, datasetId: dataset.id };
+    for (const c of chunks) c.meta = { ...c.meta, datasetId: dataset.id };
+    await this.mem.ingest(file, chunks, { behind: this.behind });
     return { file, dataset };
   }
 
@@ -300,8 +307,8 @@ export class Neurus {
     return updateDataset(id, { blobId: info.blobId, objectId: info.objectId, endEpoch: info.endEpoch }, this.tenant);
   }
 
-  createWidget(name: string, origins: string[] = []): Promise<Widget> {
-    return createWidget(this.tenant, this.set.id, name, origins);
+  createWidget(name: string, origins: string[] = [], datasetId?: string): Promise<Widget> {
+    return createWidget(this.tenant, this.set.id, name, origins, datasetId);
   }
 
   widgets(): Promise<Widget[]> {

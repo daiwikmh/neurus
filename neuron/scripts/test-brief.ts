@@ -34,7 +34,7 @@ async function main() {
   await hub.submit(SET, consolidator.add(createNeuron({ type: "insight", title: "Trend: SUI price", body: "SUI trend", author: "consolidator", meta: { kind: "trend", label: "SUI price", deltaPct: 2.5 } })));
   await hub.submit(SET, analyst.add(createNeuron({ type: "insight", title: "Post-mortem", body: "Cut SUI losers faster.", author: "analyst", meta: { kind: "postmortem", playId: "x", plPct: -5 } })));
 
-  const runner = new WorkflowRunner(hub, { set: SET, feeds: [], assets: ["sui"], wallets: [ADDR], intervalMs: 60000, threshold: 0.5, epsilon: 0.5, reportEvery: 99, autoReport: false });
+  const runner = new WorkflowRunner(hub, { set: SET, netKey: SET, feeds: [], assets: ["sui"], wallets: [ADDR], intervalMs: 60000, threshold: 0.5, epsilon: 0.5, reportEvery: 99, autoReport: false });
 
   const first = await runner.maybeDailyBrief();
   assert(first === true, "first maybeDailyBrief should brief");
@@ -55,7 +55,7 @@ async function main() {
 
   // empty-state set: no sections → no brief
   const hub2 = new NetHub();
-  const r2 = new WorkflowRunner(hub2, { set: "empty", feeds: [], assets: [], wallets: [], intervalMs: 60000, threshold: 0.5, epsilon: 0.5, reportEvery: 99, autoReport: false });
+  const r2 = new WorkflowRunner(hub2, { set: "empty", netKey: "empty", feeds: [], assets: [], wallets: [], intervalMs: 60000, threshold: 0.5, epsilon: 0.5, reportEvery: 99, autoReport: false });
   assert((await r2.maybeDailyBrief()) === false, "empty set should produce no brief");
   console.log("empty-state OK: no brief when nothing to report");
 

@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react";
 import { ConnectModal, useCurrentAccount } from "@mysten/dapp-kit";
 import Image from "next/image";
 import { setLoginMethod } from "@/lib/session-identity";
+import Link from "next/link";
 
 
 function Logo() {
@@ -54,10 +55,16 @@ function LoginCard() {
       <div className="hidden flex-1 flex-col justify-between p-12 lg:flex">
         <div className="flex items-center gap-2 text-lg font-semibold">
           <span className="grid h-15 w-15 place-items-center rounded-md text-[#14152b]">
+              <Link href="/" className="flex items-center gap-2">
+
             <Logo />
+            </Link>
 
           </span>
+                  <Link href="/" className="flex items-center gap-2">
+
           Neurus
+          </Link>
         </div>
         <div>
           <h1 className="text-4xl font-semibold leading-tight">

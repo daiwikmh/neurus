@@ -1,6 +1,8 @@
 import { stat } from "node:fs/promises";
 import { Neurus } from "../src/index";
 import { listSets } from "../src/core/sets";
+import { runAgent, runConfig } from "../src/cli/agent";
+import { loadConfig } from "../src/cli/config";
 
 try { process.loadEnvFile(".env.local"); } catch { /* noop */ }
 
@@ -19,6 +21,8 @@ function parseFlags(args: string[]): { set?: string; seal?: string; rest: string
 function usage() {
   console.log(`neurus — AI intelligence layer over Walrus data
 
+  agent                interactive agent — chat & plan over a set's memory
+  config               set the agent's provider + API key + model
   note "<text>"        remember a note (extracts people, facts, commitments)
   add <file>           store a local file on Walrus + index it (txt/md/csv/json/pdf/docx)
   index <blobId>       index data ALREADY on Walrus into a knowledge set
@@ -39,6 +43,15 @@ async function main() {
   const [cmd, ...raw] = process.argv.slice(2);
   const { set: setName, seal, rest } = parseFlags(raw);
   const arg = rest.join(" ").trim();
+
+  if (cmd === "agent" || cmd === "chat") {
+    await runAgent(setName ?? "default");
+    return;
+  }
+  if (cmd === "config") {
+    await runConfig(await loadConfig());
+    return;
+  }
 
   if (cmd === "sets") {
     const sets = await listSets();

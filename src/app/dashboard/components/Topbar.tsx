@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { dashboardNav } from "../config";
 import { useSets } from "./SetContext";
+import { useSettings } from "./SettingsContext";
 
 function pageInfo(pathname: string) {
   const match = dashboardNav.find((n) => n.href === pathname);
@@ -24,6 +25,7 @@ function IconBtn({ title, d, href }: { title: string; d: string; href?: string }
 export function Topbar() {
   const pathname = usePathname();
   const { active, sets } = useSets();
+  const { provider, model, openSettings } = useSettings();
   const page = pageInfo(pathname);
   const setId = sets.find((s) => s.name === active)?.id ?? "—";
 
@@ -37,6 +39,19 @@ export function Topbar() {
         </div>
 
         <div className="flex items-center gap-1.5">
+          <button
+            onClick={openSettings}
+            title="Model & provider settings"
+            className="mr-1 hidden items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] text-white/45 transition hover:border-white/20 hover:text-white/75 md:flex"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-[#9aa8f0]" />
+            <span className="font-mono">{model}</span>
+            <span className="text-white/25">·</span>
+            <span>{provider}</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3 text-white/30">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
           <span className="mr-1 hidden items-center gap-1.5 rounded-md bg-white/[0.04] px-2.5 py-1 font-mono text-[11px] text-white/40 sm:flex">
             <span className="text-white/25">SET</span>
             {setId}
@@ -49,8 +64,7 @@ export function Topbar() {
             Search
             <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-white/40">⌘K</kbd>
           </button>
-          <IconBtn title="Docs" d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-          <IconBtn title="Help" href="#" d="M9.1 9a3 3 0 1 1 4.5 2.6c-.9.5-1.6 1.2-1.6 2.4M12 17h.01" />
+          <IconBtn title="Help" href="/help" d="M9.1 9a3 3 0 1 1 4.5 2.6c-.9.5-1.6 1.2-1.6 2.4M12 17h.01" />
         </div>
       </div>
 

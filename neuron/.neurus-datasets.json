@@ -31,5 +31,14 @@
     "bytes": 92345,
     "id": "ds_41f7421e",
     "createdAt": 1780699111598
+  },
+  {
+    "set": "set_fb67c74d",
+    "kind": "github",
+    "title": "MystenLabs/walrus",
+    "url": "https://github.com/MystenLabs/walrus",
+    "pages": 18,
+    "id": "ds_f15f2219",
+    "createdAt": 1781271772292
   }
 ]

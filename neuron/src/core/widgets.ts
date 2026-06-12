@@ -8,6 +8,7 @@ export interface Widget {
   set: string;
   name: string;
   origins: string[];
+  datasetId?: string;
   createdAt: number;
 }
 
@@ -27,7 +28,7 @@ async function save(widgets: Widget[]): Promise<void> {
   await writeFile(registryPath(), JSON.stringify(widgets, null, 2));
 }
 
-export async function createWidget(tenant: Tenant, set: string, name: string, origins: string[] = []): Promise<Widget> {
+export async function createWidget(tenant: Tenant, set: string, name: string, origins: string[] = [], datasetId?: string): Promise<Widget> {
   const list = await all();
   const widget: Widget = {
     id: "wgt_" + randomBytes(12).toString("hex"),
@@ -35,6 +36,7 @@ export async function createWidget(tenant: Tenant, set: string, name: string, or
     set,
     name,
     origins: origins.map((o) => o.trim()).filter(Boolean),
+    datasetId: datasetId || undefined,
     createdAt: Date.now(),
   };
   list.push(widget);

@@ -7,6 +7,7 @@ export const dashboardNav = [
   { label: "Second Brain", href: "/dashboard/brain", icon: "brain" },
   { label: "Sets", href: "/dashboard/sets", icon: "layers" },
   { label: "Datasets", href: "/dashboard/datasets", icon: "database" },
+  { label: "Agents", href: "/dashboard/agents", icon: "agents" },
   { label: "Network", href: "/dashboard/network", icon: "network" },
   // { label: "Connect", href: "/dashboard/connect", icon: "plug" },
 ] as const;

@@ -16,7 +16,37 @@ export function Section({ label }: { label: string }) {
   return <div className="mb-2 mt-7 text-[11px] uppercase tracking-[0.16em] text-white/30">{label}</div>;
 }
 
-export function Card({ title, sub, children, className = "" }: { title?: string; sub?: string; children: ReactNode; className?: string }) {
+export function Card({
+  title,
+  sub,
+  children,
+  className = "",
+  collapsible = false,
+  defaultOpen = true,
+}: {
+  title?: string;
+  sub?: string;
+  children: ReactNode;
+  className?: string;
+  collapsible?: boolean;
+  defaultOpen?: boolean;
+}) {
+  if (collapsible && title) {
+    return (
+      <details open={defaultOpen} className={`group rounded-2xl border border-white/10 bg-white/[0.02] p-5 ${className}`}>
+        <summary className="flex cursor-pointer list-none items-start justify-between marker:content-none [&::-webkit-details-marker]:hidden">
+          <div>
+            <h2 className="text-sm font-medium text-white/80">{title}</h2>
+            {sub && <p className="mt-1 hidden text-[12.5px] leading-relaxed text-white/40 group-open:block">{sub}</p>}
+          </div>
+          <svg viewBox="0 0 12 12" className="ml-3 mt-1 h-3 w-3 shrink-0 text-white/30 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M3 4.5L6 7.5L9 4.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </summary>
+        {children}
+      </details>
+    );
+  }
   return (
     <div className={`rounded-2xl border border-white/10 bg-white/[0.02] p-5 ${className}`}>
       {title && <h2 className="text-sm font-medium text-white/80">{title}</h2>}

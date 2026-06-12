@@ -18,6 +18,7 @@ function Icon({ name }: { name: string }) {
     plug: "M9 2v6M15 2v6M7 8h10v3a5 5 0 0 1-10 0zM12 16v6",
     database: "M4 6c0 1.7 3.6 3 8 3s8-1.3 8-3-3.6-3-8-3-8 1.3-8 3zM4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6",
     network: "M9 5a3 3 0 1 0 6 0 3 3 0 0 0-6 0zM2 19a3 3 0 1 0 6 0 3 3 0 0 0-6 0zM16 19a3 3 0 1 0 6 0 3 3 0 0 0-6 0zM11 8 6.5 16M13 8 17.5 16",
+    agents: "M12 2v3M7 7h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zM9 13h.01M15 13h.01M9 17h6",
   };
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-[20px] w-[20px] shrink-0">

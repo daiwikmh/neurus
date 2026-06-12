@@ -14,5 +14,13 @@
     "name": "default",
     "origins": [],
     "createdAt": 1781107567264
+  },
+  {
+    "id": "wgt_4f0a4d8210882464d02e20fa",
+    "tenantId": "local",
+    "set": "set_fb67c74d",
+    "name": "Ask Walrus",
+    "origins": [],
+    "createdAt": 1781271979975
   }
 ]

@@ -48,6 +48,7 @@ async function main() {
   const hub = new NetHub();
   const runner = new WorkflowRunner(hub, {
     set: "wallet-test",
+    netKey: "wallet-test",
     feeds: [],
     assets: [],
     wallets: [address],

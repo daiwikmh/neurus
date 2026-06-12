@@ -2,27 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import { Markdown } from "@/components/Markdown";
 import { publicAskStream, publicWidget } from "@/services/neurus";
 
 interface Span { id: string; title: string; preview?: string }
 interface Turn { q: string; answer?: string; sources?: string[]; spans?: Span[]; error?: string; loading: boolean; streaming?: boolean }
-
-function Answer({ text, count, streaming }: { text: string; count: number; streaming?: boolean }) {
-  const parts = text.split(/(\[\d+\])/g);
-  return (
-    <div className="whitespace-pre-wrap text-[13.5px] leading-relaxed text-white/85">
-      {parts.map((p, i) => {
-        const m = p.match(/^\[(\d+)\]$/);
-        const n = m ? Number(m[1]) : 0;
-        if (n >= 1 && n <= count) {
-          return <sup key={i} className="mx-0.5 rounded bg-[#9aa8f0]/25 px-1 text-[9px] font-semibold text-[#aeb9f4]">{n}</sup>;
-        }
-        return <span key={i}>{p}</span>;
-      })}
-      {streaming && <span className="ml-0.5 inline-block h-3 w-[6px] translate-y-[1px] animate-pulse rounded-[2px] bg-[#9aa8f0]" />}
-    </div>
-  );
-}
 
 export default function EmbedPage() {
   const params = useParams();
@@ -85,7 +69,7 @@ export default function EmbedPage() {
                 <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2 text-[12.5px] text-red-300">{t.error}</div>
               ) : (
                 <div className="mt-2 rounded-2xl rounded-tl-sm border border-white/10 bg-white/[0.02] p-3">
-                  <Answer text={t.answer ?? ""} count={t.spans?.length ?? 0} streaming={t.streaming} />
+                  <Markdown text={t.answer ?? ""} size="sm" streaming={t.streaming} />
                   {t.sources && t.sources.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5 border-t border-white/8 pt-2">
                       {t.spans?.map((s, n) => (

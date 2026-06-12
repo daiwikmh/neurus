@@ -28,6 +28,7 @@ export interface RecallOptions {
   mmr?: number;
   hybrid?: boolean;
   abstain?: number;
+  datasetId?: string;
 }
 
 export class Memory {
@@ -134,7 +135,8 @@ export class Memory {
 
   async recall(query: string, opts: RecallOptions = {}): Promise<RankedNeuron[]> {
     await this.load();
-    const { limit = 5, overFetch = 20, type, trust, minRelevance = 0, mmr } = opts;
+    const { limit = 5, overFetch = 20, type, trust, minRelevance = 0, mmr, datasetId } = opts;
+    const dsOk = (n: Neuron) => !datasetId || (n.meta as Record<string, unknown> | undefined)?.datasetId === datasetId;
 
     const hits = await this.memwal.recall(query, overFetch);
     const seen = new Set<string>();
@@ -144,12 +146,13 @@ export class Memory {
       const n = id ? this.neurons.get(id) : undefined;
       if (!n || seen.has(n.id)) continue;
       if (type && n.type !== type) continue;
+      if (!dsOk(n)) continue;
       seen.add(n.id);
       pool.push(n);
     }
 
     if (opts.hybrid ?? true) {
-      const corpus = [...this.neurons.values()].filter((n) => SEARCHABLE.has(n.type) && (!type || n.type === type));
+      const corpus = [...this.neurons.values()].filter((n) => SEARCHABLE.has(n.type) && (!type || n.type === type) && dsOk(n));
       const bm = new BM25(corpus.map((n) => ({ id: n.id, text: n.body })));
       const bmRanking = bm.search(query, overFetch).map((x) => x.id);
       const denseRanking = pool.map((n) => n.id);
@@ -167,6 +170,7 @@ export class Memory {
         for (const n of this.neurons.values()) {
           if (seen.has(n.id) || n.meta?.durability !== "pending") continue;
           if (type && n.type !== type) continue;
+          if (!dsOk(n)) continue;
           if (qWords.some((w) => n.body.toLowerCase().includes(w))) { seen.add(n.id); pool.push(n); }
         }
       }

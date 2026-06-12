@@ -11,6 +11,7 @@ async function main() {
   const hub = new NetHub();
   const runner = new WorkflowRunner(hub, {
     set: "wftest-grounded",
+    netKey: "wftest-grounded",
     feeds: ["aave"],
     assets: ["sui"],
     wallets: [],

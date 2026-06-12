@@ -13,6 +13,7 @@ import type { NetHub } from "./hub";
 
 export interface WorkflowConfig {
   set: string;
+  netKey: string;
   feeds: string[];
   assets: string[];
   wallets: string[];
@@ -24,6 +25,7 @@ export interface WorkflowConfig {
   reportEvery: number;
   consolidateEvery?: number;
   strategySet?: string;
+  datasetId?: string;
   instruction?: string;
   durationDays?: number;
   telegram?: { token: string; chatId: string };
@@ -123,7 +125,7 @@ export class WorkflowRunner {
   }
 
   private grantReplica(agent: string): SharedReplica {
-    this.hub.grant(this.cfg.set, agent, `${agent}-secret`, "write");
+    this.hub.grant(this.cfg.netKey, agent, `${agent}-secret`, "write");
     return new SharedReplica(agent, `${agent}-secret`, new Capabilities());
   }
 
@@ -137,7 +139,7 @@ export class WorkflowRunner {
   }
 
   private async submitNote(replica: SharedReplica, author: string, title: string, body: string, meta: Record<string, unknown>): Promise<void> {
-    await this.hub.submit(this.cfg.set, replica.add(createNeuron({ type: "note", title, body, author, meta })));
+    await this.hub.submit(this.cfg.netKey, replica.add(createNeuron({ type: "note", title, body, author, meta })));
   }
 
   start(): void {
@@ -175,7 +177,7 @@ export class WorkflowRunner {
     if (!this.cfg.strategySet) return "";
     try {
       const nx = await Neurus.open(this.cfg.strategySet, { tenant: this.cfg.tenant });
-      const hits = await nx.recall(this.cfg.instruction || "strategy", { limit: 6 });
+      const hits = await nx.recall(this.cfg.instruction || "strategy", { limit: 6, datasetId: this.cfg.datasetId });
       return hits.map((h, i) => `[${i + 1}] ${h.neuron.body}`).join("\n");
     } catch {
       return "";
@@ -195,7 +197,7 @@ export class WorkflowRunner {
     if (!this.deepbookAgent) return;
     if (!this.managers) this.managers = await resolveManagers(this.cfg.wallets, this.cfg.deepbookManagers ?? []);
     if (!this.managers.length) return;
-    const seen = new Set(this.hub.snapshot(this.cfg.set).neurons.map((n) => (n.meta as Record<string, unknown> | undefined)?.tradeId).filter(Boolean) as string[]);
+    const seen = new Set(this.hub.snapshot(this.cfg.netKey).neurons.map((n) => (n.meta as Record<string, unknown> | undefined)?.tradeId).filter(Boolean) as string[]);
     const fresh: string[] = [];
     for (const m of this.managers) {
       const since = this.lastTradeTs.get(m.id) ?? Date.now() - 86_400_000;
@@ -227,7 +229,7 @@ export class WorkflowRunner {
 
   private openPlays(): { id: string; meta: PlayMeta }[] {
     return this.hub
-      .snapshot(this.cfg.set)
+      .snapshot(this.cfg.netKey)
       .neurons.filter((n) => (n.meta as Record<string, unknown> | undefined)?.kind === "play" && (n.meta as Record<string, unknown>).status === "open")
       .map((n) => ({ id: n.id, meta: n.meta as unknown as PlayMeta }));
   }
@@ -272,7 +274,7 @@ export class WorkflowRunner {
     const report = await this.groundedReport();
     if (!report) return { sent: false };
     this.lastReport = report;
-    await this.hub.submit(this.cfg.set, this.analyst.add(createNeuron({ type: "insight", title: "Update", body: report, author: "analyst", meta: { report: true } })));
+    await this.hub.submit(this.cfg.netKey, this.analyst.add(createNeuron({ type: "insight", title: "Update", body: report, author: "analyst", meta: { report: true } })));
     if (this.cfg.telegram) {
       try {
         await sendTelegram(this.cfg.telegram, report, { markdown: true });
@@ -285,18 +287,18 @@ export class WorkflowRunner {
   }
 
   async consolidate(): Promise<number> {
-    const snap = this.hub.snapshot(this.cfg.set);
+    const snap = this.hub.snapshot(this.cfg.netKey);
     const plan = planConsolidation(snap.neurons);
     if (!plan.trends.length) return 0;
-    this.consolidator.receive(this.hub.opsSince(this.cfg.set, 0));
+    this.consolidator.receive(this.hub.opsSince(this.cfg.netKey, 0));
     let folded = 0;
     for (const { stats, consolidatedIds } of plan.trends) {
       await this.hub.submit(
-        this.cfg.set,
+        this.cfg.netKey,
         this.consolidator.add(createNeuron({ type: "insight", title: `Trend: ${stats.label}`, body: describeTrend(stats), author: "consolidator", meta: { kind: "trend", replacedCount: consolidatedIds.length, ...stats } })),
       );
       for (const id of consolidatedIds) {
-        for (const op of this.consolidator.remove(id)) await this.hub.submit(this.cfg.set, op);
+        for (const op of this.consolidator.remove(id)) await this.hub.submit(this.cfg.netKey, op);
         folded++;
       }
     }
@@ -309,7 +311,7 @@ export class WorkflowRunner {
 
   private briefSections(): string[] {
     const dayAgo = Date.now() - 86_400_000;
-    const snap = this.hub.snapshot(this.cfg.set).neurons;
+    const snap = this.hub.snapshot(this.cfg.netKey).neurons;
     const meta = (n: (typeof snap)[number]) => (n.meta ?? {}) as Record<string, unknown>;
     const sections: string[] = [];
 
@@ -354,7 +356,7 @@ export class WorkflowRunner {
       void 0;
     }
     this.lastBriefDate = date;
-    await this.hub.submit(this.cfg.set, this.analyst.add(createNeuron({ type: "insight", title: `Daily brief ${date}`, body, author: "analyst", meta: { kind: "brief", date } })));
+    await this.hub.submit(this.cfg.netKey, this.analyst.add(createNeuron({ type: "insight", title: `Daily brief ${date}`, body, author: "analyst", meta: { kind: "brief", date } })));
     if (this.cfg.telegram) {
       try {
         await sendTelegram(this.cfg.telegram, body, { markdown: true });
@@ -368,7 +370,7 @@ export class WorkflowRunner {
 
   async maybeDailyBrief(): Promise<boolean> {
     const today = this.dayKey();
-    const already = this.lastBriefDate === today || this.hub.snapshot(this.cfg.set).neurons.some((n) => (n.meta as Record<string, unknown> | undefined)?.kind === "brief" && (n.meta as Record<string, unknown>).date === today);
+    const already = this.lastBriefDate === today || this.hub.snapshot(this.cfg.netKey).neurons.some((n) => (n.meta as Record<string, unknown> | undefined)?.kind === "brief" && (n.meta as Record<string, unknown>).date === today);
     if (already) return false;
     return (await this.dailyBrief()).brief != null;
   }
@@ -434,7 +436,7 @@ export class WorkflowRunner {
       if (report) {
         this.lastReport = report;
         await this.hub.submit(
-          this.cfg.set,
+          this.cfg.netKey,
           this.analyst.add(createNeuron({ type: "insight", title: "Update", body: report, author: "analyst", meta: { importance: Math.min(1, 0.5 + notable.length * 0.2), report: true } })),
         );
         if (this.cfg.telegram && this.cfg.autoReport) {

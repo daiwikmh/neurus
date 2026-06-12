@@ -50,7 +50,7 @@ async function main() {
   const before = hub.snapshot(SET).neurons.length;
   assert(before === 32, `expected 32 neurons pre-consolidation, got ${before}`);
 
-  const runner = new WorkflowRunner(hub, { set: SET, feeds: [], assets: ["sui"], wallets: [], intervalMs: 60000, threshold: 0.5, epsilon: 0.5, reportEvery: 99, autoReport: false });
+  const runner = new WorkflowRunner(hub, { set: SET, netKey: SET, feeds: [], assets: ["sui"], wallets: [], intervalMs: 60000, threshold: 0.5, epsilon: 0.5, reportEvery: 99, autoReport: false });
   const folded = await runner.consolidate();
 
   const snap = hub.snapshot(SET);

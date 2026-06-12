@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useSets } from "../components/SetContext";
+import { useSettings } from "../components/SettingsContext";
 import { neurus, netStream, type NetNeuron, type RosterEntry, type NeuronRow, type Durability, type NetAnswer, type PlayRow } from "@/services/neurus";
 import { NeuronGraph } from "../components/NeuronGraph";
 import { NetworkCanvas } from "../components/NetworkCanvas";
+import { MemoryFeed } from "../components/MemoryFeed";
 import { Section, Card, Labeled, Dot, fieldCls as field, btnPrimary, btnPrimarySm, btnGhost, btnDanger, panelCls, microLabel } from "../components/ui";
 import { merkleRoot } from "./merkle";
 
@@ -21,6 +23,7 @@ interface FeedItem {
 
 export default function NetworkPage() {
   const { active, online } = useSets();
+  const { askModel } = useSettings();
   const [neurons, setNeurons] = useState<NetNeuron[]>([]);
   const [roster, setRoster] = useState<RosterEntry[]>([]);
   const [root, setRoot] = useState("");
@@ -245,7 +248,7 @@ export default function NetworkPage() {
     setAsking(true);
     setAskA(null);
     neurus
-      .netAsk(active, q)
+      .netAsk(active, q, askModel)
       .then(setAskA)
       .catch((err) => setAskA({ text: `failed: ${(err as Error)?.message ?? "request error"}`, sources: [], spans: [] }))
       .finally(() => setAsking(false));
@@ -355,8 +358,8 @@ export default function NetworkPage() {
         </div>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <Card title="Workflow" sub="Agents track DefiLlama protocols, asset prices, and wallets over time; the analyst reports — grounded in your strategy set — to Telegram.">
+      <div className="mt-4 space-y-3">
+        <Card collapsible title="Workflow" sub="Agents track DefiLlama protocols, asset prices, and wallets over time; the analyst reports — grounded in your strategy set — to Telegram.">
           <div className="mt-4 space-y-3">
             <div className="flex gap-3">
               <Labeled label="Protocols (TVL)" className="flex-1">
@@ -406,7 +409,7 @@ export default function NetworkPage() {
           </div>
         </Card>
 
-        <Card title="Agents" sub="Who can write to this set's shared memory. Revoke any agent and its next write bounces.">
+        <Card collapsible defaultOpen={false} title="Agents" sub="Who can write to this set's shared memory. Revoke any agent and its next write bounces.">
           <div className="mt-3 space-y-1.5">
             {roster.length === 0 ? (
               <div className="rounded-lg border border-dashed border-white/10 px-3 py-4 text-center text-[12.5px] text-white/30">No agents yet — run a workflow or grant one below.</div>
@@ -435,7 +438,9 @@ export default function NetworkPage() {
           {grantMsg && <p className="mt-2 text-[12px] text-white/45">{grantMsg}</p>}
         </Card>
 
-        <Card title="Plays" sub="Log your positions — the analyst grades each one against your strategy every report cycle and writes a post-mortem when you close." className="lg:col-span-2">
+        <MemoryFeed set={active} collapsible defaultOpen={false} />
+
+        <Card collapsible defaultOpen={false} title="Plays" sub="Log your positions — the analyst grades each one against your strategy every report cycle and writes a post-mortem when you close.">
           <div className="mt-3 space-y-1.5">
             {plays.length === 0 ? (
               <div className="rounded-lg border border-dashed border-white/10 px-3 py-4 text-center text-[12.5px] text-white/30">No plays yet — log one below.</div>

@@ -121,5 +121,35 @@
     "integrity": "none",
     "sharedWith": [],
     "createdAt": 1781012497655
+  },
+  {
+    "id": "set_b61cb59c",
+    "name": "cal-test",
+    "namespace": "neurus_local_set_b61cb59c",
+    "manifestPath": ".neurus-set_b61cb59c.json",
+    "visibility": "private",
+    "integrity": "none",
+    "sharedWith": [],
+    "createdAt": 1781181858619
+  },
+  {
+    "id": "set_5a16da9c",
+    "name": "wgt-scope-test",
+    "namespace": "neurus_local_set_5a16da9c",
+    "manifestPath": ".neurus-set_5a16da9c.json",
+    "visibility": "private",
+    "integrity": "none",
+    "sharedWith": [],
+    "createdAt": 1781184425914
+  },
+  {
+    "id": "set_fb67c74d",
+    "name": "walrus-gh",
+    "namespace": "neurus_local_set_fb67c74d",
+    "manifestPath": ".neurus-set_fb67c74d.json",
+    "visibility": "private",
+    "integrity": "none",
+    "sharedWith": [],
+    "createdAt": 1781271757545
   }
 ]

@@ -77,12 +77,12 @@ export const neurus = {
   createSet: (name: string) => call<{ set: SetInfo }>("POST", "/sets", { name }).then((r) => r.set),
   map: (set: string) => call<MapInfo>("GET", `/map?set=${encodeURIComponent(set)}`),
   neurons: (set: string) => call<{ neurons: NeuronRow[] }>("GET", `/neurons?set=${encodeURIComponent(set)}`).then((r) => r.neurons),
-  ask: (set: string, question: string) => call<{ answer: string; sources: string[]; spans: Span[] }>("POST", "/ask", { set, question }),
-  askStream: async (set: string, question: string, onEvent: (e: { event: string; data: any }) => void): Promise<void> => {
+  ask: (set: string, question: string, model?: string) => call<{ answer: string; sources: string[]; spans: Span[] }>("POST", "/ask", { set, question, model }),
+  askStream: async (set: string, question: string, onEvent: (e: { event: string; data: any }) => void, model?: string): Promise<void> => {
     const res = await fetch(`${BASE}/v1/ask/stream`, {
       method: "POST",
       headers: headers(true),
-      body: JSON.stringify({ set, question }),
+      body: JSON.stringify({ set, question, model }),
     });
     if (!res.ok || !res.body) throw new Error(`Neurus API ${res.status}: ${await res.text().catch(() => "")}`);
     await readSSE(res, onEvent);
@@ -102,7 +102,7 @@ export const neurus = {
   datasetHealth: (set: string, objectId: string) => call<{ health: BlobHealth }>("POST", "/datasets/health", { set, objectId }).then((r) => r.health),
   renewDataset: (set: string, id: string) => call<{ dataset: Dataset }>("POST", "/datasets/renew", { set, id }).then((r) => r.dataset),
   widgets: (set: string) => call<{ widgets: Widget[] }>("GET", `/widgets?set=${encodeURIComponent(set)}`).then((r) => r.widgets),
-  createWidget: (set: string, name: string, origins: string[]) => call<{ widget: Widget }>("POST", "/widgets", { set, name, origins }).then((r) => r.widget),
+  createWidget: (set: string, name: string, origins: string[], datasetId?: string) => call<{ widget: Widget }>("POST", "/widgets", { set, name, origins, datasetId }).then((r) => r.widget),
   deleteWidget: (set: string, id: string) => call<{ deleted: boolean }>("POST", "/widgets/delete", { set, id }),
   notifyConfig: (set: string) => call<{ config: NotifyConfig }>("GET", `/notify?set=${encodeURIComponent(set)}`).then((r) => r.config),
   connectTelegram: (set: string, chatId: string) => call<{ config: NotifyConfig }>("POST", "/notify/telegram", { set, chatId }).then((r) => r.config),
@@ -119,7 +119,9 @@ export const neurus = {
   submitOp: (set: string, op: unknown) =>
     call<{ ok: boolean; reason?: string; root: string; lamport: number }>("POST", "/net/op", { set, op }),
   seedNet: (set: string) => call<NetSnapshot & { added: number }>("POST", "/net/seed", { set }),
-  netAsk: (set: string, question: string) => call<NetAnswer>("POST", "/net/ask", { set, question }),
+  netAsk: (set: string, question: string, model?: string) => call<NetAnswer>("POST", "/net/ask", { set, question, model }),
+  billingStatus: () => call<BillingStatus>("GET", "/billing/status"),
+  billingVerify: (txDigest: string) => call<{ paid: boolean; amountSui?: number; already?: boolean }>("POST", "/billing/verify", { txDigest }),
   logPlay: (set: string, p: { asset: string; direction: "long" | "short"; entry: number; target?: number; stop?: number; thesis?: string }) =>
     call<NetSnapshot & { play: NetNeuron }>("POST", "/net/play", { set, ...p }),
   closePlay: (set: string, playId: string) => call<NetSnapshot & { closed: NetNeuron; postmortem: NetNeuron }>("POST", "/net/play/close", { set, playId }),
@@ -127,13 +129,60 @@ export const neurus = {
   compileWorkflow: (set: string, prompt: string) => call<{ spec: WorkflowSpec }>("POST", "/net/compile", { set, prompt }).then((r) => r.spec),
   startWorkflow: (
     set: string,
-    opts: { feeds?: string[]; protocols?: string[]; assets?: string[]; wallets?: string[]; deepbook?: boolean; deepbookManagers?: string[]; strategySet?: string; instruction?: string; durationDays?: number; intervalMs?: number; threshold?: number; reportEvery?: number; telegram?: boolean },
+    opts: { feeds?: string[]; protocols?: string[]; assets?: string[]; wallets?: string[]; deepbook?: boolean; deepbookManagers?: string[]; strategySet?: string; datasetId?: string; instruction?: string; durationDays?: number; intervalMs?: number; threshold?: number; reportEvery?: number; telegram?: boolean },
   ) => call<WorkflowStatus>("POST", "/net/workflow", { set, ...opts }),
   stopWorkflow: (set: string) => call<WorkflowStatus>("POST", "/net/workflow/stop", { set }),
   workflowStatus: (set: string) => call<WorkflowStatus>("GET", `/net/workflow?set=${encodeURIComponent(set)}`),
   reportNow: (set: string) => call<{ sent: boolean; report?: string; error?: string }>("POST", "/net/workflow/report", { set }),
   briefNow: (set: string) => call<{ sent: boolean; brief?: string; date?: string; error?: string }>("POST", "/net/workflow/brief", { set }),
+  publishShare: (set: string, shareId: string) =>
+    call<{ blobId: string; shareId: string; identity: string; packageId: string; neurons: number }>("POST", "/share/publish", { set, shareId }),
+  inspectShare: (blobId: string) => call<{ packageId: string; threshold: number; services: number }>("GET", `/share/inspect?blobId=${encodeURIComponent(blobId)}`),
+  feeds: (set: string) => call<{ feeds: Feed[] }>("GET", `/feeds?set=${encodeURIComponent(set)}`).then((r) => r.feeds),
+  createFeed: (set: string, name: string) => call<{ feed: Feed }>("POST", "/feeds/create", { set, name }).then((r) => r.feed),
+  grantFeed: (feedId: string, address: string) => call<{ feed: Feed }>("POST", "/feeds/grant", { feedId, address }).then((r) => r.feed),
+  revokeFeed: (feedId: string, address: string) => call<{ feed: Feed }>("POST", "/feeds/revoke", { feedId, address }).then((r) => r.feed),
+  deleteFeed: (feedId: string) => call<{ deleted: boolean }>("POST", "/feeds/delete", { feedId }),
+  fetchSealed: (blobId: string) =>
+    call<{ sealedB64: string; packageId: string; threshold: number; services: number }>("GET", `/share/fetch?blobId=${encodeURIComponent(blobId)}`),
+  importNeurons: (set: string, neurons: unknown[]) => call<{ imported: number }>("POST", "/share/import", { set, neurons }),
+  agents: () => call<{ agents: AgentDef[] }>("GET", "/agents").then((r) => r.agents),
+  createAgent: (a: Omit<AgentDef, "id" | "tenantId" | "createdAt">) => call<{ agent: AgentDef }>("POST", "/agents", a).then((r) => r.agent),
+  deleteAgent: (id: string) => call<{ deleted: boolean }>("POST", "/agents/delete", { id }),
+  askAgent: (dataset: string, datasetId: string | undefined, question: string, model?: string) =>
+    call<{ answer: string; sources: string[]; spans: Span[] }>("POST", "/agents/ask", { dataset, datasetId, question, model }),
 };
+
+export interface AgentDef {
+  id: string;
+  tenantId: string;
+  name: string;
+  role: string;
+  dataset: string;
+  datasetId: string;
+  feeds: string[];
+  assets: string[];
+  wallets: string[];
+  intervalMs: number;
+  durationDays: number;
+  threshold: number;
+  telegram: boolean;
+  createdAt: number;
+}
+
+export interface Feed {
+  id: string;
+  tenantId: string;
+  set: string;
+  name: string;
+  shareId: string;
+  capId: string;
+  blobId: string;
+  identity: string;
+  neurons: number;
+  createdAt: number;
+  grants: string[];
+}
 
 export interface PlayRow {
   id: string;
@@ -151,6 +200,14 @@ export interface PlayRow {
   plPct?: number;
   distToStop?: number;
   distToTarget?: number;
+}
+
+export interface BillingStatus {
+  paid: boolean;
+  configured: boolean;
+  priceUsd: number;
+  priceSui?: number | null;
+  treasury?: string;
 }
 
 export interface NetAnswer {
@@ -226,6 +283,7 @@ export interface Widget {
   set: string;
   name: string;
   origins: string[];
+  datasetId?: string;
   createdAt: number;
 }
 

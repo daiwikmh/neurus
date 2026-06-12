@@ -62,6 +62,8 @@ export default function DatasetsPage() {
   const folderRef = useRef<HTMLInputElement>(null);
 
   const [widgets, setWidgets] = useState<Widget[]>([]);
+  const [widgetDataset, setWidgetDataset] = useState("");
+  const [widgetName, setWidgetName] = useState("");
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   const refresh = () => {
@@ -69,6 +71,9 @@ export default function DatasetsPage() {
     neurus.widgets(active).then(setWidgets).catch(() => {});
   };
   useEffect(() => { if (online) refresh(); }, [active, online]);
+
+  const fileDatasets = datasets.filter((d) => d.kind === "file");
+  const datasetTitle = (id?: string) => datasets.find((d) => d.id === id)?.title ?? id ?? "—";
 
   const snippet = (id: string) => `<script src="${origin}/embed.js" data-widget="${id}" defer></script>`;
   const copy = (text: string) => navigator.clipboard?.writeText(text);
@@ -271,31 +276,57 @@ export default function DatasetsPage() {
       </div>
 
       <div className="mt-10">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-medium text-white">Embed as a chatbot</h2>
-            <p className="mt-0.5 text-[12px] text-white/40">
-              Drop one script tag on any site — a grounded, cited assistant over <span className="font-mono text-white/60">{active}</span>.
-            </p>
-          </div>
+        <div>
+          <h2 className="text-sm font-medium text-white">Embed as a chatbot</h2>
+          <p className="mt-0.5 text-[12px] text-white/40">
+            Drop one script tag on any site — a grounded, cited assistant over <span className="text-white/70">one dataset</span> you choose. The widget answers from that whole database, nothing else.
+          </p>
+        </div>
+        <div className="mt-3 flex flex-wrap items-end gap-2">
+          <label className="block">
+            <span className="text-[11px] uppercase tracking-wide text-white/35">Dataset</span>
+            <select
+              value={widgetDataset}
+              onChange={(e) => setWidgetDataset(e.target.value)}
+              className="mt-1 block rounded-lg border border-white/10 bg-[#0c0d10] px-3 py-2 text-[13px] text-white outline-none focus:border-[#9aa8f0]/50"
+            >
+              <option value="" className="bg-[#0c0d10]">Select a dataset…</option>
+              {fileDatasets.map((d) => (
+                <option key={d.id} value={d.id} className="bg-[#0c0d10]">{d.title}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block flex-1">
+            <span className="text-[11px] uppercase tracking-wide text-white/35">Name</span>
+            <input
+              value={widgetName}
+              onChange={(e) => setWidgetName(e.target.value)}
+              placeholder={datasetTitle(widgetDataset)}
+              className="mt-1 block w-full rounded-lg border border-white/10 bg-[#0c0d10] px-3 py-2 text-[13px] text-white outline-none placeholder:text-white/25 focus:border-[#9aa8f0]/50"
+            />
+          </label>
           <button
-            onClick={() => run("widget", () => neurus.createWidget(active, active, []))}
-            disabled={!!busy}
-            className="shrink-0 rounded-lg bg-[#9aa8f0] px-3.5 py-1.5 text-[12.5px] font-medium text-[#14152b] transition hover:bg-[#aeb9f4] disabled:opacity-40"
+            onClick={() => run("widget", () => neurus.createWidget(active, widgetName.trim() || datasetTitle(widgetDataset), [], widgetDataset).then(() => { setWidgetName(""); setWidgetDataset(""); }))}
+            disabled={!!busy || !widgetDataset}
+            className="shrink-0 rounded-lg bg-[#9aa8f0] px-3.5 py-2 text-[12.5px] font-medium text-[#14152b] transition hover:bg-[#aeb9f4] disabled:opacity-40"
           >
             {busy === "widget" ? "Creating…" : "Create widget"}
           </button>
         </div>
+        {fileDatasets.length === 0 && (
+          <p className="mt-2 text-[12px] text-white/35">Upload a file/database above first — widgets attach to one uploaded dataset.</p>
+        )}
         <div className="mt-3 space-y-2">
           {widgets.length === 0 ? (
             <div className="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-[12.5px] text-white/40">
-              No widget yet. Create one to get an embeddable chatbot for this set.
+              No widget yet. Create one to get an embeddable chatbot scoped to a single dataset.
             </div>
           ) : (
             widgets.map((w) => (
               <div key={w.id} className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
                 <div className="flex items-center gap-2">
                   <span className="text-[13px] text-white/85">{w.name}</span>
+                  {w.datasetId && <span className="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-white/45">{datasetTitle(w.datasetId)}</span>}
                   <span className="font-mono text-[10px] text-white/30">{w.id}</span>
                   <a href={`/embed/${w.id}`} target="_blank" rel="noreferrer" className="ml-auto text-[11px] text-[#9aa8f0]/80 transition hover:text-[#aeb9f4]">
                     preview ↗
