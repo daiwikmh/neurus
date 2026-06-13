@@ -1,7 +1,28 @@
 import { withRetry, RetryableError, isNetworkError } from "../util/retry";
 
 const NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
-const MODEL = process.env.NVIDIA_MODEL ?? "openai/gpt-oss-120b";
+const primaryModel = () => process.env.NVIDIA_MODEL ?? "openai/gpt-oss-120b";
+const fallbackModel = () => process.env.NVIDIA_FALLBACK_MODEL ?? "meta/llama-3.1-8b-instruct";
+
+const retryOpts = (label: string, attempts: number) => ({
+  label,
+  attempts,
+  shouldRetry: (e: unknown) => e instanceof RetryableError || isNetworkError(e),
+});
+
+// Run against the primary model with a single shot — a hung or unresponsive model won't recover
+// on retry, so on any failure switch straight to a known-good fallback (which gets a couple of
+// attempts). This keeps the worst case to one primary timeout, never an open-ended hang.
+async function withFallback<T>(run: (model: string) => Promise<T>): Promise<T> {
+  const primary = primaryModel();
+  try {
+    return await withRetry(() => run(primary), retryOpts(`LLM (NVIDIA ${primary})`, 1));
+  } catch (e) {
+    const fb = fallbackModel();
+    if (fb === primary) throw e;
+    return await withRetry(() => run(fb), retryOpts(`LLM (NVIDIA ${fb} fallback)`, 3));
+  }
+}
 
 export interface ChatOptions {
   maxTokens?: number;
@@ -9,7 +30,7 @@ export interface ChatOptions {
   timeoutMs?: number;
 }
 
-async function callOnce(system: string, user: string, opts: ChatOptions): Promise<string> {
+async function callOnce(system: string, user: string, opts: ChatOptions, model: string): Promise<string> {
   const key = process.env.NVIDIA_API_KEY;
   if (!key) throw new Error("Missing NVIDIA_API_KEY in environment");
   const controller = new AbortController();
@@ -19,7 +40,7 @@ async function callOnce(system: string, user: string, opts: ChatOptions): Promis
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
-        model: MODEL,
+        model,
         messages: [
           { role: "system", content: system },
           { role: "user", content: user },
@@ -46,30 +67,36 @@ async function callOnce(system: string, user: string, opts: ChatOptions): Promis
 }
 
 export async function chat(system: string, user: string, opts: ChatOptions = {}): Promise<string> {
-  return withRetry(() => callOnce(system, user, opts), {
-    label: "LLM (NVIDIA)",
-    attempts: 3,
-    shouldRetry: (e) => e instanceof RetryableError || isNetworkError(e),
-  });
+  return withFallback((model) => callOnce(system, user, opts, model));
 }
 
-async function openStream(system: string, user: string, opts: ChatOptions): Promise<Response> {
+async function openStream(system: string, user: string, opts: ChatOptions, model: string): Promise<Response> {
   const key = process.env.NVIDIA_API_KEY;
   if (!key) throw new Error("Missing NVIDIA_API_KEY in environment");
-  const res = await fetch(NVIDIA_URL, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", Accept: "text/event-stream" },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      max_tokens: opts.maxTokens ?? 700,
-      temperature: opts.temperature ?? 0.3,
-      stream: true,
-    }),
-  });
+  // Time only the connection-open: if no response headers arrive in time, abort so the
+  // fallback model can take over fast. Cleared once headers land — streaming itself is uncapped.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 15_000);
+  let res: Response;
+  try {
+    res = await fetch(NVIDIA_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", Accept: "text/event-stream" },
+      body: JSON.stringify({
+        model,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+        max_tokens: opts.maxTokens ?? 700,
+        temperature: opts.temperature ?? 0.3,
+        stream: true,
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     if (res.status === 429 || res.status >= 500) throw new RetryableError(`NVIDIA API HTTP ${res.status}: ${body}`);
@@ -80,11 +107,7 @@ async function openStream(system: string, user: string, opts: ChatOptions): Prom
 }
 
 export async function chatStream(system: string, user: string, onToken: (t: string) => void, opts: ChatOptions = {}): Promise<string> {
-  const res = await withRetry(() => openStream(system, user, opts), {
-    label: "LLM (NVIDIA) stream",
-    attempts: 3,
-    shouldRetry: (e) => e instanceof RetryableError || isNetworkError(e),
-  });
+  const res = await withFallback((model) => openStream(system, user, opts, model));
   const reader = res.body!.getReader();
   const decoder = new TextDecoder();
   let buf = "";

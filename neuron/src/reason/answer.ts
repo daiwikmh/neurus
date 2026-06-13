@@ -30,6 +30,18 @@ const CONVERSE_SYSTEM = `You are Neurus, the user's private memory assistant. No
 - If it is a question, say you don't have anything about that in their memory yet and invite them to add it.
 - NEVER invent facts about the user, people, dates, or commitments. Keep it to 1–2 sentences. Do not list memory.`;
 
+const docsSystem = (name: string) => `You are the documentation assistant for ${name}. Answer ONLY from the provided documentation excerpts below.
+The excerpts are numbered — cite the ones you actually use with their number in square brackets, e.g. [1] or [2][3]. Do not invent citation numbers.
+If the excerpts do not contain the answer, say the documentation does not cover it. Be concise and accurate; do not refer to "memory".`;
+
+const docsConverse = (name: string) => `You are the ${name} documentation assistant. Nothing in the documentation matches what the visitor just said.
+- If it is a greeting or small talk, reply warmly in one short sentence and invite them to ask about ${name}.
+- If it is a question, say the documentation does not cover that yet and suggest they rephrase or ask about a related topic.
+- NEVER invent facts. Keep it to 1–2 sentences. Do not mention "memory".`;
+
+const systemFor = (docsName?: string) => (docsName ? docsSystem(docsName) : SYSTEM);
+const converseFor = (docsName?: string) => (docsName ? docsConverse(docsName) : CONVERSE_SYSTEM);
+
 const FLOOR = Number(process.env.NEURUS_ASK_FLOOR ?? -5);
 
 export interface Answer {
@@ -57,10 +69,13 @@ function buildContext(neurons: RankedNeuron[]): string {
 
 const sourcesOf = (neurons: RankedNeuron[]) => [...new Set(neurons.map((n) => n.neuron.title))];
 
-function degraded(neurons: RankedNeuron[]): Answer {
+function degraded(neurons: RankedNeuron[], docsName?: string): Answer {
   const top = neurons.reduce((a, b) => (b.score > a.score ? b : a));
+  const lead = docsName
+    ? "I couldn't reach the model just now, but the most relevant excerpt is:"
+    : "I couldn't reach the model to compose an answer just now, but the most relevant thing in your memory is:";
   return {
-    text: `I couldn't reach the model to compose an answer just now, but the most relevant thing in your memory is:\n\n“${top.neuron.body}”\n\n(${top.neuron.title}) — ask again in a moment for a full answer.`,
+    text: `${lead}\n\n“${top.neuron.body}”\n\n(${top.neuron.title}) — ask again in a moment for a full answer.`,
     sources: [top.neuron.title],
   };
 }
@@ -68,34 +83,34 @@ function degraded(neurons: RankedNeuron[]): Answer {
 const CONVERSE_FALLBACK = "I'm having trouble reaching the model right now — try again in a moment.";
 const promptFor = (question: string, neurons: RankedNeuron[]) => `Memory items:\n${buildContext(neurons)}\n\nQuestion: ${question}`;
 
-export async function answer(question: string, neurons: RankedNeuron[], opts: { floor?: number; model?: string } = {}): Promise<Answer> {
+export async function answer(question: string, neurons: RankedNeuron[], opts: { floor?: number; model?: string; docsName?: string } = {}): Promise<Answer> {
   const ask = chatVia(opts.model);
   if (!hasRelevantContext(neurons, opts.floor ?? FLOOR)) {
     try {
-      return { text: (await ask(CONVERSE_SYSTEM, question, { maxTokens: 200 })).trim(), sources: [] };
+      return { text: (await ask(converseFor(opts.docsName), question, { maxTokens: 200 })).trim(), sources: [] };
     } catch {
       return { text: CONVERSE_FALLBACK, sources: [] };
     }
   }
   try {
-    return { text: (await ask(SYSTEM, promptFor(question, neurons))).trim(), sources: sourcesOf(neurons) };
+    return { text: (await ask(systemFor(opts.docsName), promptFor(question, neurons))).trim(), sources: sourcesOf(neurons) };
   } catch {
-    return degraded(neurons);
+    return degraded(neurons, opts.docsName);
   }
 }
 
-export async function answerStream(question: string, neurons: RankedNeuron[], onToken: (t: string) => void, opts: { model?: string } = {}): Promise<Answer> {
+export async function answerStream(question: string, neurons: RankedNeuron[], onToken: (t: string) => void, opts: { model?: string; docsName?: string } = {}): Promise<Answer> {
   const ask = chatStreamVia(opts.model);
   if (!hasRelevantContext(neurons)) {
     try {
-      return { text: (await ask(CONVERSE_SYSTEM, question, onToken, { maxTokens: 200 })).trim(), sources: [] };
+      return { text: (await ask(converseFor(opts.docsName), question, onToken, { maxTokens: 200 })).trim(), sources: [] };
     } catch {
       return { text: CONVERSE_FALLBACK, sources: [] };
     }
   }
   try {
-    return { text: (await ask(SYSTEM, promptFor(question, neurons), onToken)).trim(), sources: sourcesOf(neurons) };
+    return { text: (await ask(systemFor(opts.docsName), promptFor(question, neurons), onToken)).trim(), sources: sourcesOf(neurons) };
   } catch {
-    return degraded(neurons);
+    return degraded(neurons, opts.docsName);
   }
 }

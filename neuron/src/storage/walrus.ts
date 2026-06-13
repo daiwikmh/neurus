@@ -8,9 +8,16 @@ export interface BlobInfo {
   endEpoch?: number;
 }
 
+let blobOwner: string | undefined = process.env.WALRUS_OWNER_ADDRESS;
+
+export function setBlobOwner(address: string | undefined): void {
+  blobOwner = address;
+}
+
 export async function putBlobInfo(data: Uint8Array | string, epochs = 5): Promise<BlobInfo> {
   const body = typeof data === "string" ? new TextEncoder().encode(data) : data;
-  const res = await fetch(`${PUBLISHER}/v1/blobs?epochs=${epochs}`, { method: "PUT", body: body as BodyInit });
+  const send = blobOwner ? `&send_object_to=${blobOwner}` : "";
+  const res = await fetch(`${PUBLISHER}/v1/blobs?epochs=${epochs}${send}`, { method: "PUT", body: body as BodyInit });
   const text = await res.text();
   if (!res.ok) throw new Error(`Walrus publish HTTP ${res.status}: ${text}`);
   const r = JSON.parse(text);

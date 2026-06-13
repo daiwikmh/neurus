@@ -4,6 +4,7 @@ const wrap = (code: string) => (s: string) => (useColor ? `\x1b[${code}m${s}\x1b
 export const c = {
   dim: wrap("2"),
   bold: wrap("1"),
+  gray: wrap("90"),
   cyan: wrap("36"),
   green: wrap("32"),
   red: wrap("31"),
@@ -29,6 +30,14 @@ export function banner(): void {
   for (const l of art) console.log(c.cyan(l));
   console.log(c.dim("  cross-user memory sharing · Seal-gated, custodian-blind, on Walrus"));
   console.log("");
+}
+
+export function sysline(status: string): void {
+  console.log(`${c.gray("sys")}   ${c.gray(status)}`);
+}
+
+export function strip(parts: string[]): void {
+  console.log(c.gray(parts.join("  ·  ")));
 }
 
 export function box(title: string, lines: string[]): void {

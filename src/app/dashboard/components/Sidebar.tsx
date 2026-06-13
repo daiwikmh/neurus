@@ -8,7 +8,7 @@ import { dashboardNav } from "../config";
 import { useSets } from "./SetContext";
 import { ProfileMenu } from "./ProfileMenu";
 
-function Icon({ name }: { name: string }) {
+export function Icon({ name }: { name: string }) {
   const paths: Record<string, string> = {
     grid: "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z",
     pulse: "M3 12h4l2 6 4-14 2 8h6",
@@ -31,13 +31,13 @@ function SetSwitcher({ collapsed }: { collapsed: boolean }) {
   const { sets, active, setActive, online } = useSets();
   if (collapsed) {
     return (
-      <div className="flex justify-center px-2 py-3" title={`set: ${active}`}>
+      <div data-tour="setswitcher" className="flex justify-center px-2 py-3" title={`set: ${active}`}>
         <span className={`h-2 w-2 rounded-full ${online ? "bg-emerald-400" : "bg-red-500"}`} />
       </div>
     );
   }
   return (
-    <div className="px-3 pb-3 pt-4">
+    <div data-tour="setswitcher" className="px-3 pb-3 pt-4">
       <div className="flex items-center gap-1.5 px-2 pb-1.5 text-[10px] uppercase tracking-[0.15em] text-white/30">
         <span className={`h-1.5 w-1.5 rounded-full ${online ? "bg-emerald-400" : "bg-red-500"}`} />
         {online ? "engine online" : "engine offline"}
@@ -76,7 +76,7 @@ export function Sidebar() {
   return (
     <aside className={`relative flex shrink-0 flex-col border-r border-white/10 bg-[#0a0b0e] transition-[width] duration-200 ${collapsed ? "w-16" : "w-60"}`}>
       <div className={`flex items-center py-4 ${collapsed ? "justify-center px-0" : "justify-between px-5"}`}>
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" data-tour="brand" className="flex items-center gap-2">
           <Image src="/neurus.png" alt="Neurus" width={28} height={28} />
           {!collapsed && <span className="text-sm font-semibold tracking-tight">Neurus</span>}
         </Link>
@@ -91,6 +91,7 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              data-tour={item.icon}
               title={collapsed ? item.label : undefined}
               className={`flex items-center gap-3 rounded-lg py-2 text-[13.5px] transition ${collapsed ? "justify-center px-0" : "px-3"} ${
                 isActive ? "bg-white/[0.07] text-white" : "text-white/50 hover:bg-white/[0.04] hover:text-white/80"

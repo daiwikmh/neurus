@@ -51,6 +51,8 @@ const features = [
   { icon: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12", title: "Store files on Walrus,", body: "PDFs, docs, and folders chunked and indexed for recall." },
   { icon: "M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0zM12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z", title: "Recall by meaning, not keywords,", body: "two-stage retrieval with a cross-encoder reranker." },
   { icon: "M4 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM4 9h16M8 4v5", title: "Grounded, cited, conflict-aware answers,", body: "it surfaces contradictions instead of guessing." },
+  { icon: "M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15", title: "Swap models, keep the context,", body: "one owned memory — Claude, Gemini, and GPT stay in sync as you switch." },
+  { icon: "M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z", title: "Plug into Claude, Cursor, any agent,", body: "memory exposed as tools over MCP and A2A — model-agnostic." },
   { icon: "M20 21a8 8 0 1 0-16 0M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z", title: "Proactive insights while you're away,", body: "sleep-time reflection synthesizes what matters." },
   { icon: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8", title: "Share memory across agents,", body: "verifiable, access-controlled knowledge sets on Walrus." },
 ];
@@ -101,7 +103,7 @@ export function PlatformShowcase() {
             </div>
             <div className="grid grid-cols-1 divide-y divide-white/10 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
               <div className="divide-y divide-white/10">
-                {features.slice(0, 3).map((f) => (
+                {features.slice(0, 4).map((f) => (
                   <div key={f.title} className="p-6">
                     <Ic d={f.icon} />
                     <h3 className="mt-4 text-[15px] font-medium text-white">{f.title}</h3>
@@ -110,7 +112,7 @@ export function PlatformShowcase() {
                 ))}
               </div>
               <div className="divide-y divide-white/10">
-                {features.slice(3).map((f) => (
+                {features.slice(4).map((f) => (
                   <div key={f.title} className="p-6">
                     <Ic d={f.icon} />
                     <h3 className="mt-4 text-[15px] font-medium text-white">{f.title}</h3>

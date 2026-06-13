@@ -100,6 +100,16 @@ export function ProfileMenu({ collapsed }: { collapsed: boolean }) {
               Model
             </button>
             <button
+              onClick={() => {
+                setOpen(false);
+                window.dispatchEvent(new Event("neurus:start-tour"));
+              }}
+              className="flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-[13px] text-white/80 transition hover:bg-white/[0.05]"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-[#9aa8f0]"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>
+              Take a tour
+            </button>
+            <button
               onClick={handleSignOut}
               className="block w-full px-3.5 py-2 text-left text-[13px] text-red-400 transition hover:bg-white/[0.05]"
             >
@@ -110,6 +120,7 @@ export function ProfileMenu({ collapsed }: { collapsed: boolean }) {
       )}
 
       <button
+        data-tour="profile"
         onClick={() => setOpen((o) => !o)}
         title={collapsed ? name : undefined}
         className={`flex w-full items-center rounded-lg py-1.5 transition hover:bg-white/[0.05] ${collapsed ? "justify-center px-0" : "gap-2.5 px-2"}`}

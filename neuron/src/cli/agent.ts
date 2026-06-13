@@ -1,10 +1,13 @@
 import * as readline from "node:readline";
 import * as rlp from "node:readline/promises";
 import { Neurus, answer } from "../index";
+import { setBlobOwner } from "../storage/walrus";
+import * as screen from "./screen";
 import { orChat } from "../llm/openrouter";
 import { chat as nvidiaChat } from "../llm/nvidia";
-import { banner, box, c, info, ok, warn, err } from "./ui";
+import { sysline, strip, box, c, info, ok, warn, err } from "./ui";
 import { loadConfig, saveConfig, applyConfig, configPath, DEFAULT_MODEL, type CliConfig, type Provider } from "./config";
+import { loadIdentity, createIdentity, tenantFor, identityPath, shortAddr, type AgentIdentity } from "./identity";
 
 function ask(rl: rlp.Interface, q: string): Promise<string> {
   return rl.question(q);
@@ -30,14 +33,14 @@ export async function runConfig(existing?: CliConfig | null): Promise<CliConfig>
   try {
     info("Set up the agent's model provider. Keys are stored locally at " + c.dim(configPath));
     let provider: Provider = existing?.provider ?? "openrouter";
-    const p = (await ask(rl, c.cyan(`provider [nvidia/openrouter] (${provider}) › `))).trim().toLowerCase();
+    const p = (await ask(rl, c.cyan("> ") + `provider [nvidia/openrouter] (${provider}) `)).trim().toLowerCase();
     if (p === "nvidia" || p === "openrouter") provider = p;
 
-    const key = await askHidden(c.cyan(`${provider} API key › `));
+    const key = await askHidden(c.cyan("> ") + `${provider} API key `);
     if (!key) throw new Error("an API key is required");
 
     const defModel = existing?.provider === provider ? existing.model : DEFAULT_MODEL[provider];
-    const m = (await ask(rl, c.cyan(`model (${defModel}) › `))).trim();
+    const m = (await ask(rl, c.cyan("> ") + `model (${defModel}) `)).trim();
     const model = m || defModel;
 
     const cfg: CliConfig = { provider, apiKey: key, model };
@@ -65,7 +68,9 @@ function helpBox(): void {
     `${c.bold("/plan <goal>")}  build a numbered plan from memory`,
     `${c.bold("/recall <q>")}   show the memories that match a query`,
     `${c.bold("/note <text>")}  save a new memory to this set`,
+    `${c.bold("/publish")}      snapshot this memory to Walrus (prints the blob)`,
     `${c.bold("/set <name>")}   switch knowledge set`,
+    `${c.bold("/whoami")}       this agent's name + address`,
     `${c.bold("/model [id]")}   show or change the model`,
     `${c.bold("/config")}       re-enter provider / key / model`,
     `${c.bold("/help")}         this list`,
@@ -73,41 +78,90 @@ function helpBox(): void {
   ]);
 }
 
+async function birth(): Promise<AgentIdentity> {
+  info("No agent here yet — let's create one. It only needs a name.");
+  const rl = rlp.createInterface({ input: process.stdin, output: process.stdout });
+  let name = "";
+  try {
+    name = (await ask(rl, c.cyan("> ") + "name your agent ")).trim();
+  } finally {
+    rl.close();
+  }
+  const id = await createIdentity(name);
+  ok(`${id.name} is born`);
+  return id;
+}
+
 export async function runAgent(setName = "default"): Promise<void> {
+  const fs = screen.fullscreen();
+  const header = `${c.gray("sys")}   ${c.gray("connected to walrus · sui testnet")}`;
+  if (fs) {
+    screen.enter();
+    screen.setHeader(header);
+  } else {
+    console.log("");
+    sysline("connected to walrus · sui testnet");
+    console.log("");
+  }
+
   let cfg = await loadConfig();
   if (!cfg || !cfg.apiKey) {
-    banner();
-    warn("No agent configured yet — let's set one up.");
-    cfg = await runConfig(cfg);
+    if (process.env.NVIDIA_API_KEY) {
+      cfg = { provider: "nvidia", apiKey: process.env.NVIDIA_API_KEY, model: process.env.NVIDIA_MODEL ?? DEFAULT_MODEL.nvidia };
+    } else {
+      warn("No model configured yet — let's set one up.");
+      cfg = await runConfig(cfg);
+    }
   }
   applyConfig(cfg);
 
-  let neurus = await Neurus.open(setName);
+  const identity = (await loadIdentity()) ?? (await birth());
+  const tenant = tenantFor(identity);
+  setBlobOwner(identity.address);
+
+  let neurus = await Neurus.open(setName, { tenant });
   let count = (await neurus.neurons()).length;
 
-  banner();
-  box("neurus agent", [
-    kvline("set", neurus.set.name),
-    kvline("memory", `${count} neurons`),
-    kvline("provider", cfg.provider),
-    kvline("model", cfg.model),
-  ]);
+  const renderStatus = () => {
+    const parts = [
+      `${c.gray("agent")} ${c.bold(identity.name)}`,
+      c.gray(`wallet ${shortAddr(identity.address)}`),
+      c.gray(`${count} ${count === 1 ? "memory" : "memories"}`),
+      c.gray(`${cfg!.provider} · ${cfg!.model}`),
+    ];
+    if (fs) screen.setStatus(c.gray(" ") + parts.join(c.gray("  ·  ")));
+    else strip(parts);
+  };
+  renderStatus();
+  if (!fs) console.log("");
   info(`type ${c.bold("/help")} for commands · ${c.bold("/exit")} to leave`);
   console.log("");
+  if (fs) screen.toBottom();
 
   const rl = rlp.createInterface({ input: process.stdin, output: process.stdout });
+  rl.on("SIGINT", () => { screen.exit(); rl.close(); process.exit(0); });
   try {
     while (true) {
-      const line = (await ask(rl, c.cyan("you › "))).trim();
+      const line = (await ask(rl, c.gray("> "))).trim();
       if (!line) continue;
 
       if (line === "/exit" || line === "/quit") break;
       if (line === "/help") { helpBox(); continue; }
 
+      if (line === "/whoami") {
+        box("identity", [
+          kvline("agent", identity.name),
+          kvline("address", identity.address),
+          kvline("stored", c.dim(identityPath)),
+        ]);
+        continue;
+      }
+
       if (line === "/config") {
         rl.pause();
         cfg = await runConfig(cfg);
         applyConfig(cfg);
+        renderStatus();
         rl.resume();
         continue;
       }
@@ -117,6 +171,7 @@ export async function runAgent(setName = "default"): Promise<void> {
         if (!id) { info(`${cfg.provider} · ${cfg.model}`); continue; }
         cfg = { ...cfg, model: id };
         await saveConfig(cfg);
+        renderStatus();
         ok(`model → ${id}${cfg.provider === "nvidia" ? c.dim("  (note: NVIDIA uses its default model)") : ""}`);
         continue;
       }
@@ -124,8 +179,9 @@ export async function runAgent(setName = "default"): Promise<void> {
       if (line.startsWith("/set")) {
         const name = line.slice(4).trim() || "default";
         try {
-          neurus = await Neurus.open(name);
+          neurus = await Neurus.open(name, { tenant });
           count = (await neurus.neurons()).length;
+          renderStatus();
           ok(`set → ${neurus.set.name} · ${count} neurons`);
         } catch (e) {
           err(e instanceof Error ? e.message : String(e));
@@ -139,7 +195,22 @@ export async function runAgent(setName = "default"): Promise<void> {
         try {
           const r = await neurus.note(text);
           count = (await neurus.neurons()).length;
+          renderStatus();
           ok(`remembered · people: ${r.people.map((p) => p.title).join(", ") || "—"} · commitments: ${r.commitments.length}`);
+          if (r.note.blobId) info(`${c.dim("walrus blob ·")} ${r.note.blobId}`);
+        } catch (e) {
+          err(e instanceof Error ? e.message : String(e));
+        }
+        continue;
+      }
+
+      if (line === "/publish") {
+        try {
+          process.stdout.write(c.dim("  publishing to Walrus…\r"));
+          const blob = await neurus.publish();
+          process.stdout.write("                       \r");
+          ok("memory snapshot published on Walrus");
+          info(`${c.dim("walrus blob ·")} ${blob}`);
         } catch (e) {
           err(e instanceof Error ? e.message : String(e));
         }
@@ -174,7 +245,7 @@ export async function runAgent(setName = "default"): Promise<void> {
             `Goal: ${goal}\n\nMemory:\n${context || "(nothing relevant found)"}`,
           );
           process.stdout.write("              \r");
-          console.log(c.magenta("neurus ›") + " " + text.trim() + "\n");
+          console.log(c.gray("neurus ›") + " " + text.trim() + "\n");
         } catch (e) {
           err(e instanceof Error ? e.message : String(e));
         }
@@ -189,7 +260,7 @@ export async function runAgent(setName = "default"): Promise<void> {
         const model = cfg.provider === "openrouter" ? cfg.model : undefined;
         const a = await answer(line, hits, { model });
         process.stdout.write("             \r");
-        console.log(c.magenta("neurus ›") + " " + a.text.trim());
+        console.log(c.gray("neurus ›") + " " + a.text.trim());
         if (a.sources.length) console.log(c.dim("  sources: " + a.sources.join(", ")));
         console.log("");
       } catch (e) {
@@ -198,6 +269,7 @@ export async function runAgent(setName = "default"): Promise<void> {
     }
   } finally {
     rl.close();
+    screen.exit();
   }
   info("bye");
 }

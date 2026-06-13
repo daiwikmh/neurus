@@ -54,6 +54,10 @@ export async function listAgents(tenant: Tenant): Promise<AgentDef[]> {
   return (await all()).filter((a) => a.tenantId === tenant.id);
 }
 
+export async function getAgentById(id: string): Promise<AgentDef | undefined> {
+  return (await all()).find((a) => a.id === id.trim());
+}
+
 export async function deleteAgent(id: string, tenant: Tenant): Promise<boolean> {
   const list = await all();
   const next = list.filter((a) => !(a.id === id && a.tenantId === tenant.id));

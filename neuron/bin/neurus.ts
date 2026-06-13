@@ -44,7 +44,7 @@ async function main() {
   const { set: setName, seal, rest } = parseFlags(raw);
   const arg = rest.join(" ").trim();
 
-  if (cmd === "agent" || cmd === "chat") {
+  if (!cmd || cmd === "agent" || cmd === "chat") {
     await runAgent(setName ?? "default");
     return;
   }

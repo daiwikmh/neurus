@@ -14,7 +14,8 @@ import { saveRecords, loadRecords, type WorkflowRecord } from "../net/wfpersist"
 import { publishSealedDataset, fetchSealedDataset } from "../net/share";
 import { createShare, grantReader, revokeReader, shareConfigured } from "../net/share-chain";
 import { createFeed, listFeeds, getFeed, deleteFeed, addGrant, removeGrant } from "../core/feeds";
-import { createAgent, listAgents, deleteAgent, type AgentInput } from "../core/agents";
+import { createAgent, listAgents, deleteAgent, getAgentById, type AgentInput } from "../core/agents";
+import { buildAgentCard, textFromMessage, jsonrpcResult, jsonrpcError } from "../net/a2a";
 import { playMath, describeClose, fmtPrice, type PlayMeta } from "../net/plays";
 import { SharedReplica } from "../crdt/replica";
 import { Capabilities } from "../crdt/oplog";
@@ -741,13 +742,45 @@ const server = createServer(async (req, res) => {
       res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive", ...CORS });
       const sse = (event: string, data: unknown) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
       sse("spans", { spans: hits.map(span) });
-      const a = await answerStream(String(body.question), hits, (t) => sse("token", { t }));
+      const a = await answerStream(String(body.question), hits, (t) => sse("token", { t }), { docsName: w.name });
       sse("done", { answer: a.text, sources: a.sources });
       res.end();
     } catch (e: any) {
       res.write(`event: error\ndata: ${JSON.stringify({ error: e?.message ?? String(e) })}\n\n`);
       res.end();
     }
+    return;
+  }
+  if (url.pathname.startsWith("/v1/a2a/")) {
+    const rest = url.pathname.slice("/v1/a2a/".length);
+    const slash = rest.indexOf("/");
+    const id = (slash === -1 ? rest : rest.slice(0, slash)).trim();
+    const sub = slash === -1 ? "" : rest.slice(slash + 1);
+    const agent = await getAgentById(id);
+    if (!agent) { send(res, 404, jsonrpcError(null, -32004, "unknown agent")); return; }
+    const base = process.env.NEURUS_PUBLIC_URL ?? `http://${req.headers.host ?? "localhost:" + PORT}`;
+    if (req.method === "GET" && (sub === ".well-known/agent-card.json" || sub === "")) {
+      send(res, 200, buildAgentCard(agent, base));
+      return;
+    }
+    if (req.method === "POST" && sub === "") {
+      const rpc = await readBody(req);
+      if (rpc?.method !== "message/send") { send(res, 200, jsonrpcError(rpc?.id, -32601, "method not supported; use message/send")); return; }
+      if (!allowRate(`a2a:${agent.id}`)) { send(res, 200, jsonrpcError(rpc?.id, -32003, "rate limit exceeded, slow down")); return; }
+      const question = textFromMessage(rpc.params);
+      if (!question) { send(res, 200, jsonrpcError(rpc?.id, -32602, "no text part in message")); return; }
+      try {
+        const tenant = await tenantById(agent.tenantId);
+        const ax = await Neurus.open(agent.dataset || "default", { behind: true, tenant });
+        const hits = await ax.recall(question, { limit: 6, datasetId: agent.datasetId || undefined });
+        const a = await answer(question, hits, { docsName: agent.name });
+        send(res, 200, jsonrpcResult(rpc?.id, a.text, a.sources));
+      } catch (e: any) {
+        send(res, 200, jsonrpcError(rpc?.id, -32603, e?.message ?? "internal error"));
+      }
+      return;
+    }
+    send(res, 404, jsonrpcError(null, -32601, "not found"));
     return;
   }
   if (req.method === "POST" && url.pathname === "/v1/ask/stream") {

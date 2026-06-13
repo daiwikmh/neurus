@@ -503,6 +503,7 @@ export default function NetworkPage() {
           </div>
           {view === "canvas" ? (
             <NetworkCanvas
+              setKey={active}
               datasets={rows.filter((r) => r.type === "file").map((r) => ({ id: r.id, label: r.title }))}
               feeds={wfFeeds.split(",").map((f) => f.trim()).filter(Boolean)}
               assets={wfAssets.split(",").map((a) => a.trim()).filter(Boolean)}

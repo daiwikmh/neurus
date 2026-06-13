@@ -4,6 +4,7 @@ import { Sidebar } from "./components/Sidebar";
 import { Topbar } from "./components/Topbar";
 import { SetProvider } from "./components/SetContext";
 import { SettingsProvider } from "./components/SettingsContext";
+import { ProductTour } from "./components/ProductTour";
 
 export const metadata: Metadata = {
   title: "Dashboard — Neurus",
@@ -19,6 +20,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <Topbar />
             <main className="flex-1 overflow-y-auto">{children}</main>
           </div>
+          <ProductTour />
         </div>
       </SettingsProvider>
     </SetProvider>

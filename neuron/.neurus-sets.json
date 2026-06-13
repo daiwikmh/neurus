@@ -151,5 +151,25 @@
     "integrity": "none",
     "sharedWith": [],
     "createdAt": 1781271757545
+  },
+  {
+    "id": "set_e07e2a60",
+    "name": "set_a107f259",
+    "namespace": "neurus_local_set_e07e2a60",
+    "manifestPath": ".neurus-set_e07e2a60.json",
+    "visibility": "private",
+    "integrity": "none",
+    "sharedWith": [],
+    "createdAt": 1781359093387
+  },
+  {
+    "id": "set_5bc61931",
+    "name": "ctx-demo-mqcgn4cv",
+    "namespace": "neurus_local_set_5bc61931",
+    "manifestPath": ".neurus-set_5bc61931.json",
+    "visibility": "private",
+    "integrity": "none",
+    "sharedWith": [],
+    "createdAt": 1781361497554
   }
 ]

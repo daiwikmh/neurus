@@ -30,7 +30,7 @@ It ships as two things on the same engine:
 - **A private second brain** — sign in with Google or a Sui wallet, drop in files and notes, and ask questions that get grounded, cited answers from *your* memory.
 - **A memory API for agents** — point any agent at the `/v1` HTTP API (or `npm install neuron`) and give it durable, verifiable long-term memory.
 
-> **The thesis:** "owning your memory" is only a moat if an agent can *act* on it and anyone can *verify* it. Neurus sits **above** raw storage — it ranks, reasons over, encrypts, and proves the memory, so the data stays yours and stays trustworthy.
+> **The thesis:** "owning your memory" is only a moat if an agent can *act* on it and anyone can *verify* it. Neurus sits **above** raw storage — it ranks, reasons over, encrypts, and proves the memory, so the data stays yours and stays trustworthy. And because that memory is owned and **model-agnostic**, the models become interchangeable: Claude, Gemini, and GPT all work over the *same* context, so you're never locked to one provider.
 
 ---
 
@@ -45,6 +45,8 @@ It ships as two things on the same engine:
 
 ### For developers — the agent memory layer
 - **Drop-in `/v1` HTTP API** — `remember`, `recall`, `ask` (streaming), `retrieve`, `forget`, and more.
+- **Model-agnostic context router** — one owned memory shared across models; swap Claude, Gemini, or GPT mid-session and the context carries with full provenance (which model wrote what). See `neuron/src/reason/router.ts`.
+- **Open interop** — expose your memory to any client as tools over **MCP** (`npm run mcp`), or be discovered and answer as an **A2A** agent (`/v1/a2a/...`). Plug into Claude Code, Cursor, Claude Desktop, or another vendor's agent without copying context.
 - **Knowledge sets** — namespaced, shareable, optionally verifiable collections of memory.
 - **Verifiable integrity** — publish a Merkle-rooted manifest, anchor it on Sui, and restore/verify any time.
 - **Embeddable widgets** — expose a read-only "ask" widget for a set on your own site.
@@ -171,6 +173,7 @@ neurus/
 | **Integrity** | `POST /publish` · `POST /restore` · `POST /flush` |
 | **Ownership** | `GET /account` · `POST /account/{link,provision,unlink}` |
 | **Widgets** | `GET /widgets` · `POST /widgets` · `/widgets/delete` · `GET /public/widget` · `POST /public/ask/stream` |
+| **Interop** | `GET /a2a/{id}/.well-known/agent-card.json` · `POST /a2a/{id}` (A2A JSON-RPC `message/send`) — plus an **MCP** stdio server (`npm run mcp`) exposing `recall` · `ask` · `remember` · `list_sets` · `share_set` · `inspect_share` |
 | **Notify** | `GET /notify` · `POST /notify/telegram` · `/notify/test` |
 
 Every request carries an `x-neurus-user` header that scopes it to that user's namespace/account.

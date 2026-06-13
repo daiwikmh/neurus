@@ -1,0 +1,18 @@
+[
+  {
+    "id": "agt_70d8bee6bf43d48e",
+    "tenantId": "local",
+    "createdAt": 1781291092011,
+    "name": "Walrus Docs Agent",
+    "role": "Answers questions about Walrus from its official docs.",
+    "dataset": "walrus-gh",
+    "datasetId": "",
+    "feeds": [],
+    "assets": [],
+    "wallets": [],
+    "intervalMs": 5000,
+    "durationDays": 1,
+    "threshold": 0.5,
+    "telegram": false
+  }
+]

@@ -54,7 +54,7 @@ export default function EmbedPage() {
         {missing ? (
           <div className="mt-10 text-center text-sm text-white/40">This assistant isn’t available.</div>
         ) : turns.length === 0 ? (
-          <div className="mt-10 text-center text-sm text-white/40">Ask me anything about the docs.</div>
+          <div className="mt-10 text-center text-sm text-white/40">Ask me anything about {name}.</div>
         ) : (
           turns.map((t, i) => (
             <div key={i}>

@@ -24,6 +24,7 @@ import { createWidget, listWidgets, deleteWidget, getWidget, type Widget } from 
 import { addDataset, listDatasets, updateDataset, getDataset, type Dataset } from "./core/datasets";
 import { blobHealth, type BlobHealth } from "./integrity/health";
 import { getBlob, putBlobInfo } from "./storage/walrus";
+import { extendBlob } from "./storage/extend";
 import { ingestWalrusBlob, type WalrusIngestOptions } from "./ingest/walrus";
 import { ingestDir, type DirResult } from "./ingest/dir";
 import { ingestCalendarEvents, type CalEvent } from "./ingest/calendar";
@@ -299,10 +300,25 @@ export class Neurus {
     return blobHealth(objectId);
   }
 
-  async renewDataset(id: string, epochs = 5): Promise<Dataset | undefined> {
+  async renewDataset(id: string, epochs = 5, opts?: { signer?: string }): Promise<Dataset | undefined> {
     const d = await getDataset(id, this.tenant);
     if (!d || !d.blobId) return undefined;
-    const bytes = await getBlob(d.blobId);
+
+    if (opts?.signer && d.objectId) {
+      await extendBlob(d.objectId, opts.signer, epochs);
+      const endEpoch = d.endEpoch ? d.endEpoch + epochs : undefined;
+      return updateDataset(id, endEpoch ? { endEpoch } : {}, this.tenant);
+    }
+
+    let bytes: Uint8Array;
+    try {
+      bytes = await getBlob(d.blobId);
+    } catch (e) {
+      if (e instanceof Error && /HTTP 404/.test(e.message)) {
+        throw new Error(`"${d.title}" has expired and is no longer stored on Walrus — its data is gone, so it can't be renewed. Re-upload the original file to restore it.`);
+      }
+      throw e;
+    }
     const info = await putBlobInfo(bytes, epochs);
     return updateDataset(id, { blobId: info.blobId, objectId: info.objectId, endEpoch: info.endEpoch }, this.tenant);
   }
