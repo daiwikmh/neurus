@@ -52,5 +52,94 @@
       "memwalBlob": "yFVHp5qkOLEJNFHxCJkNcasNP960E3i2WSkqGoDI5Xs",
       "durability": "confirmed"
     }
+  },
+  {
+    "id": "file_7c135ed0",
+    "type": "file",
+    "title": "README.md",
+    "body": "# Neurus Persistent intelligence infrastructure for AI agents, built on Walrus. Every investigation becomes a reusable, versioned, verifiable intelligence artifact — stored on Walrus, indexed via MemWal, coordinated through a tiered global state. See [`TECHNICAL_IMPLEMENTATION.m…",
+    "blobId": "WC5DtnECWs5socrnpv2ZuWrUMdBygI-LGv58kwtfEPg",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781473885626,
+    "synapses": [],
+    "meta": {
+      "mime": "text/markdown",
+      "bytes": 1794,
+      "ext": ".md",
+      "walrusObject": "0x1a7c831f37c4cef12aaf3277092097050f18a2263f757dece47fb85941354dbd",
+      "endEpoch": 434
+    }
+  },
+  {
+    "id": "chunk_c29759eb",
+    "type": "chunk",
+    "title": "README.md#1",
+    "body": "# Neurus\n\nPersistent intelligence infrastructure for AI agents, built on Walrus. Every\ninvestigation becomes a reusable, versioned, verifiable intelligence artifact —\nstored on Walrus, indexed via MemWal, coordinated through a tiered global state.\n\nSee [`TECHNICAL_IMPLEMENTATION.md`](./TECHNICAL_IMPLEMENTATION.md) for the full spec.\n\n## Build status\n\n**Backend-first.** The web dashboard (`apps/web`) is deferred — we ship the\nagent + memory + Walrus loop first and run it via API/CLI, then build UI on top.\n\n## Layout",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781473885627,
+    "synapses": [
+      {
+        "to": "file_7c135ed0",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 0,
+      "file": "file_7c135ed0",
+      "memwalBlob": "ZJ_GiPQbHH00TB2Og56MKwJTqffwduYB00eemV9Bzfg",
+      "durability": "confirmed"
+    }
+  },
+  {
+    "id": "chunk_658becaf",
+    "type": "chunk",
+    "title": "README.md#2",
+    "body": "* The web dashboard (`apps/web`) is deferred — we ship the\nagent + memory + Walrus loop first and run it via API/CLI, then build UI on top.\n\n## Layout\n\n```\npackages/\n  core/            shared zod schemas + types + thresholds (no deps)\n  memory/          the three tiers: L1 Redis · L2 MemWal · L3 Walrus + router/scorer\n  agents/          research / audit / synthesis agents + orchestrator + tools\n  watchers/        external-state sensors (blockchain / price / governance / social)\n  feature-engine/  raw event → structured ExtractedFeature (rule pass + LLM pass)\n  contradiction/   compare features vs beliefs → proactive action\nworkers/\n  sleep-compute    always-on proactive loop (watch → extract → contradict → act)\nscripts/           one-time setup (memwal / walrus / seed watchers)\n```\n\n### Dependency direction",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781473885627,
+    "synapses": [
+      {
+        "to": "file_7c135ed0",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 1,
+      "file": "file_7c135ed0",
+      "memwalBlob": "XLVVSqPAhNumXXLeUJEe4Fj9UjBRzf8gjoY9gOS9qrE",
+      "durability": "confirmed"
+    }
+  },
+  {
+    "id": "chunk_24602bf2",
+    "type": "chunk",
+    "title": "README.md#3",
+    "body": " proactive loop (watch → extract → contradict → act)\nscripts/           one-time setup (memwal / walrus / seed watchers)\n```\n\n### Dependency direction\n\n`core` ← everything. `memory` ← `agents`, `feature-engine`, `contradiction`.\nOnly `memory` talks to the Walrus stack (MemWal / Walrus / Redis); every other\npackage goes through it. This keeps the storage integration in one swappable place.\n\n## Getting started\n\n```bash\npnpm install\ncp .env.example .env   # fill in keys\npnpm typecheck\npnpm sleep-compute     # runs the proactive loop (once watchers are seeded)\n```\n\n> MemWal/Seal/Walrus SDK signatures in the code are per the spec and marked where\n> they need verification against the installed packages — confirm before first run.",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781473885627,
+    "synapses": [
+      {
+        "to": "file_7c135ed0",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 2,
+      "file": "file_7c135ed0",
+      "memwalBlob": "IR1AfO53ilqU-8Itn56buAQHwp5-J9YNG6clJMD0q14",
+      "durability": "confirmed"
+    }
   }
 ]

@@ -1,12 +1,15 @@
 import * as readline from "node:readline";
 import * as rlp from "node:readline/promises";
+import { stat } from "node:fs/promises";
+import { basename, resolve } from "node:path";
 import { Neurus, answer } from "../index";
+import { pickPath } from "./filepicker";
 import { listSets } from "../core/sets";
 import { setBlobOwner } from "../storage/walrus";
 import * as screen from "./screen";
 import { orChat } from "../llm/openrouter";
 import { chat as nvidiaChat } from "../llm/nvidia";
-import { banner, strip, box, c, info, ok, warn, err } from "./ui";
+import { banner, strip, box, c, info, ok, warn, err, shortId } from "./ui";
 import { loadConfig, saveConfig, applyConfig, configPath, DEFAULT_MODEL, type CliConfig, type Provider } from "./config";
 import { loadIdentity, createIdentity, tenantFor, identityPath, shortAddr, type AgentIdentity } from "./identity";
 
@@ -69,6 +72,9 @@ function helpBox(): void {
     `${c.bold("/plan <goal>")}  build a numbered plan from memory`,
     `${c.bold("/recall <q>")}   show the memories that match a query`,
     `${c.bold("/note <text>")}  save a new memory to this set`,
+    `${c.bold("/add <path>")}   upload a local file or folder → Walrus, index it here`,
+    `${c.bold("@")}             type @ to browse files in this folder, pick one to ask over it`,
+    `${c.bold("/blobs")}        list files uploaded to Walrus in this set`,
     `${c.bold("/publish")}      snapshot this memory to Walrus (prints the blob)`,
     `${c.bold("/set <name>")}   switch knowledge set`,
     `${c.bold("/whoami")}       this agent's name + address`,
@@ -129,20 +135,27 @@ export async function runAgent(setName = "default"): Promise<void> {
   setBlobOwner(identity.address);
 
   let neurus = await Neurus.open(setName, { tenant });
-  const neuronsList = await neurus.neurons();
-  let count = neuronsList.length;
-  let storage = neuronsList.reduce((s, n) => s + Buffer.byteLength(n.body ?? ""), 0);
-  let setsCount = (await listSets(tenant)).length;
+  let count = 0;
+  let storage = 0;
+  let setsCount = 0;
+  let mentions: { name: string; fileId: string; datasetId?: string }[] = [];
 
   const refreshStats = async () => {
     const ns = await neurus.neurons();
     count = ns.length;
     storage = ns.reduce((s, n) => s + Buffer.byteLength(n.body ?? ""), 0);
     setsCount = (await listSets(tenant)).length;
+    mentions = ns
+      .filter((n) => n.type === "file")
+      .map((n) => ({ name: n.title, fileId: n.id, datasetId: n.meta?.datasetId as string | undefined }));
   };
+  await refreshStats();
 
-  const header = `${c.gray("sys")}   ${c.gray("connected to walrus")}  ${c.dim("·")}  ${c.gray("sui testnet")}  ${c.dim("·")}  ${c.gray(fmtBytes(storage))}`;
-  if (fs) { screen.enter(); screen.setHeader(header); } else { console.log(""); console.log(header); }
+  const headerBase = () => `${c.gray("sys")}   ${c.gray("connected to walrus")}  ${c.dim("·")}  ${c.gray("sui testnet")}  ${c.dim("·")}  ${c.gray(fmtBytes(storage))}`;
+  const setHdr = (note?: string) => {
+    if (fs) screen.setHeader(note ? `${headerBase()}  ${c.dim("·")}  ${c.cyan(note)}` : headerBase());
+  };
+  if (fs) { screen.enter(); setHdr(); } else { console.log(""); console.log(headerBase()); }
 
   banner("owned, verifiable memory  ·  walrus × sui");
   bootPanel([
@@ -168,8 +181,37 @@ export async function runAgent(setName = "default"): Promise<void> {
   renderStatus();
   if (fs) screen.toBottom();
 
-  const rl = rlp.createInterface({ input: process.stdin, output: process.stdout });
+  const completer = (line: string): [string[], string] => {
+    const m = line.match(/@([^\s@]*)$/);
+    if (!m) return [[], line];
+    const frag = ("@" + m[1]).toLowerCase();
+    const hits = mentions.map((x) => `@${x.name}`).filter((n) => n.toLowerCase().includes(frag));
+    return [hits, "@" + m[1]];
+  };
+  const rl = rlp.createInterface({ input: process.stdin, output: process.stdout, completer });
   rl.on("SIGINT", () => { screen.exit(); rl.close(); process.exit(0); });
+
+  let picking = false;
+  readline.emitKeypressEvents(process.stdin);
+  const onAt = async (str: string) => {
+    if (picking || str !== "@" || (rl as { line?: string }).line !== "@") return;
+    picking = true;
+    rl.write(null, { ctrl: true, name: "u" });
+    const others = process.stdin.listeners("keypress").filter((l) => l !== onAt);
+    others.forEach((l) => process.stdin.removeListener("keypress", l as never));
+    let picked: string | null = null;
+    try {
+      picked = await pickPath(process.cwd());
+    } finally {
+      others.forEach((l) => process.stdin.on("keypress", l as never));
+      if (picked) {
+        const root = process.cwd() + "/";
+        rl.write(`@${picked.startsWith(root) ? picked.slice(root.length) : picked} `);
+      }
+      picking = false;
+    }
+  };
+  process.stdin.on("keypress", onAt);
   try {
     while (true) {
       const line = (await ask(rl, c.gray("> "))).trim();
@@ -184,6 +226,18 @@ export async function runAgent(setName = "default"): Promise<void> {
           kvline("address", identity.address),
           kvline("stored", c.dim(identityPath)),
         ]);
+        continue;
+      }
+
+      if (line === "/blobs" || line === "/files") {
+        const all = await neurus.neurons();
+        const files = all.filter((n) => n.type === "file");
+        if (!files.length) { info("no files uploaded yet — use /add or @ to upload one"); continue; }
+        box("uploaded blobs (Walrus)", files.map((f) => {
+          const chunks = all.filter((n) => (n.meta?.file as string) === f.id).length;
+          const blob = f.blobId ? `${c.green("✓")} ${c.dim("walrus")} ${f.blobId}` : c.yellow("local only");
+          return `${c.bold(f.title.slice(0, 24).padEnd(24))} ${c.dim(`${chunks} chunk${chunks === 1 ? "" : "s"}`.padEnd(24))} ${blob}`;
+        }));
         continue;
       }
 
@@ -228,6 +282,31 @@ export async function runAgent(setName = "default"): Promise<void> {
           renderStatus();
           ok(`remembered · people: ${r.people.map((p) => p.title).join(", ") || "—"} · commitments: ${r.commitments.length}`);
           if (r.note.blobId) info(`${c.dim("walrus blob ·")} ${r.note.blobId}`);
+        } catch (e) {
+          err(e instanceof Error ? e.message : String(e));
+        }
+        continue;
+      }
+
+      if (line.startsWith("/add") || line.startsWith("/ingest")) {
+        const path = line.replace(/^\/(add|ingest)/, "").trim();
+        if (!path) { warn("usage: /add <file-or-folder path>  — uploads to Walrus and indexes it here"); continue; }
+        try {
+          const st = await stat(path).catch(() => null);
+          if (!st) { err(`no such file or folder: ${path}`); continue; }
+          setHdr("writing to Walrus…");
+          if (st.isDirectory()) {
+            const r = await neurus.addDir(path, { max: 100, store: true });
+            await refreshStats();
+            setHdr(); renderStatus();
+            ok(`added ${r.files.length} file(s) · ${r.totalChunks} chunks → "${neurus.set.name}"`);
+          } else {
+            const file = await neurus.addFile(path);
+            await refreshStats();
+            setHdr(); renderStatus();
+            ok(`added ${file.title}`);
+          }
+          info("indexed — now just ask a question and I'll answer from it");
         } catch (e) {
           err(e instanceof Error ? e.message : String(e));
         }
@@ -285,10 +364,43 @@ export async function runAgent(setName = "default"): Promise<void> {
       if (line.startsWith("/")) { warn(`unknown command — try ${c.bold("/help")}`); continue; }
 
       try {
-        const hits = await neurus.recall(line, { limit: 6 });
+        const tokens = [...line.matchAll(/@(\S+)/g)].map((x) => x[1]);
+        const scopedFileIds = new Set<string>();
+        const scopedNames: string[] = [];
+        for (const tok of tokens) {
+          const st = await stat(resolve(tok)).catch(() => null);
+          if (st?.isFile()) {
+            const existing = mentions.find((m) => m.name.toLowerCase() === basename(tok).toLowerCase());
+            if (existing) { scopedFileIds.add(existing.fileId); scopedNames.push(existing.name); continue; }
+            setHdr(`writing ${basename(tok)} to Walrus…`);
+            try {
+              const file = await neurus.addFile(resolve(tok));
+              await refreshStats();
+              setHdr(); renderStatus();
+              scopedFileIds.add(file.id); scopedNames.push(file.title);
+            } catch (e) {
+              setHdr();
+              err(`add ${basename(tok)}: ${e instanceof Error ? e.message : String(e)}`);
+            }
+          } else {
+            const hit = mentions.find((m) => m.name.toLowerCase() === tok.toLowerCase() || m.name.toLowerCase().startsWith(tok.toLowerCase()));
+            if (hit) { scopedFileIds.add(hit.fileId); scopedNames.push(hit.name); }
+          }
+        }
+        const stripped = line.replace(/@\S+/g, "").trim();
+        const question = stripped || (scopedFileIds.size ? "Summarize the key points of this file." : line);
+        let hits;
+        if (scopedFileIds.size) {
+          if (scopedNames.length) info(`scoped to ${scopedNames.join(", ")}`);
+          const all = await neurus.neurons();
+          const own = all.filter((n) => scopedFileIds.has((n.meta?.file as string) ?? "") || scopedFileIds.has(n.id));
+          hits = own.slice(0, 12).map((n) => ({ neuron: n, score: 1, relevance: 1 }));
+        } else {
+          hits = await neurus.recall(question, { limit: 6 });
+        }
         process.stdout.write(c.dim("  thinking…\r"));
         const model = cfg.provider === "openrouter" ? cfg.model : undefined;
-        const a = await answer(line, hits, { model });
+        const a = await answer(question, hits, { model });
         process.stdout.write("             \r");
         console.log(c.gray("neurus ›") + " " + a.text.trim());
         if (a.sources.length) console.log(c.dim("  sources: " + a.sources.join(", ")));
