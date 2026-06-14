@@ -111,7 +111,9 @@ export const neurus = {
   linkAccount: (accountId: string, delegateKey: string, serverUrl?: string) => call<AccountStatus>("POST", "/account/link", { accountId, delegateKey, serverUrl }),
   provisionAccount: () => call<AccountStatus>("POST", "/account/provision"),
   adoptEnvAccount: () => call<AccountStatus>("POST", "/account/adopt-env"),
-  unlinkAccount: () => call<{ unlinked: boolean }>("POST", "/account/unlink"),
+  unlinkAccount: () => call<{ unlinked: boolean; accountId?: string }>("POST", "/account/unlink"),
+  getDelegatePubkey: () => call<{ pubkey: string }>("GET", "/account/delegate-pubkey"),
+  relinkAccount: (delegateKey: string) => call<AccountStatus>("POST", "/account/relink", { delegateKey }),
   netState: (set: string) => call<NetSnapshot>("GET", `/net/state?set=${encodeURIComponent(set)}`),
   netGrant: (set: string, actor: string, secret: string, can: "read" | "write" = "write") =>
     call<NetSnapshot>("POST", "/net/grant", { set, actor, secret, can }),

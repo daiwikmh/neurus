@@ -1,3 +1,4 @@
+import { delegateKeyToPublicKey } from "@mysten-incubation/memwal";
 import { Vault } from "./vault";
 import { provisionCredentials } from "./provision";
 import type { Credentials } from "./credentials";
@@ -13,7 +14,9 @@ export class AccountManager {
 
   async status(tenantId: string): Promise<AccountStatus> {
     const creds = await this.vault.get(tenantId);
-    return { linked: !!creds, accountId: creds?.accountId, owned: !!creds };
+    const owned = !!creds?.accountId;
+    const linked = owned && !!creds?.delegateKey;
+    return { linked, accountId: creds?.accountId, owned };
   }
 
   async link(tenantId: string, creds: Credentials): Promise<AccountStatus> {
@@ -32,9 +35,24 @@ export class AccountManager {
     return { linked: true, accountId: creds.accountId, owned: true };
   }
 
-  async unlink(tenantId: string): Promise<{ unlinked: boolean }> {
-    if (!(await this.vault.has(tenantId))) return { unlinked: false };
-    await this.vault.remove(tenantId);
-    return { unlinked: true };
+  async unlink(tenantId: string): Promise<{ unlinked: boolean; accountId?: string }> {
+    const creds = await this.vault.get(tenantId);
+    if (!creds) return { unlinked: false };
+    await this.vault.put(tenantId, { accountId: creds.accountId, delegateKey: "" });
+    return { unlinked: true, accountId: creds.accountId };
+  }
+
+  async getDelegatePublicKey(tenantId: string): Promise<string> {
+    const creds = await this.vault.get(tenantId);
+    if (!creds?.delegateKey) throw new Error("no delegate key linked");
+    const bytes = await delegateKeyToPublicKey(creds.delegateKey);
+    return Buffer.from(bytes).toString("hex");
+  }
+
+  async relink(tenantId: string, delegateKey: string): Promise<AccountStatus> {
+    const creds = await this.vault.get(tenantId);
+    if (!creds?.accountId) throw new Error("no account to relink — claim ownership first");
+    await this.vault.put(tenantId, { ...creds, delegateKey });
+    return { linked: true, accountId: creds.accountId, owned: true };
   }
 }

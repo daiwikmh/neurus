@@ -1,4 +1,4 @@
-import { generateDelegateKey, createAccount, addDelegateKey } from "@mysten-incubation/memwal/account";
+import { generateDelegateKey, createAccount, addDelegateKey, removeDelegateKey } from "@mysten-incubation/memwal/account";
 
 const PACKAGE_ID = process.env.NEXT_PUBLIC_MEMWAL_PACKAGE_ID ?? "";
 const REGISTRY_ID = process.env.NEXT_PUBLIC_MEMWAL_REGISTRY_ID ?? "";
@@ -17,6 +17,33 @@ export interface WalletSigner {
 export interface ClaimResult {
   accountId: string;
   delegateKey: string;
+}
+
+export async function revokeOwnership(signer: WalletSigner, suiClient: unknown, accountId: string, delegatePubkey: string): Promise<void> {
+  if (!ownershipConfigured()) throw new Error("MEMWAL package/registry id not configured");
+  await removeDelegateKey({
+    packageId: PACKAGE_ID,
+    accountId,
+    publicKey: delegatePubkey,
+    walletSigner: signer as any,
+    suiClient: suiClient as any,
+    suiNetwork: NETWORK,
+  });
+}
+
+export async function relinkOwnership(signer: WalletSigner, suiClient: unknown, accountId: string): Promise<{ delegateKey: string }> {
+  if (!ownershipConfigured()) throw new Error("MEMWAL package/registry id not configured");
+  const delegate = await generateDelegateKey();
+  await addDelegateKey({
+    packageId: PACKAGE_ID,
+    accountId,
+    publicKey: delegate.publicKey,
+    label: "Neurus dashboard",
+    walletSigner: signer as any,
+    suiClient: suiClient as any,
+    suiNetwork: NETWORK,
+  });
+  return { delegateKey: delegate.privateKey };
 }
 
 export async function claimOwnership(signer: WalletSigner, suiClient: unknown): Promise<ClaimResult> {

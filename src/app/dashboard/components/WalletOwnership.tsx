@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ConnectModal, useCurrentAccount, useDisconnectWallet, useSignAndExecuteTransaction, useSignPersonalMessage, useSuiClient } from "@mysten/dapp-kit";
 import { neurus, type AccountStatus } from "@/services/neurus";
-import { claimOwnership, ownershipConfigured, type WalletSigner } from "@/lib/ownership";
+import { claimOwnership, revokeOwnership, relinkOwnership, ownershipConfigured, type WalletSigner } from "@/lib/ownership";
 
 export function WalletOwnership() {
   const account = useCurrentAccount();
@@ -14,7 +14,7 @@ export function WalletOwnership() {
 
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<AccountStatus | null>(null);
-  const [busy, setBusy] = useState<"claim" | null>(null);
+  const [busy, setBusy] = useState<"claim" | "revoke" | "relink" | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   const addr = account?.address ?? null;
@@ -61,6 +61,39 @@ export function WalletOwnership() {
     }
   };
 
+  const revoke = async () => {
+    if (!signer || !status?.accountId) return;
+    setBusy("revoke");
+    setMsg(null);
+    try {
+      const { pubkey } = await neurus.getDelegatePubkey();
+      await revokeOwnership(signer, suiClient, status.accountId, pubkey);
+      const result = await neurus.unlinkAccount();
+      setStatus({ linked: false, owned: true, accountId: result.accountId ?? status.accountId });
+      setMsg("Delegate key revoked. Your account is still yours on Walrus.");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "revoke failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const relink = async () => {
+    if (!signer || !status?.accountId) return;
+    setBusy("relink");
+    setMsg(null);
+    try {
+      const { delegateKey } = await relinkOwnership(signer, suiClient, status.accountId);
+      const s = await neurus.relinkAccount(delegateKey);
+      setStatus(s);
+      setMsg("Access restored. Neurus holds a new delegate key.");
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : "relink failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   if (!addr) {
     return (
       <ConnectModal
@@ -88,10 +121,19 @@ export function WalletOwnership() {
       {status?.owned ? (
         <div className="rounded-lg border border-white/10 px-2.5 py-2">
           <div className="flex items-center gap-1.5 text-[11px] text-white/70">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#9aa8f0]" />
-            You own this memory
+            <span className={`h-1.5 w-1.5 rounded-full ${status.linked ? "bg-[#9aa8f0]" : "bg-amber-400"}`} />
+            {status.linked ? "You own this memory" : "Ownership retained — access revoked"}
           </div>
           {status.accountId && <div className="mt-1 truncate font-mono text-[10px] text-white/35">{status.accountId.slice(0, 18)}…</div>}
+          {status.linked ? (
+            <button onClick={revoke} disabled={!!busy} className="mt-1.5 text-[11px] text-white/40 transition hover:text-red-400 disabled:opacity-40">
+              {busy === "revoke" ? "revoking…" : "revoke access"}
+            </button>
+          ) : (
+            <button onClick={relink} disabled={!!busy} className="mt-1.5 w-full rounded-lg bg-[#9aa8f0] py-1.5 text-[12px] font-medium text-[#14152b] transition hover:bg-[#aeb9f4] disabled:opacity-50">
+              {busy === "relink" ? "Signing…" : "Re-link access"}
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-1.5">

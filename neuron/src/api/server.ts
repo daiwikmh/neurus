@@ -211,6 +211,14 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
     if (tenant.id === "local") return { unlinked: false };
     return accounts.unlink(tenant.id);
   }
+  if (method === "GET" && path === "/v1/account/delegate-pubkey") {
+    if (tenant.id === "local") throw new Error("no delegate key for local tenant");
+    return { pubkey: await accounts.getDelegatePublicKey(tenant.id) };
+  }
+  if (method === "POST" && path === "/v1/account/relink") {
+    if (tenant.id === "local") throw new Error("connect a wallet before relinking");
+    return accounts.relink(tenant.id, String(body.delegateKey));
+  }
 
   if (method === "POST" && path === "/v1/extract/meeting") {
     try {
