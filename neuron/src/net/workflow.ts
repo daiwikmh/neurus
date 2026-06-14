@@ -335,6 +335,11 @@ export class WorkflowRunner {
       const d = Number(meta(t).deltaPct) || 0;
       sections.push(`Trend ${meta(t).label}: ${d >= 0 ? "+" : ""}${d.toFixed(2)}% net`);
     }
+    const trades = snap.filter((n) => meta(n).kind === "trade" && n.createdAt >= dayAgo);
+    if (trades.length) {
+      const recent = trades.slice(-3).map((n) => `${meta(n).pair} ${meta(n).side}`).join(", ");
+      sections.push(`DeepBook: ${trades.length} fill(s) in 24h — ${recent}`);
+    }
     for (const pm of snap.filter((n) => meta(n).kind === "postmortem" && n.createdAt >= dayAgo)) {
       sections.push(`Lesson: ${pm.body}`);
     }

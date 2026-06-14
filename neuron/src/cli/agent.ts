@@ -1,11 +1,12 @@
 import * as readline from "node:readline";
 import * as rlp from "node:readline/promises";
 import { Neurus, answer } from "../index";
+import { listSets } from "../core/sets";
 import { setBlobOwner } from "../storage/walrus";
 import * as screen from "./screen";
 import { orChat } from "../llm/openrouter";
 import { chat as nvidiaChat } from "../llm/nvidia";
-import { sysline, strip, box, c, info, ok, warn, err } from "./ui";
+import { banner, strip, box, c, info, ok, warn, err } from "./ui";
 import { loadConfig, saveConfig, applyConfig, configPath, DEFAULT_MODEL, type CliConfig, type Provider } from "./config";
 import { loadIdentity, createIdentity, tenantFor, identityPath, shortAddr, type AgentIdentity } from "./identity";
 
@@ -92,17 +93,25 @@ async function birth(): Promise<AgentIdentity> {
   return id;
 }
 
+function fmtBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function bootPanel(rows: { label: string; value: string; ok?: boolean }[]): void {
+  console.log(c.gray("> ") + c.dim("neurus init"));
+  console.log("  " + c.magenta("█".repeat(30)) + c.dim("  100%") + "\n");
+  const w = Math.max(...rows.map((r) => r.label.length));
+  for (const r of rows) {
+    const mark = r.ok === false ? c.yellow("✗") : c.green("✓");
+    console.log(`  ${c.magenta("◇")} ${c.bold(r.label.padEnd(w))}  ${c.dim("│")}  ${c.gray(r.value)}  ${mark}`);
+  }
+  console.log(`  ${c.green("✓")} ${c.green("ready")}  ${c.dim("— type")} ${c.bold("/help")} ${c.dim("or try")} ${c.bold("ask")}${c.dim(",")} ${c.bold("/recall")}${c.dim(",")} ${c.bold("/note")}\n`);
+}
+
 export async function runAgent(setName = "default"): Promise<void> {
   const fs = screen.fullscreen();
-  const header = `${c.gray("sys")}   ${c.gray("connected to walrus · sui testnet")}`;
-  if (fs) {
-    screen.enter();
-    screen.setHeader(header);
-  } else {
-    console.log("");
-    sysline("connected to walrus · sui testnet");
-    console.log("");
-  }
 
   let cfg = await loadConfig();
   if (!cfg || !cfg.apiKey) {
@@ -120,22 +129,43 @@ export async function runAgent(setName = "default"): Promise<void> {
   setBlobOwner(identity.address);
 
   let neurus = await Neurus.open(setName, { tenant });
-  let count = (await neurus.neurons()).length;
+  const neuronsList = await neurus.neurons();
+  let count = neuronsList.length;
+  let storage = neuronsList.reduce((s, n) => s + Buffer.byteLength(n.body ?? ""), 0);
+  let setsCount = (await listSets(tenant)).length;
+
+  const refreshStats = async () => {
+    const ns = await neurus.neurons();
+    count = ns.length;
+    storage = ns.reduce((s, n) => s + Buffer.byteLength(n.body ?? ""), 0);
+    setsCount = (await listSets(tenant)).length;
+  };
+
+  const header = `${c.gray("sys")}   ${c.gray("connected to walrus")}  ${c.dim("·")}  ${c.gray("sui testnet")}  ${c.dim("·")}  ${c.gray(fmtBytes(storage))}`;
+  if (fs) { screen.enter(); screen.setHeader(header); } else { console.log(""); console.log(header); }
+
+  banner("owned, verifiable memory  ·  walrus × sui");
+  bootPanel([
+    { label: "engine", value: "recall · rerank · consolidate", ok: true },
+    { label: "walrus", value: "memory blobs · sui testnet", ok: true },
+    { label: "identity", value: `${identity.name} · ${shortAddr(identity.address)}`, ok: true },
+    { label: "agent api", value: `${cfg.provider} · ${cfg.model}`, ok: true },
+    { label: "account", value: `${setsCount} set${setsCount === 1 ? "" : "s"} · ${count} ${count === 1 ? "memory" : "memories"} · ${fmtBytes(storage)}`, ok: true },
+    { label: "telegram", value: "off — connect in the dashboard", ok: false },
+  ]);
 
   const renderStatus = () => {
     const parts = [
       `${c.gray("agent")} ${c.bold(identity.name)}`,
-      c.gray(`wallet ${shortAddr(identity.address)}`),
+      c.gray("testnet"),
+      c.gray(`storage ${fmtBytes(storage)}`),
+      c.gray(`sets ${setsCount}`),
       c.gray(`${count} ${count === 1 ? "memory" : "memories"}`),
-      c.gray(`${cfg!.provider} · ${cfg!.model}`),
     ];
     if (fs) screen.setStatus(c.gray(" ") + parts.join(c.gray("  ·  ")));
     else strip(parts);
   };
   renderStatus();
-  if (!fs) console.log("");
-  info(`type ${c.bold("/help")} for commands · ${c.bold("/exit")} to leave`);
-  console.log("");
   if (fs) screen.toBottom();
 
   const rl = rlp.createInterface({ input: process.stdin, output: process.stdout });
@@ -180,7 +210,7 @@ export async function runAgent(setName = "default"): Promise<void> {
         const name = line.slice(4).trim() || "default";
         try {
           neurus = await Neurus.open(name, { tenant });
-          count = (await neurus.neurons()).length;
+          await refreshStats();
           renderStatus();
           ok(`set → ${neurus.set.name} · ${count} neurons`);
         } catch (e) {
@@ -194,7 +224,7 @@ export async function runAgent(setName = "default"): Promise<void> {
         if (!text) { warn("usage: /note <text>"); continue; }
         try {
           const r = await neurus.note(text);
-          count = (await neurus.neurons()).length;
+          await refreshStats();
           renderStatus();
           ok(`remembered · people: ${r.people.map((p) => p.title).join(", ") || "—"} · commitments: ${r.commitments.length}`);
           if (r.note.blobId) info(`${c.dim("walrus blob ·")} ${r.note.blobId}`);

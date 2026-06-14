@@ -1,20 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Container } from "./Container";
 
-const sets = [
-  ["Microsoft", "Anthropic", "zapier", "Meta", "OpenAI", "Apple", "shopify", "Vercel", "ROBLOX", "Google"],
-  ["ByteDance", "Brex", "Revolut", "NTT DATA", "Y Combinator", "ebay", "Qualcomm", "amazon", "Dell", "LinkedIn"],
+const services = [
+  "Owned Memory",
+  "Semantic Recall",
+  "Verifiable Integrity",
+  "Seal-Gated Sharing",
+  "MCP · A2A Interop",
 ];
 
 export function TrustedBy() {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setI((p) => (p + 1) % sets.length), 5000);
-    return () => clearInterval(id);
-  }, []);
+  const loop = [...services, ...services];
 
   return (
     <Container className="py-28">
@@ -24,24 +21,21 @@ export function TrustedBy() {
         teams building serious agents
       </h2>
 
-      {/* <div className="relative mt-16 min-h-[160px]">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={i}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
-            className="grid grid-cols-2 gap-x-6 gap-y-12 sm:grid-cols-5"
-          >
-            {sets[i].map((logo) => (
-              <div key={logo} className="flex items-center justify-center">
-                <span className="text-lg font-semibold text-white/35 transition-colors hover:text-white/60">{logo}</span>
-              </div>
+      <div className="mt-14">
+        <p className="mb-6 text-center font-mono text-[11px] uppercase tracking-[0.28em] text-white/35">
+          Services
+        </p>
+        <div className="relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]">
+          <div className="flex w-max animate-marquee whitespace-nowrap">
+            {loop.map((s, i) => (
+              <span key={i} className="flex items-center text-lg font-semibold text-white/35">
+                {s}
+                <span className="mx-10 text-white/15">◆</span>
+              </span>
             ))}
-          </motion.div>
-        </AnimatePresence>
-      </div> */}
+          </div>
+        </div>
+      </div>
     </Container>
   );
 }

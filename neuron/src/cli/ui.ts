@@ -17,7 +17,7 @@ const ANSI = /\x1b\[[0-9;]*m/g;
 const vlen = (s: string) => s.replace(ANSI, "").length;
 const pad = (s: string, w: number) => s + " ".repeat(Math.max(0, w - vlen(s)));
 
-export function banner(): void {
+export function banner(subtitle = "cross-user memory sharing · Seal-gated, custodian-blind, on Walrus"): void {
   const art = [
     "  ███╗   ██╗███████╗██╗   ██╗██████╗ ██╗   ██╗███████╗",
     "  ████╗  ██║██╔════╝██║   ██║██╔══██╗██║   ██║██╔════╝",
@@ -28,7 +28,7 @@ export function banner(): void {
   ];
   console.log("");
   for (const l of art) console.log(c.cyan(l));
-  console.log(c.dim("  cross-user memory sharing · Seal-gated, custodian-blind, on Walrus"));
+  console.log(c.dim("  " + subtitle));
   console.log("");
 }
 

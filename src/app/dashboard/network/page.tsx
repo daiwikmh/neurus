@@ -64,6 +64,7 @@ export default function NetworkPage() {
   const [wfAssets, setWfAssets] = useState("");
   const [wfWallets, setWfWallets] = useState("");
   const [wfDeepbook, setWfDeepbook] = useState(false);
+  const [wfDeepbookManagers, setWfDeepbookManagers] = useState("");
   const [wfStrategy, setWfStrategy] = useState("");
   const [wfInstruction, setWfInstruction] = useState("");
   const [wfDuration, setWfDuration] = useState("5");
@@ -231,6 +232,7 @@ export default function NetworkPage() {
       assets: wfAssets.split(",").map((a) => a.trim().toLowerCase()).filter(Boolean),
       wallets: wfWallets.split(",").map((w) => w.trim()).filter(Boolean),
       deepbook: wfDeepbook,
+      deepbookManagers: wfDeepbookManagers.split(",").map((m) => m.trim()).filter(Boolean),
       strategySet: ga ? ga.dataset : wfStrategy.trim() || undefined,
       datasetId: ga ? ga.datasetId || undefined : undefined,
       instruction: ga ? ga.role || undefined : wfInstruction.trim() || undefined,
@@ -428,6 +430,14 @@ export default function NetworkPage() {
           <div className={microLabel}>Wallet watcher (optional)</div>
           <input value={wfWallets} onChange={(e) => setWfWallets(e.target.value)} disabled={wfRunning} placeholder="0x… — comma-separated Sui addresses, watch-only" className={`mt-2 w-full ${field}`} />
         </div>
+
+        {wfDeepbook ? (
+          <div className="mt-4">
+            <div className={microLabel}>DeepBook BalanceManager IDs (optional)</div>
+            <input value={wfDeepbookManagers} onChange={(e) => setWfDeepbookManagers(e.target.value)} disabled={wfRunning} placeholder="0x… — BalanceManager object IDs, comma-separated" className={`mt-2 w-full ${field}`} />
+            <p className="mt-1.5 text-[11px] text-white/30">Watched wallets only resolve trades if they own a BalanceManager. Paste the BM object ID from Suiscan to track it directly.</p>
+          </div>
+        ) : null}
 
         <div className="mt-4 flex flex-wrap items-end gap-3">
           {!groundAgent && (
