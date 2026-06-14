@@ -135,6 +135,8 @@ export const neurus = {
   workflowStatus: (set: string) => call<WorkflowStatus>("GET", `/net/workflow?set=${encodeURIComponent(set)}`),
   reportNow: (set: string) => call<{ sent: boolean; report?: string; error?: string }>("POST", "/net/workflow/report", { set }),
   briefNow: (set: string) => call<{ sent: boolean; brief?: string; date?: string; error?: string }>("POST", "/net/workflow/brief", { set }),
+  snapshotSet: (set: string) => call<{ blobId: string; neurons: number }>("POST", "/share/snapshot", { set }),
+  importSnapshot: (set: string, blobId: string) => call<{ imported: number }>("POST", "/share/snapshot/import", { set, blobId }),
   publishShare: (set: string, shareId: string) =>
     call<{ blobId: string; shareId: string; identity: string; packageId: string; neurons: number }>("POST", "/share/publish", { set, shareId }),
   inspectShare: (blobId: string) => call<{ packageId: string; threshold: number; services: number }>("GET", `/share/inspect?blobId=${encodeURIComponent(blobId)}`),

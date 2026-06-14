@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSets } from "../components/SetContext";
 import { useSettings } from "../components/SettingsContext";
-import { neurus, netStream, type NetNeuron, type RosterEntry, type NeuronRow, type Durability, type NetAnswer, type PlayRow } from "@/services/neurus";
+import { neurus, netStream, type NetNeuron, type RosterEntry, type NeuronRow, type Durability, type NetAnswer, type PlayRow, type AgentDef, type SetInfo } from "@/services/neurus";
 import { NeuronGraph } from "../components/NeuronGraph";
 import { NetworkCanvas } from "../components/NetworkCanvas";
 import { MemoryFeed } from "../components/MemoryFeed";
@@ -11,6 +11,29 @@ import { Section, Card, Labeled, Dot, fieldCls as field, btnPrimary, btnPrimaryS
 import { merkleRoot } from "./merkle";
 
 const AGENT_COLORS = ["#9aa8f0", "#34d399", "#f59e0b", "#f472b6", "#22d3ee", "#a78bfa", "#fb7185", "#4ade80"];
+
+const PROTOCOL_AGENTS = [
+  { slug: "aave", label: "Aave TVL" },
+  { slug: "uniswap", label: "Uniswap TVL" },
+  { slug: "lido", label: "Lido TVL" },
+  { slug: "curve", label: "Curve TVL" },
+  { slug: "compound", label: "Compound TVL" },
+];
+const ASSET_AGENTS = [
+  { slug: "sui", label: "SUI price" },
+  { slug: "ethereum", label: "ETH price" },
+  { slug: "bitcoin", label: "BTC price" },
+  { slug: "solana", label: "SOL price" },
+];
+
+const csvHas = (csv: string, item: string) => csv.split(",").map((s) => s.trim()).includes(item);
+const csvToggle = (csv: string, item: string) => {
+  const list = csv.split(",").map((s) => s.trim()).filter(Boolean);
+  const i = list.indexOf(item);
+  if (i >= 0) list.splice(i, 1);
+  else list.push(item);
+  return list.join(",");
+};
 
 interface FeedItem {
   actor: string;
@@ -26,6 +49,9 @@ export default function NetworkPage() {
   const { askModel } = useSettings();
   const [neurons, setNeurons] = useState<NetNeuron[]>([]);
   const [roster, setRoster] = useState<RosterEntry[]>([]);
+  const [myAgents, setMyAgents] = useState<AgentDef[]>([]);
+  const [groundAgent, setGroundAgent] = useState("");
+  const [sets, setSets] = useState<SetInfo[]>([]);
   const [root, setRoot] = useState("");
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [clientRoot, setClientRoot] = useState("");
@@ -114,6 +140,11 @@ export default function NetworkPage() {
   }, [active]);
 
   useEffect(() => {
+    neurus.agents().then(setMyAgents).catch(() => setMyAgents([]));
+    neurus.sets().then(setSets).catch(() => setSets([]));
+  }, []);
+
+  useEffect(() => {
     neurus
       .workflowStatus(active)
       .then((s) => {
@@ -156,6 +187,7 @@ export default function NetworkPage() {
     preview: n.body.slice(0, 140),
   }));
   const legend = authors.map((a) => ({ label: a, color: colorFor(a) }));
+  const datasetAgents = myAgents.filter((a) => a.dataset === active);
 
   const importMemory = () => {
     setSeedMsg("importing…");
@@ -192,17 +224,21 @@ export default function NetworkPage() {
       .finally(() => setCompiling(false));
   };
 
-  const wfPayload = () => ({
-    protocols: wfFeeds.split(",").map((f) => f.trim()).filter(Boolean),
-    assets: wfAssets.split(",").map((a) => a.trim().toLowerCase()).filter(Boolean),
-    wallets: wfWallets.split(",").map((w) => w.trim()).filter(Boolean),
-    deepbook: wfDeepbook,
-    strategySet: wfStrategy.trim() || undefined,
-    instruction: wfInstruction.trim() || undefined,
-    durationDays: Number(wfDuration) || undefined,
-    intervalMs: Math.round(Number(wfInterval) * 1000) || 5000,
-    threshold: Number(wfThreshold) || 0.5,
-  });
+  const wfPayload = () => {
+    const ga = datasetAgents.find((a) => a.id === groundAgent);
+    return {
+      protocols: wfFeeds.split(",").map((f) => f.trim()).filter(Boolean),
+      assets: wfAssets.split(",").map((a) => a.trim().toLowerCase()).filter(Boolean),
+      wallets: wfWallets.split(",").map((w) => w.trim()).filter(Boolean),
+      deepbook: wfDeepbook,
+      strategySet: ga ? ga.dataset : wfStrategy.trim() || undefined,
+      datasetId: ga ? ga.datasetId || undefined : undefined,
+      instruction: ga ? ga.role || undefined : wfInstruction.trim() || undefined,
+      durationDays: Number(wfDuration) || undefined,
+      intervalMs: Math.round(Number(wfInterval) * 1000) || 5000,
+      threshold: Number(wfThreshold) || 0.5,
+    };
+  };
 
   const runWorkflow = () => {
     neurus
@@ -313,13 +349,20 @@ export default function NetworkPage() {
       .catch((err) => setGrantMsg(`failed: ${(err as Error)?.message ?? "error"}`));
   };
 
+  const chip = (on: boolean) =>
+    `rounded-full border px-3 py-1 text-[12px] transition disabled:cursor-not-allowed disabled:opacity-40 ${
+      on
+        ? "border-[#9aa8f0]/50 bg-[#9aa8f0]/15 text-[#cdd5fb]"
+        : "border-white/10 bg-white/[0.03] text-white/55 hover:border-white/20 hover:text-white/80"
+    }`;
+
   return (
     <div className="mx-auto max-w-6xl px-8 py-8">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Network</h1>
           <p className="mt-1 text-sm text-white/45">
-            Agents collaborating in <span className="font-mono text-white/70">{active}</span> — shared memory on Walrus, every write signed and attributed.
+            <span className="font-mono text-white/70">{active}</span> · shared memory on Walrus, every write signed and attributed.
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-1.5 text-[12px]">
@@ -337,82 +380,139 @@ export default function NetworkPage() {
         </div>
       </div>
 
-      <Section label="Build" />
-      <div className="rounded-2xl border border-[#9aa8f0]/25 bg-[#9aa8f0]/[0.04] p-5">
-        <h2 className="text-sm font-medium text-white/85">Describe a workflow</h2>
-        <p className="mt-1 text-[12.5px] leading-relaxed text-white/45">
-          Say what you want in plain English — Neurus compiles it into agents on the canvas, grounded in your knowledge sets, wallets, and live data.
-        </p>
-        <textarea
-          value={wfPrompt}
-          onChange={(e) => setWfPrompt(e.target.value)}
-          rows={2}
-          placeholder="For the next 5 days, send me Telegram updates on SUI based on the strategy in my trading-rules set — check every minute"
-          className="mt-3 w-full resize-none rounded-lg border border-white/10 bg-[#0c0d12] px-3 py-2 text-[13px] text-white outline-none placeholder:text-white/25 focus:border-[#9aa8f0]/50"
-        />
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <button onClick={compile} disabled={compiling || !wfPrompt.trim()} className={btnPrimary}>
-            {compiling ? "Building…" : "Build workflow"}
-          </button>
-          {compileMsg && <span className="text-[12px] text-white/55">{compileMsg}</span>}
+      <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.025] p-5">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-sm font-medium text-white/85">Pick agents to run</h2>
+          <span className={`inline-flex items-center gap-1.5 text-[12px] ${wfRunning ? "text-emerald-300" : "text-white/35"}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${wfRunning ? "bg-emerald-400" : "bg-white/20"}`} />
+            {wfRunning ? "running" : "idle"}
+          </span>
+        </div>
+
+        <div className="mt-4">
+          <div className={microLabel}>Your agents</div>
+          {datasetAgents.length === 0 ? (
+            <p className="mt-2 text-[12px] text-white/35">None for this set yet — create one in the Agents tab. A selected agent grounds the workflow in its dataset.</p>
+          ) : (
+            <>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {datasetAgents.map((a) => {
+                  const on = groundAgent === a.id;
+                  return (
+                    <button key={a.id} disabled={wfRunning} onClick={() => setGroundAgent(on ? "" : a.id)} className={chip(on)}>
+                      {a.name}<span className="ml-1 text-white/35">· {a.dataset}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-1.5 text-[11px] text-white/30">The selected agent grounds the analyst&apos;s reports in its dataset.</p>
+            </>
+          )}
+        </div>
+
+        <div className="mt-4">
+          <div className={microLabel}>Our agents</div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {PROTOCOL_AGENTS.map((p) => (
+              <button key={p.slug} disabled={wfRunning} onClick={() => setWfFeeds(csvToggle(wfFeeds, p.slug))} className={chip(csvHas(wfFeeds, p.slug))}>{p.label}</button>
+            ))}
+            {ASSET_AGENTS.map((p) => (
+              <button key={p.slug} disabled={wfRunning} onClick={() => setWfAssets(csvToggle(wfAssets, p.slug))} className={chip(csvHas(wfAssets, p.slug))}>{p.label}</button>
+            ))}
+            <button disabled={wfRunning} onClick={() => setWfDeepbook(!wfDeepbook)} className={chip(wfDeepbook)}>DeepBook grader</button>
+          </div>
+          <p className="mt-1.5 text-[11px] text-white/30">Analyst and consolidator run automatically.</p>
+        </div>
+
+        <div className="mt-4">
+          <div className={microLabel}>Wallet watcher (optional)</div>
+          <input value={wfWallets} onChange={(e) => setWfWallets(e.target.value)} disabled={wfRunning} placeholder="0x… — comma-separated Sui addresses, watch-only" className={`mt-2 w-full ${field}`} />
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          {!groundAgent && (
+            <Labeled label="Grounding (set)">
+              <select value={wfStrategy} onChange={(e) => setWfStrategy(e.target.value)} disabled={wfRunning} className={`mt-1 ${field}`}>
+                <option value="" className="bg-[#0c0d10]">— none —</option>
+                {sets.map((s) => (
+                  <option key={s.id} value={s.name} className="bg-[#0c0d10]">{s.name}</option>
+                ))}
+              </select>
+            </Labeled>
+          )}
+          <Labeled label="Every (s)">
+            <input value={wfInterval} onChange={(e) => setWfInterval(e.target.value)} disabled={wfRunning} className={`mt-1 w-20 ${field}`} />
+          </Labeled>
+          <Labeled label="For (days)">
+            <input value={wfDuration} onChange={(e) => setWfDuration(e.target.value)} disabled={wfRunning} className={`mt-1 w-20 ${field}`} />
+          </Labeled>
+          <Labeled label="Anomaly ≥ (%)">
+            <input value={wfThreshold} onChange={(e) => setWfThreshold(e.target.value)} disabled={wfRunning} className={`mt-1 w-20 ${field}`} />
+          </Labeled>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          {wfRunning ? (
+            <>
+              <button onClick={stopWorkflow} className={btnDanger}>Stop</button>
+              <button onClick={sendReport} className={btnGhost}>Send report now</button>
+              <button onClick={sendBrief} className={btnGhost}>Send brief now</button>
+            </>
+          ) : (
+            <button onClick={runWorkflow} className={btnPrimary}>Run workflow</button>
+          )}
+          {wfReportMsg && <span className="text-[12px] text-white/45">{wfReportMsg}</span>}
         </div>
       </div>
 
-      <div className="mt-4 space-y-3">
-        <Card collapsible title="Workflow" sub="Agents track DefiLlama protocols, asset prices, and wallets over time; the analyst reports — grounded in your strategy set — to Telegram.">
-          <div className="mt-4 space-y-3">
-            <div className="flex gap-3">
-              <Labeled label="Protocols (TVL)" className="flex-1">
-                <input value={wfFeeds} onChange={(e) => setWfFeeds(e.target.value)} disabled={wfRunning} placeholder="aave,uniswap" className={`mt-1 w-full ${field}`} />
-              </Labeled>
-              <Labeled label="Assets (price)" className="flex-1">
-                <input value={wfAssets} onChange={(e) => setWfAssets(e.target.value)} disabled={wfRunning} placeholder="sui,ethereum" className={`mt-1 w-full ${field}`} />
-              </Labeled>
-            </div>
-            <Labeled label="Wallets (Sui address, watch-only)">
-              <input value={wfWallets} onChange={(e) => setWfWallets(e.target.value)} disabled={wfRunning} placeholder="0x…" className={`mt-1 w-full ${field}`} />
-            </Labeled>
-            <label className="flex items-center gap-2 text-[12.5px] text-white/65">
-              <input type="checkbox" checked={wfDeepbook} onChange={(e) => setWfDeepbook(e.target.checked)} disabled={wfRunning} className="accent-[#9aa8f0]" />
-              Read & grade my DeepBook trades (for owned balance managers on the watched wallets)
-            </label>
-            <Labeled label="Strategy set (grounding)">
-              <input value={wfStrategy} onChange={(e) => setWfStrategy(e.target.value)} disabled={wfRunning} placeholder="trading-rules" className={`mt-1 w-full ${field}`} />
-            </Labeled>
-            <div className="flex items-end gap-3">
-              <Labeled label="Every (s)">
-                <input value={wfInterval} onChange={(e) => setWfInterval(e.target.value)} disabled={wfRunning} className={`mt-1 w-20 ${field}`} />
-              </Labeled>
-              <Labeled label="For (days)">
-                <input value={wfDuration} onChange={(e) => setWfDuration(e.target.value)} disabled={wfRunning} className={`mt-1 w-20 ${field}`} />
-              </Labeled>
-              <Labeled label="Anomaly >= (%)">
-                <input value={wfThreshold} onChange={(e) => setWfThreshold(e.target.value)} disabled={wfRunning} className={`mt-1 w-20 ${field}`} />
-              </Labeled>
+      <details className="group mt-3 rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+        <summary className="flex cursor-pointer list-none items-center justify-between text-[13px] text-white/65 marker:content-none [&::-webkit-details-marker]:hidden">
+          Advanced — describe in plain English, fine-tune, write access, plays
+          <svg viewBox="0 0 12 12" className="h-3 w-3 text-white/30 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M3 4.5L6 7.5L9 4.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </summary>
+        <div className="mt-4 space-y-3">
+          <div className="rounded-2xl border border-[#9aa8f0]/25 bg-[#9aa8f0]/[0.04] p-5">
+            <h2 className="text-sm font-medium text-white/85">Describe a workflow</h2>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-white/45">
+              Say what you want in plain English — Neurus compiles it into the picks above.
+            </p>
+            <textarea
+              value={wfPrompt}
+              onChange={(e) => setWfPrompt(e.target.value)}
+              rows={2}
+              placeholder="For the next 5 days, send me Telegram updates on SUI based on the strategy in my trading-rules set — check every minute"
+              className="mt-3 w-full resize-none rounded-lg border border-white/10 bg-[#0c0d12] px-3 py-2 text-[13px] text-white outline-none placeholder:text-white/25 focus:border-[#9aa8f0]/50"
+            />
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <button onClick={compile} disabled={compiling || !wfPrompt.trim()} className={btnPrimary}>
+                {compiling ? "Building…" : "Build workflow"}
+              </button>
+              {compileMsg && <span className="text-[12px] text-white/55">{compileMsg}</span>}
             </div>
           </div>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            {wfRunning ? (
-              <>
-                <button onClick={stopWorkflow} className={btnDanger}>Stop</button>
-                <button onClick={sendReport} className={btnGhost}>Send report now</button>
-                <button onClick={sendBrief} className={btnGhost}>Send brief now</button>
-              </>
-            ) : (
-              <button onClick={runWorkflow} className={btnPrimary}>Run workflow</button>
-            )}
-            <span className={`inline-flex items-center gap-1.5 text-[12px] ${wfRunning ? "text-emerald-300" : "text-white/35"}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${wfRunning ? "bg-emerald-400" : "bg-white/20"}`} />
-              {wfRunning ? "running — feed-agents writing to the network" : "idle"}
-            </span>
-            {wfReportMsg && <span className="text-[12px] text-white/45">{wfReportMsg}</span>}
-          </div>
-        </Card>
 
-        <Card collapsible defaultOpen={false} title="Agents" sub="Who can write to this set's shared memory. Revoke any agent and its next write bounces.">
+          <Card title="Fine-tune" sub="Edit the raw protocol, asset, and instruction values behind the picks above.">
+            <div className="mt-4 space-y-3">
+              <div className="flex gap-3">
+                <Labeled label="Protocols (TVL)" className="flex-1">
+                  <input value={wfFeeds} onChange={(e) => setWfFeeds(e.target.value)} disabled={wfRunning} placeholder="aave,uniswap" className={`mt-1 w-full ${field}`} />
+                </Labeled>
+                <Labeled label="Assets (price)" className="flex-1">
+                  <input value={wfAssets} onChange={(e) => setWfAssets(e.target.value)} disabled={wfRunning} placeholder="sui,ethereum" className={`mt-1 w-full ${field}`} />
+                </Labeled>
+              </div>
+              <Labeled label="Extra instruction for the analyst">
+                <input value={wfInstruction} onChange={(e) => setWfInstruction(e.target.value)} disabled={wfRunning} placeholder="flag anything that contradicts my strategy" className={`mt-1 w-full ${field}`} />
+              </Labeled>
+            </div>
+          </Card>
+
+        <Card collapsible defaultOpen={false} title="Write access" sub="Who can write to this set's shared memory — the running workflow's agents plus anyone you grant. Revoke one and its next write bounces.">
           <div className="mt-3 space-y-1.5">
             {roster.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-white/10 px-3 py-4 text-center text-[12.5px] text-white/30">No agents yet — run a workflow or grant one below.</div>
+              <div className="rounded-lg border border-dashed border-white/10 px-3 py-4 text-center text-[12.5px] text-white/30">No writers yet — run a workflow or grant one below.</div>
             ) : (
               roster.map((r) => (
                 <div key={r.actor} className="flex items-center gap-2.5 rounded-lg border border-white/8 bg-white/[0.015] px-3 py-1.5 text-[12.5px]">
@@ -482,7 +582,8 @@ export default function NetworkPage() {
           </form>
           {playMsg && <p className="mt-2 text-[12px] text-white/45">{playMsg}</p>}
         </Card>
-      </div>
+        </div>
+      </details>
 
       <Section label="Memory & activity" />
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
@@ -509,7 +610,7 @@ export default function NetworkPage() {
               assets={wfAssets.split(",").map((a) => a.trim()).filter(Boolean)}
               wallets={wfWallets.split(",").map((w) => w.trim()).filter(Boolean)}
               deepbook={wfDeepbook}
-              strategy={wfStrategy.trim() || undefined}
+              strategy={(groundAgent ? datasetAgents.find((a) => a.id === groundAgent)?.dataset : wfStrategy.trim()) || undefined}
               running={wfRunning}
               onRun={runFlow}
               onStop={stopWorkflow}

@@ -158,6 +158,17 @@ export function NetworkCanvas({ datasets, feeds, assets, wallets, deepbook, stra
     setEdges(g.edges);
   };
 
+  const deleteSelected = () => {
+    const ids = nodes.filter((n) => n.selected && n.deletable !== false).map((n) => n.id);
+    if (!ids.length) return;
+    for (const id of ids) removed.current.add(id);
+    saveHidden(setKey, removed.current);
+    setHiddenCount(removed.current.size);
+    const drop = new Set(ids);
+    setNodes((ns) => ns.filter((n) => !drop.has(n.id)));
+    setEdges((es) => es.filter((e) => !drop.has(e.source) && !drop.has(e.target)));
+  };
+
   const addFeed = () => {
     const slug = newFeed.trim().toLowerCase();
     if (!slug) return;
@@ -185,6 +196,7 @@ export function NetworkCanvas({ datasets, feeds, assets, wallets, deepbook, stra
           ) : (
             <button onClick={run} className={btnPrimarySm}>Run flow</button>
           )}
+          <button onClick={deleteSelected} className={btnGhostSm}>Delete</button>
         </Panel>
         <Panel position="bottom-left" className="flex items-center gap-2 rounded-md bg-black/40 px-2 py-1 text-[10px] text-white/40">
           select a node · press Delete to remove

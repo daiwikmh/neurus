@@ -375,6 +375,24 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
         .sort((a, b) => (a.status === b.status ? b.openedAt - a.openedAt : a.status === "open" ? -1 : 1)),
     };
   }
+  if (method === "POST" && path === "/v1/share/snapshot") {
+    const snapSet = String(body.set ?? "default");
+    const nx = await Neurus.open(snapSet, { tenant });
+    const neurons = await nx.neurons();
+    const { blobId } = await import("../storage/walrus").then((m) => m.putBlobInfo(JSON.stringify(neurons)));
+    return { blobId, neurons: neurons.length };
+  }
+  if (method === "POST" && path === "/v1/share/snapshot/import") {
+    const intoSet = String(body.set ?? "default");
+    const blobId = String(body.blobId ?? "");
+    if (!blobId) throw new Error("blobId required");
+    const text = await import("../storage/walrus").then((m) => m.getBlobText(blobId));
+    const neurons = JSON.parse(text) as { id: string }[];
+    const nx = await Neurus.open(intoSet, { tenant });
+    let imported = 0;
+    for (const n of neurons) { await nx.memory.remember(n as never); imported++; }
+    return { imported };
+  }
   if (method === "POST" && path === "/v1/share/publish") {
     const shareSet = String(body.set ?? "default");
     const shareId = String(body.shareId ?? "");
