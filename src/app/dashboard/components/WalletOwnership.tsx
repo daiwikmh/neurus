@@ -14,7 +14,7 @@ export function WalletOwnership() {
 
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<AccountStatus | null>(null);
-  const [busy, setBusy] = useState<"claim" | "unlink" | null>(null);
+  const [busy, setBusy] = useState<"claim" | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   const addr = account?.address ?? null;
@@ -61,20 +61,6 @@ export function WalletOwnership() {
     }
   };
 
-  const unlink = async () => {
-    setBusy("unlink");
-    setMsg(null);
-    try {
-      await neurus.unlinkAccount();
-      setStatus({ linked: false, owned: false });
-      setMsg("Revoked. Neurus no longer holds a delegate key.");
-    } catch (e) {
-      setMsg(e instanceof Error ? e.message : "failed");
-    } finally {
-      setBusy(null);
-    }
-  };
-
   if (!addr) {
     return (
       <ConnectModal
@@ -106,9 +92,6 @@ export function WalletOwnership() {
             You own this memory
           </div>
           {status.accountId && <div className="mt-1 truncate font-mono text-[10px] text-white/35">{status.accountId.slice(0, 18)}…</div>}
-          <button onClick={unlink} disabled={!!busy} className="mt-1.5 text-[11px] text-white/40 transition hover:text-red-400 disabled:opacity-40">
-            {busy === "unlink" ? "revoking…" : "revoke access"}
-          </button>
         </div>
       ) : (
         <div className="space-y-1.5">
