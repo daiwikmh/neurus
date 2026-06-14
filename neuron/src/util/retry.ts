@@ -5,6 +5,13 @@ export class RetryableError extends Error {
   }
 }
 
+export class RateLimitError extends RetryableError {
+  constructor(message: string, retryAfterMs?: number) {
+    super(message, retryAfterMs);
+    this.name = "RateLimitError";
+  }
+}
+
 export interface RetryOptions {
   attempts?: number;
   baseMs?: number;

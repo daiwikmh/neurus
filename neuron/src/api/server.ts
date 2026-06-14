@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { Neurus, answer, answerStream, listSets, createSet, Vault, AccountManager, localTenant, safeTenantId, getWidget, getChatBinding, bindChat, sendTelegram, envCredentials, type Tenant } from "../index";
+import { Neurus, answer, answerStream, listSets, createSet, Vault, AccountManager, localTenant, safeTenantId, getWidget, getChatBinding, bindChat, sendTelegram, connectTelegram, getNotifyConfig, mintLinkToken, consumeLinkToken, envCredentials, type Tenant } from "../index";
 import type { RankedNeuron } from "../core/memory";
 import { warmup, rerank } from "../retrieval/rerank";
 import { NetHub } from "../net/hub";
@@ -97,6 +97,17 @@ function envTelegram(): { token: string; chatId: string } | undefined {
   const token = process.env.TELEGRAM_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   return token && chatId ? { token, chatId } : undefined;
+}
+
+// Telegram target for a workflow: prefer the explicit env chat id, else fall back to the
+// chat the tenant connected in the dashboard (so "Connect Telegram" drives reports too).
+async function tenantTelegram(tenant: Tenant): Promise<{ token: string; chatId: string } | undefined> {
+  const env = envTelegram();
+  if (env) return env;
+  const token = process.env.TELEGRAM_BOT_TOKEN ?? process.env.TELEGRAM_TOKEN;
+  if (!token) return undefined;
+  const cfg = await getNotifyConfig(tenant);
+  return cfg.telegram?.chatId ? { token, chatId: cfg.telegram.chatId } : undefined;
 }
 
 function signedReplica(set: string, actor: string, secret: string): SharedReplica {
@@ -523,7 +534,7 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
       datasetId: body.datasetId ? String(body.datasetId) : undefined,
       instruction: body.instruction ? String(body.instruction) : undefined,
       durationDays: body.durationDays ? Number(body.durationDays) : undefined,
-      telegram: envTelegram(),
+      telegram: await tenantTelegram(tenant),
       autoReport: body.telegram !== false,
       tenant,
     };
@@ -605,6 +616,12 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
       return { config: await nx.notifyConfig() };
     case "POST /v1/notify/telegram":
       return { config: await nx.connectTelegram(String(body.chatId)) };
+    case "POST /v1/notify/telegram/link": {
+      const bot = process.env.TELEGRAM_BOT_USERNAME;
+      if (!bot) return { configured: false, error: "TELEGRAM_BOT_USERNAME not set on the server" };
+      const token = mintLinkToken(tenant.id, setName);
+      return { configured: true, url: `https://t.me/${bot.replace(/^@/, "")}?start=${token}` };
+    }
     case "POST /v1/notify/test":
       return nx.notify(String(body.text ?? "✅ Neurus is connected. You'll get nudges here."));
     case "GET /v1/map": {
@@ -615,6 +632,7 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
         set: nx.set.name,
         counts: { person: by("person"), file: by("file"), note: by("note"), chunk: by("chunk"), insight: by("insight"), commitment: by("commitment") },
         pending: nx.memory.pending(),
+        failed: nx.memory.failed(),
       };
     }
     case "GET /v1/neurons": {
@@ -656,6 +674,8 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
       return { health: await nx.datasetHealth(String(body.objectId)) };
     case "POST /v1/datasets/renew":
       return { dataset: await nx.renewDataset(String(body.id), body.epochs) };
+    case "POST /v1/datasets/delete":
+      return nx.deleteDataset(String(body.id));
     case "GET /v1/widgets":
       return { widgets: await nx.widgets() };
     case "POST /v1/widgets":
@@ -671,6 +691,8 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
     case "POST /v1/flush":
       await nx.flush();
       return { pending: nx.memory.pending() };
+    case "POST /v1/reconcile":
+      return nx.reconcile();
     default:
       return { __notfound: true };
   }
@@ -685,9 +707,23 @@ async function handleTelegramUpdate(update: any): Promise<void> {
   if (!chatId || !text) return;
   const reply = (t: string) => sendTelegram({ token, chatId }, t).catch(() => {});
 
+  const startToken = text.match(/^\/start\s+(\S+)/);
+  if (startToken) {
+    const link = consumeLinkToken(startToken[1]);
+    if (!link) {
+      await reply("That link expired. Open Neurus → Telegram → Connect to get a fresh one.");
+      return;
+    }
+    const linkTenant = await tenantById(link.user);
+    await connectTelegram(chatId, linkTenant);
+    await bindChat(chatId, { user: link.user, set: link.set });
+    await reply(`Connected ✓\nNeurus will send alerts here. Ask me anything about "${link.set}".`);
+    return;
+  }
+
   const binding = await getChatBinding(chatId);
   if (!binding) {
-    await reply(`This chat isn't linked yet.\nOpen Neurus → profile → Telegram, paste this chat id (${chatId}), and connect.`);
+    await reply(`This chat isn't linked yet.\nOpen Neurus → Telegram → Connect to link it in one tap.`);
     return;
   }
   const tenant = await tenantById(binding.user);
@@ -866,7 +902,7 @@ async function resumeWorkflows(): Promise<void> {
     }
     try {
       const tenant = await resolveTenant(rec.tenantId === "local" ? undefined : rec.tenantId);
-      const cfg: WorkflowConfig = { set: rec.set, netKey, ...rec.spec, telegram: envTelegram(), tenant };
+      const cfg: WorkflowConfig = { set: rec.set, netKey, ...rec.spec, telegram: await tenantTelegram(tenant), tenant };
       const wf = new WorkflowRunner(net, cfg, { ticks: rec.cursor.ticksDone, endsAt: rec.endsAt });
       workflows.set(netKey, wf);
       wf.start();

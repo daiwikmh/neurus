@@ -1,10 +1,30 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { randomBytes } from "node:crypto";
 import { join } from "node:path";
 import { localTenant, type Tenant } from "../identity/credentials";
 import { kvEnabled, kvGet, kvSet } from "../storage/kv";
 import { sendTelegram } from "./telegram";
 
 export { sendTelegram, type TelegramTarget } from "./telegram";
+
+// One-time deep-link tokens for the "tap to connect" Telegram flow. Short-lived; the
+// user opens t.me/<bot>?start=<token>, presses Start, and the webhook binds their chat.
+interface LinkToken { user: string; set: string; exp: number }
+const linkTokens = new Map<string, LinkToken>();
+
+export function mintLinkToken(user: string, set: string, ttlMs = 600_000): string {
+  const token = randomBytes(9).toString("base64url");
+  linkTokens.set(token, { user, set, exp: Date.now() + ttlMs });
+  return token;
+}
+
+export function consumeLinkToken(token: string): { user: string; set: string } | undefined {
+  const t = linkTokens.get(token);
+  if (!t) return undefined;
+  linkTokens.delete(token);
+  if (t.exp < Date.now()) return undefined;
+  return { user: t.user, set: t.set };
+}
 
 // Reverse index: an inbound Telegram chat id → which user + set it talks to.
 export interface ChatBinding {

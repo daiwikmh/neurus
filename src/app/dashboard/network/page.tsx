@@ -258,7 +258,7 @@ export default function NetworkPage() {
     setWfReportMsg("sending…");
     neurus
       .reportNow(active)
-      .then((r) => setWfReportMsg(r.sent ? "report sent to Telegram ✓" : r.error ?? "no Telegram configured / not running"))
+      .then((r) => setWfReportMsg(r.sent ? "report sent to Telegram ✓" : r.report ? "report ready — connect Telegram to receive it" : r.error ?? "nothing to report yet"))
       .catch(() => setWfReportMsg("failed"));
   };
 

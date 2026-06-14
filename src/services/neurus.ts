@@ -62,6 +62,7 @@ export interface MapInfo {
   set: string;
   counts: Record<NeuronType, number>;
   pending: number;
+  failed: number;
 }
 
 export interface AccountStatus {
@@ -101,11 +102,14 @@ export const neurus = {
   addFolderDataset: (set: string, name: string, files: { path: string; content: string }[]) => call<{ dataset: Dataset; files: number; failed: number }>("POST", "/datasets/folder", { set, name, files }),
   datasetHealth: (set: string, objectId: string) => call<{ health: BlobHealth }>("POST", "/datasets/health", { set, objectId }).then((r) => r.health),
   renewDataset: (set: string, id: string) => call<{ dataset: Dataset }>("POST", "/datasets/renew", { set, id }).then((r) => r.dataset),
+  deleteDataset: (set: string, id: string) => call<{ deleted: boolean; neuronsForgotten: number }>("POST", "/datasets/delete", { set, id }),
+  reconcile: (set: string) => call<{ queued: number; pending: number; failed: number }>("POST", "/reconcile", { set }),
   widgets: (set: string) => call<{ widgets: Widget[] }>("GET", `/widgets?set=${encodeURIComponent(set)}`).then((r) => r.widgets),
   createWidget: (set: string, name: string, origins: string[], datasetId?: string) => call<{ widget: Widget }>("POST", "/widgets", { set, name, origins, datasetId }).then((r) => r.widget),
   deleteWidget: (set: string, id: string) => call<{ deleted: boolean }>("POST", "/widgets/delete", { set, id }),
   notifyConfig: (set: string) => call<{ config: NotifyConfig }>("GET", `/notify?set=${encodeURIComponent(set)}`).then((r) => r.config),
   connectTelegram: (set: string, chatId: string) => call<{ config: NotifyConfig }>("POST", "/notify/telegram", { set, chatId }).then((r) => r.config),
+  linkTelegram: (set: string) => call<{ configured: boolean; url?: string; error?: string }>("POST", "/notify/telegram/link", { set }),
   testNotify: (set: string) => call<{ delivered: string[]; skipped: string[] }>("POST", "/notify/test", { set }),
   accountStatus: () => call<AccountStatus>("GET", "/account"),
   linkAccount: (accountId: string, delegateKey: string, serverUrl?: string) => call<AccountStatus>("POST", "/account/link", { accountId, delegateKey, serverUrl }),

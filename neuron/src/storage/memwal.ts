@@ -1,6 +1,13 @@
 import { MemWal } from "@mysten-incubation/memwal";
 import { envCredentials, type Credentials } from "../identity/credentials";
-import { withRetry, isNetworkError } from "../util/retry";
+import { withRetry, isNetworkError, RateLimitError } from "../util/retry";
+
+function asRateLimit(e: unknown): RateLimitError | null {
+  const m = (e as Error)?.message ?? "";
+  if (!/\b429\b|rate.?limit|too many/i.test(m)) return null;
+  const secs = m.match(/retry_after_seconds"?\s*:\s*(\d+)/i);
+  return new RateLimitError("MemWal account rate limit (500 weighted-requests/hour)", secs ? Number(secs[1]) * 1000 : 300_000);
+}
 
 export interface MemwalHit {
   blobId: string;
@@ -23,8 +30,18 @@ export class MemwalStore {
   }
 
   async remember(text: string, timeoutMs = 150_000): Promise<string> {
-    const res = await this.mw.rememberAndWait(text, this.namespace, { timeoutMs });
-    return res.blob_id;
+    try {
+      const res = await withRetry(() => this.mw.rememberAndWait(text, this.namespace, { timeoutMs }), {
+        label: "memory write (MemWal)",
+        attempts: 3,
+        shouldRetry: isNetworkError,
+      });
+      return res.blob_id;
+    } catch (e) {
+      const rl = asRateLimit(e);
+      if (rl) throw rl;
+      throw e;
+    }
   }
 
   async rememberAsync(text: string): Promise<void> {

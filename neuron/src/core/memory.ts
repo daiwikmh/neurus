@@ -9,8 +9,10 @@ import { BM25 } from "../retrieval/bm25";
 import { rrf } from "../retrieval/rrf";
 import { standsOut } from "../retrieval/margin";
 import { merkleRoot } from "../integrity/merkle";
+import { RateLimitError } from "../util/retry";
 
 const SEARCHABLE: Set<NeuronType> = new Set(["note", "chunk", "insight"]);
+const WRITE_SPACING_MS = Number(process.env.NEURUS_WRITE_SPACING_MS ?? 1000);
 const sigmoid = (x: number) => 1 / (1 + Math.exp(-x));
 
 export interface RankedNeuron {
@@ -37,6 +39,7 @@ export class Memory {
   private loaded = false;
   private queue: Neuron[] = [];
   private draining = false;
+  private deferred = false;
 
   constructor(
     private namespace: string,
@@ -111,26 +114,72 @@ export class Memory {
   private async drain(): Promise<void> {
     if (this.draining) return;
     this.draining = true;
+    this.deferred = false;
     while (this.queue.length) {
       const n = this.queue.shift()!;
       try {
         await this.embed(n);
         n.meta = { ...(n.meta ?? {}), durability: "confirmed" };
-      } catch {
+      } catch (e) {
+        if (e instanceof RateLimitError) {
+          this.queue.unshift(n);
+          n.meta = { ...(n.meta ?? {}), durability: "pending" };
+          await this.save();
+          this.draining = false;
+          this.deferred = true;
+          const wait = Math.min(e.retryAfterMs ?? 300_000, 300_000);
+          setTimeout(() => void this.drain(), wait);
+          return;
+        }
         n.meta = { ...(n.meta ?? {}), durability: "failed" };
       }
       await this.save();
+      if (this.queue.length) await new Promise((r) => setTimeout(r, WRITE_SPACING_MS));
     }
     this.draining = false;
   }
 
+  async resume(): Promise<{ queued: number }> {
+    await this.load();
+    let queued = 0;
+    for (const n of this.neurons.values()) {
+      if (!SEARCHABLE.has(n.type) || n.meta?.memwalBlob) continue;
+      const d = n.meta?.durability;
+      if ((d === "pending" || d === "failed") && !this.queue.includes(n)) {
+        n.meta = { ...(n.meta ?? {}), durability: "pending" };
+        this.queue.push(n);
+        queued++;
+      }
+    }
+    await this.drain();
+    return { queued };
+  }
+
+  async forgetByDataset(datasetId: string): Promise<number> {
+    await this.load();
+    let count = 0;
+    for (const n of [...this.neurons.values()]) {
+      if ((n.meta as Record<string, unknown> | undefined)?.datasetId !== datasetId) continue;
+      this.neurons.delete(n.id);
+      const mb = n.meta?.memwalBlob as string | undefined;
+      if (mb) this.byMemwalBlob.delete(mb);
+      count++;
+    }
+    if (count) await this.save();
+    return count;
+  }
+
   async flush(): Promise<void> {
     void this.drain();
-    while (this.queue.length || this.draining) await new Promise((r) => setTimeout(r, 50));
+    while ((this.queue.length || this.draining) && !this.deferred) await new Promise((r) => setTimeout(r, 50));
   }
 
   pending(): number {
     return [...this.neurons.values()].filter((n) => n.meta?.durability === "pending").length;
+  }
+
+  failed(): number {
+    return [...this.neurons.values()].filter((n) => n.meta?.durability === "failed").length;
   }
 
   async recall(query: string, opts: RecallOptions = {}): Promise<RankedNeuron[]> {

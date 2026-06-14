@@ -21,7 +21,7 @@ import { ingestSite, type CrawlOptions, type CrawlResult } from "./ingest/web";
 import { fetchRepoFiles } from "./ingest/github";
 import type { DatasetKind } from "./core/datasets";
 import { createWidget, listWidgets, deleteWidget, getWidget, type Widget } from "./core/widgets";
-import { addDataset, listDatasets, updateDataset, getDataset, type Dataset } from "./core/datasets";
+import { addDataset, listDatasets, updateDataset, getDataset, deleteDataset, type Dataset } from "./core/datasets";
 import { blobHealth, type BlobHealth } from "./integrity/health";
 import { getBlob, putBlobInfo } from "./storage/walrus";
 import { extendBlob } from "./storage/extend";
@@ -42,7 +42,7 @@ export * from "./identity/credentials";
 export { Vault } from "./identity/vault";
 export { provisionCredentials } from "./identity/provision";
 export { AccountManager, type AccountStatus } from "./identity/account";
-export { connectTelegram, getNotifyConfig, notify, sendTelegram, bindChat, getChatBinding } from "./notify";
+export { connectTelegram, getNotifyConfig, notify, sendTelegram, bindChat, getChatBinding, mintLinkToken, consumeLinkToken } from "./notify";
 export type { NotifyConfig, NotifyResult, TelegramTarget, ChatBinding } from "./notify";
 export { listDatasets, type Dataset, type DatasetKind } from "./core/datasets";
 export { blobHealth, currentWalrusEpoch, type BlobHealth } from "./integrity/health";
@@ -256,28 +256,38 @@ export class Neurus {
     if (res.pages === 0) {
       throw new Error(`no readable pages found at ${url} — the site may be JS-rendered (try a direct page URL) or blocked by robots.txt`);
     }
-    for (const { source, chunks } of res.ingested) await this.mem.ingest(source, chunks, { behind: this.behind });
     const dataset = await addDataset(
       { set: this.set.id, kind: "web", title: res.host, url: res.root, pages: res.pages },
       this.tenant,
     );
+    for (const { source, chunks } of res.ingested) {
+      source.meta = { ...source.meta, datasetId: dataset.id };
+      for (const c of chunks) c.meta = { ...c.meta, datasetId: dataset.id };
+      await this.mem.ingest(source, chunks, { behind: this.behind });
+    }
     return { dataset, pages: res.pages, failed: res.failed.length, skipped: res.skipped };
   }
 
   private async ingestStructure(kind: DatasetKind, title: string, url: string | undefined, items: { name: string; bytes: Buffer }[]): Promise<{ dataset: Dataset; files: number; failed: number }> {
+    const dataset = await addDataset({ set: this.set.id, kind, title, url, pages: 0 }, this.tenant);
     let files = 0;
     let failed = 0;
     for (const it of items) {
       try {
         const { file, chunks } = await ingestBuffer(it.name, it.bytes, { store: false });
+        file.meta = { ...file.meta, datasetId: dataset.id };
+        for (const c of chunks) c.meta = { ...c.meta, datasetId: dataset.id };
         await this.mem.ingest(file, chunks, { behind: this.behind });
         files++;
       } catch {
         failed++;
       }
     }
-    if (files === 0) throw new Error(`no ingestible files found in "${title}" (need md/txt/csv/json/log/pdf/docx)`);
-    const dataset = await addDataset({ set: this.set.id, kind, title, url, pages: files }, this.tenant);
+    if (files === 0) {
+      await deleteDataset(dataset.id, this.tenant);
+      throw new Error(`no ingestible files found in "${title}" (need md/txt/csv/json/log/pdf/docx)`);
+    }
+    await updateDataset(dataset.id, { pages: files }, this.tenant);
     return { dataset, files, failed };
   }
 
@@ -294,6 +304,18 @@ export class Neurus {
 
   datasets(): Promise<Dataset[]> {
     return listDatasets(this.set.id, this.tenant);
+  }
+
+  async deleteDataset(id: string): Promise<{ deleted: boolean; neuronsForgotten: number }> {
+    const removed = await deleteDataset(id, this.tenant);
+    if (!removed) return { deleted: false, neuronsForgotten: 0 };
+    const neuronsForgotten = await this.mem.forgetByDataset(id);
+    return { deleted: true, neuronsForgotten };
+  }
+
+  async reconcile(): Promise<{ queued: number; pending: number; failed: number }> {
+    const { queued } = await this.mem.resume();
+    return { queued, pending: this.mem.pending(), failed: this.mem.failed() };
   }
 
   datasetHealth(objectId: string): Promise<BlobHealth> {

@@ -54,3 +54,12 @@ export async function updateDataset(id: string, patch: Partial<Dataset>, tenant:
 export async function getDataset(id: string, tenant: Tenant = localTenant()): Promise<Dataset | undefined> {
   return (await listDatasets(undefined, tenant)).find((d) => d.id === id);
 }
+
+export async function deleteDataset(id: string, tenant: Tenant = localTenant()): Promise<Dataset | undefined> {
+  const all = await listDatasets(undefined, tenant);
+  const idx = all.findIndex((d) => d.id === id);
+  if (idx === -1) return undefined;
+  const [removed] = all.splice(idx, 1);
+  await writeFile(registryPath(tenant), JSON.stringify(all, null, 2));
+  return removed;
+}
