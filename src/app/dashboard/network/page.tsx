@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSets } from "../components/SetContext";
 import { useSettings } from "../components/SettingsContext";
 import { neurus, netStream, type NetNeuron, type RosterEntry, type NeuronRow, type Durability, type NetAnswer, type PlayRow, type AgentDef, type SetInfo } from "@/services/neurus";
@@ -163,32 +163,54 @@ export default function NetworkPage() {
       .catch(() => {});
   }, [active]);
 
-  const authors = [...new Set(neurons.map((n) => n.source.author))];
-  const colorFor = (a: string) => AGENT_COLORS[(authors.indexOf(a) + AGENT_COLORS.length) % AGENT_COLORS.length];
-  const idColor = new Map(neurons.map((n) => [n.id, colorFor(n.source.author)]));
-
-  const chunkCount = new Map<string, number>();
-  for (const n of neurons) {
-    if (n.type !== "chunk") continue;
-    const parent = n.synapses.find((s) => s.kind === "derived_from")?.to;
-    if (parent) chunkCount.set(parent, (chunkCount.get(parent) ?? 0) + 1);
-  }
-  const displayNeurons = neurons.filter((n) => n.type !== "chunk");
-
-  const rows: NeuronRow[] = displayNeurons.map((n) => ({
-    id: n.id,
-    type: n.type,
-    title: n.type === "file" && chunkCount.get(n.id) ? `${n.title} · ${chunkCount.get(n.id)} chunks` : n.title,
-    trust: n.source.trust,
-    author: n.source.author,
-    durability: (n.meta?.durability as Durability) ?? "confirmed",
-    importance: n.meta?.importance as number | undefined,
-    ageHours: Math.round((Date.now() - n.createdAt) / 3_600_000),
-    synapses: n.synapses.filter((s) => s.kind !== "derived_from"),
-    preview: n.body.slice(0, 140),
-  }));
-  const legend = authors.map((a) => ({ label: a, color: colorFor(a) }));
-  const datasetAgents = myAgents.filter((a) => a.dataset === active);
+  const authors = useMemo(
+    () => [...new Set(neurons.map((n) => n.source.author))],
+    [neurons],
+  );
+  const colorFor = useMemo(
+    () => (a: string) => AGENT_COLORS[(authors.indexOf(a) + AGENT_COLORS.length) % AGENT_COLORS.length],
+    [authors],
+  );
+  const idColor = useMemo(
+    () => new Map(neurons.map((n) => [n.id, colorFor(n.source.author)])),
+    [neurons, colorFor],
+  );
+  const { chunkCount, displayNeurons } = useMemo(() => {
+    const chunkCount = new Map<string, number>();
+    const displayNeurons = [];
+    for (const n of neurons) {
+      if (n.type === "chunk") {
+        const parent = n.synapses.find((s) => s.kind === "derived_from")?.to;
+        if (parent) chunkCount.set(parent, (chunkCount.get(parent) ?? 0) + 1);
+      } else {
+        displayNeurons.push(n);
+      }
+    }
+    return { chunkCount, displayNeurons };
+  }, [neurons]);
+  const rows: NeuronRow[] = useMemo(
+    () => displayNeurons.map((n) => ({
+      id: n.id,
+      type: n.type,
+      title: n.type === "file" && chunkCount.get(n.id) ? `${n.title} · ${chunkCount.get(n.id)} chunks` : n.title,
+      trust: n.source.trust,
+      author: n.source.author,
+      durability: (n.meta?.durability as Durability) ?? "confirmed",
+      importance: n.meta?.importance as number | undefined,
+      ageHours: Math.round((Date.now() - n.createdAt) / 3_600_000),
+      synapses: n.synapses.filter((s) => s.kind !== "derived_from"),
+      preview: n.body.slice(0, 140),
+    })),
+    [displayNeurons, chunkCount],
+  );
+  const legend = useMemo(
+    () => authors.map((a) => ({ label: a, color: colorFor(a) })),
+    [authors, colorFor],
+  );
+  const datasetAgents = useMemo(
+    () => myAgents.filter((a) => a.dataset === active),
+    [myAgents, active],
+  );
 
   const importMemory = () => {
     setSeedMsg("importing…");

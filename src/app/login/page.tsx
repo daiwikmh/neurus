@@ -68,9 +68,9 @@ function LoginCard() {
         </div>
         <div>
           <h1 className="text-4xl font-semibold leading-tight">
-            Agents forget.
+            One memory. 
             <br />
-            Neurus remembers.
+            Every AI.
           </h1>
           <p className="mt-4 max-w-sm text-sm text-white/50">
             Sign in to your owned, verifiable memory on Walrus.

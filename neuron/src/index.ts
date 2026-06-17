@@ -23,6 +23,7 @@ import type { DatasetKind } from "./core/datasets";
 import { createWidget, listWidgets, deleteWidget, getWidget, type Widget } from "./core/widgets";
 import { addDataset, listDatasets, updateDataset, getDataset, deleteDataset, type Dataset } from "./core/datasets";
 import { blobHealth, type BlobHealth } from "./integrity/health";
+import { readFile } from "node:fs/promises";
 import { getBlob, putBlobInfo } from "./storage/walrus";
 import { extendBlob } from "./storage/extend";
 import { ingestWalrusBlob, type WalrusIngestOptions } from "./ingest/walrus";
@@ -84,10 +85,25 @@ export class Neurus {
     return ingestNote(this.mem, text, { behind: this.behind });
   }
 
-  async addFile(path: string): Promise<Neuron> {
-    const { file, chunks } = await ingestFile(path, { store: true });
+  async addFile(path: string, opts: { store?: boolean } = {}): Promise<Neuron> {
+    const { file, chunks } = await ingestFile(path, { store: opts.store ?? true });
     await this.mem.ingest(file, chunks, { behind: this.behind });
     return file;
+  }
+
+  async uploadFileToBlobstore(fileId: string, path: string): Promise<string> {
+    const raw = await readFile(path);
+    const info = await putBlobInfo(raw, 5);
+    await this.mem.ready();
+    const neuron = this.mem.all().find((n: Neuron) => n.id === fileId);
+    if (neuron) {
+      await this.mem.update({
+        ...neuron,
+        blobId: info.blobId,
+        meta: { ...neuron.meta, walrusObject: info.objectId, endEpoch: info.endEpoch },
+      });
+    }
+    return info.blobId;
   }
 
   async indexWalrus(blobId: string, opts?: WalrusIngestOptions): Promise<Neuron> {
@@ -316,6 +332,10 @@ export class Neurus {
   async reconcile(): Promise<{ queued: number; pending: number; failed: number }> {
     const { queued } = await this.mem.resume();
     return { queued, pending: this.mem.pending(), failed: this.mem.failed() };
+  }
+
+  restoreIndex(limit = 50): Promise<{ restored: number; skipped: number; total: number }> {
+    return this.mem.restoreIndex(limit);
   }
 
   datasetHealth(objectId: string): Promise<BlobHealth> {

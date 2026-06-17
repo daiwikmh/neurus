@@ -9,7 +9,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 const playfair = Playfair_Display({ variable: "--font-playfair", subsets: ["latin"], weight: ["700", "900"] });
 
 export const metadata: Metadata = {
-  title: "Neurus — owned, verifiable memory for AI agents",
+  title: "Neurus",
   description: "The owned, verifiable memory layer for AI agents, on Walrus. Capture anything, recall it by meaning, and prove it was never tampered with.",
 };
 

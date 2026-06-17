@@ -1,5 +1,6 @@
 const useColor = process.stdout.isTTY && !process.env.NO_COLOR;
 const wrap = (code: string) => (s: string) => (useColor ? `\x1b[${code}m${s}\x1b[0m` : s);
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export const c = {
   dim: wrap("2"),
@@ -17,7 +18,7 @@ const ANSI = /\x1b\[[0-9;]*m/g;
 const vlen = (s: string) => s.replace(ANSI, "").length;
 const pad = (s: string, w: number) => s + " ".repeat(Math.max(0, w - vlen(s)));
 
-export function banner(subtitle = "cross-user memory sharing · Seal-gated, custodian-blind, on Walrus"): void {
+export async function banner(subtitle = "cross-user memory sharing · Seal-gated, custodian-blind, on Walrus"): Promise<void> {
   const art = [
     "  ███╗   ██╗███████╗██╗   ██╗██████╗ ██╗   ██╗███████╗",
     "  ████╗  ██║██╔════╝██║   ██║██╔══██╗██║   ██║██╔════╝",
@@ -27,7 +28,10 @@ export function banner(subtitle = "cross-user memory sharing · Seal-gated, cust
     "  ╚═╝  ╚═══╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝",
   ];
   console.log("");
-  for (const l of art) console.log(c.cyan(l));
+  for (const l of art) {
+    console.log(c.cyan(l));
+    if (useColor) await sleep(35);
+  }
   console.log(c.dim("  " + subtitle));
   console.log("");
 }

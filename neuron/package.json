@@ -1,10 +1,18 @@
 {
   "name": "neurus",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
-  "version": "0.0.0",
-  "description": "Persistent intelligence infrastructure for AI agents on Walrus",
+  "description": "Owned, verifiable memory layer for AI agents — on Walrus",
+  "bin": {
+    "neurus": "./dist/neurus.js",
+    "neurus-mcp": "./dist/mcp.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
+    "build": "node build.mjs",
+    "prepublishOnly": "node build.mjs",
     "cli": "tsx bin/neurus.ts",
     "neurus": "tsx bin/neurus.ts",
     "web": "tsx src/web/server.ts",

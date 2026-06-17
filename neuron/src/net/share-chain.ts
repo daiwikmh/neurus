@@ -1,4 +1,5 @@
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
+import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
 import { Transaction } from "@mysten/sui/transactions";
 import { SuiJsonRpcClient, getJsonRpcFullnodeUrl } from "@mysten/sui/jsonRpc";
 
@@ -25,7 +26,12 @@ function pkg(): string {
 }
 
 function signer(): Ed25519Keypair {
-  return Ed25519Keypair.fromSecretKey(secretKey()!.trim());
+  const raw = secretKey()!.trim();
+  if (raw.startsWith("suiprivkey")) {
+    const { secretKey: bytes } = decodeSuiPrivateKey(raw);
+    return Ed25519Keypair.fromSecretKey(bytes);
+  }
+  return Ed25519Keypair.fromSecretKey(raw);
 }
 
 function client(): SuiJsonRpcClient {

@@ -2,8 +2,6 @@ import { SealClient, SessionKey, EncryptedObject } from "@mysten/seal";
 import { Transaction } from "@mysten/sui/transactions";
 import type { SuiJsonRpcClient } from "@mysten/sui/jsonRpc";
 
-const PKG =
-  process.env.NEXT_PUBLIC_NEURUS_SEAL_PACKAGE ?? "0xfb0728e6e0900c92f4c9b58f8910dad2b74849f394a312f3ca9d718ef68fad03";
 const KEYSERVERS = (
   process.env.NEXT_PUBLIC_SEAL_KEYSERVERS ?? "0xb012378c9f3799fb5b1a7083da74a4069e3c3f1c93de0b27212a5799ce1e1e98"
 )
@@ -33,7 +31,9 @@ export async function decryptSealed(opts: {
   signPersonalMessage: (message: Uint8Array) => Promise<{ signature: string }>;
 }): Promise<string> {
   const sealed = b64ToBytes(opts.sealedB64);
-  const identity = EncryptedObject.parse(sealed).id;
+  const parsed = EncryptedObject.parse(sealed);
+  const identity = parsed.id;
+  const packageId = parsed.packageId;
 
   const sealClient = new SealClient({
     suiClient: opts.suiClient as never,
@@ -41,13 +41,13 @@ export async function decryptSealed(opts: {
     verifyKeyServers: false,
   });
 
-  const sessionKey = await SessionKey.create({ address: opts.address, packageId: PKG, ttlMin: 10, suiClient: opts.suiClient as never });
+  const sessionKey = await SessionKey.create({ address: opts.address, packageId, ttlMin: 10, suiClient: opts.suiClient as never });
   const { signature } = await opts.signPersonalMessage(sessionKey.getPersonalMessage());
   await sessionKey.setPersonalMessageSignature(signature);
 
   const tx = new Transaction();
   tx.moveCall({
-    target: `${PKG}::share::seal_approve`,
+    target: `${packageId}::share::seal_approve`,
     arguments: [tx.pure.vector("u8", Array.from(hexToBytes(identity))), tx.object(opts.shareId)],
   });
   const txBytes = await tx.build({ client: opts.suiClient as never, onlyTransactionKind: true });

@@ -104,6 +104,7 @@ export const neurus = {
   renewDataset: (set: string, id: string) => call<{ dataset: Dataset }>("POST", "/datasets/renew", { set, id }).then((r) => r.dataset),
   deleteDataset: (set: string, id: string) => call<{ deleted: boolean; neuronsForgotten: number }>("POST", "/datasets/delete", { set, id }),
   reconcile: (set: string) => call<{ queued: number; pending: number; failed: number }>("POST", "/reconcile", { set }),
+  restoreIndex: (set: string, limit?: number) => call<{ restored: number; skipped: number; total: number }>("POST", "/restore", { set, limit }),
   widgets: (set: string) => call<{ widgets: Widget[] }>("GET", `/widgets?set=${encodeURIComponent(set)}`).then((r) => r.widgets),
   createWidget: (set: string, name: string, origins: string[], datasetId?: string) => call<{ widget: Widget }>("POST", "/widgets", { set, name, origins, datasetId }).then((r) => r.widget),
   deleteWidget: (set: string, id: string) => call<{ deleted: boolean }>("POST", "/widgets/delete", { set, id }),

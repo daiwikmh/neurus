@@ -44,8 +44,27 @@ export class MemwalStore {
     }
   }
 
+  async rememberBulk(texts: string[], timeoutMs = 150_000): Promise<string[]> {
+    try {
+      const res = await withRetry(
+        () => this.mw.rememberBulkAndWait(texts.map((text) => ({ text, namespace: this.namespace })), { timeoutMs }),
+        { label: "memory bulk write (MemWal)", attempts: 3, shouldRetry: isNetworkError },
+      );
+      return res.results.map((r) => r.blob_id ?? "");
+    } catch (e) {
+      const rl = asRateLimit(e);
+      if (rl) throw rl;
+      throw e;
+    }
+  }
+
   async rememberAsync(text: string): Promise<void> {
     await this.mw.rememberAsync(text, this.namespace);
+  }
+
+  async restore(limit = 50): Promise<{ restored: number; skipped: number; total: number }> {
+    const res = await this.mw.restore(this.namespace, limit);
+    return { restored: res.restored, skipped: res.skipped, total: res.total };
   }
 
   async recall(query: string, limit = 20, maxDistance?: number): Promise<MemwalHit[]> {

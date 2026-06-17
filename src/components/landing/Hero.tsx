@@ -16,9 +16,9 @@ function Content({ copied, copy }: { copied: boolean; copy: () => void }) {
       </span>
 
       <h1 className="max-w-4xl text-5xl font-bold leading-[1.03] tracking-tight text-white sm:text-[68px]">
-        Agents forget.
+        One memory. Every model. 
         <br />
-        Neurus remembers.
+        Always yours. 
       </h1>
 
       <p className="mt-7 max-w-xl text-lg leading-relaxed text-white/65 sm:text-xl">

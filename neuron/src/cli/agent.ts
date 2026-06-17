@@ -12,6 +12,13 @@ import { chat as nvidiaChat } from "../llm/nvidia";
 import { banner, strip, box, c, info, ok, warn, err, shortId } from "./ui";
 import { loadConfig, saveConfig, applyConfig, configPath, DEFAULT_MODEL, type CliConfig, type Provider } from "./config";
 import { loadIdentity, createIdentity, tenantFor, identityPath, shortAddr, type AgentIdentity } from "./identity";
+import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
+import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
+import { fetchSealedDataset } from "../net/share";
+import { unsealForReader } from "../access/seal-walrus";
+import { createShare, grantReader, shareConfigured } from "../net/share-chain";
+import { publishSealedDataset } from "../net/share";
+import { createFeed, listFeeds, getFeed, type Feed } from "../core/feeds";
 
 function ask(rl: rlp.Interface, q: string): Promise<string> {
   return rl.question(q);
@@ -76,6 +83,9 @@ function helpBox(): void {
     `${c.bold("@")}             type @ to browse files in this folder, pick one to ask over it`,
     `${c.bold("/blobs")}        list files uploaded to Walrus in this set`,
     `${c.bold("/publish")}      snapshot this memory to Walrus (prints the blob)`,
+    `${c.bold("/share [name]")} create a Seal-gated feed from this set → shareId + blobId`,
+    `${c.bold("/grant <addr>")} grant a Sui address access to the last feed`,
+    `${c.bold("/follow <blobId> <shareId>")}  import a shared feed into this set`,
     `${c.bold("/set <name>")}   switch knowledge set`,
     `${c.bold("/whoami")}       this agent's name + address`,
     `${c.bold("/model [id]")}   show or change the model`,
@@ -105,13 +115,22 @@ function fmtBytes(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function bootPanel(rows: { label: string; value: string; ok?: boolean }[]): void {
+async function bootPanel(rows: { label: string; value: string; ok?: boolean }[]): Promise<void> {
+  const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+  const useColor = process.stdout.isTTY && !process.env.NO_COLOR;
+  const width = 30;
   console.log(c.gray("> ") + c.dim("neurus init"));
-  console.log("  " + c.magenta("█".repeat(30)) + c.dim("  100%") + "\n");
+  for (let i = 0; i <= width; i += 2) {
+    const bar = c.magenta("█".repeat(i)) + c.dim("·".repeat(width - i));
+    process.stdout.write(`  ${bar}  ${c.dim(String(Math.round((i / width) * 100)).padStart(3) + "%")}\r`);
+    if (useColor) await sleep(18);
+  }
+  process.stdout.write("\n\n");
   const w = Math.max(...rows.map((r) => r.label.length));
   for (const r of rows) {
     const mark = r.ok === false ? c.yellow("✗") : c.green("✓");
     console.log(`  ${c.magenta("◇")} ${c.bold(r.label.padEnd(w))}  ${c.dim("│")}  ${c.gray(r.value)}  ${mark}`);
+    if (useColor) await sleep(80);
   }
   console.log(`  ${c.green("✓")} ${c.green("ready")}  ${c.dim("— type")} ${c.bold("/help")} ${c.dim("or try")} ${c.bold("ask")}${c.dim(",")} ${c.bold("/recall")}${c.dim(",")} ${c.bold("/note")}\n`);
 }
@@ -139,6 +158,7 @@ export async function runAgent(setName = "default"): Promise<void> {
   let storage = 0;
   let setsCount = 0;
   let mentions: { name: string; fileId: string; datasetId?: string }[] = [];
+  let lastFeed: Feed | null = null;
 
   const refreshStats = async () => {
     const ns = await neurus.neurons();
@@ -157,8 +177,8 @@ export async function runAgent(setName = "default"): Promise<void> {
   };
   if (fs) { screen.enter(); setHdr(); } else { console.log(""); console.log(headerBase()); }
 
-  banner("owned, verifiable memory  ·  walrus × sui");
-  bootPanel([
+  await banner("owned, verifiable memory  ·  walrus × sui");
+  await bootPanel([
     { label: "engine", value: "recall · rerank · consolidate", ok: true },
     { label: "walrus", value: "memory blobs · sui testnet", ok: true },
     { label: "identity", value: `${identity.name} · ${shortAddr(identity.address)}`, ok: true },
@@ -326,6 +346,71 @@ export async function runAgent(setName = "default"): Promise<void> {
         continue;
       }
 
+      if (line.startsWith("/share")) {
+        const feedName = line.slice(6).trim() || neurus.set.name;
+        const cfg2 = shareConfigured();
+        if (!cfg2.ok) { err(`share not configured: ${cfg2.reason}`); continue; }
+        try {
+          process.stdout.write(c.dim("  creating feed on Sui + sealing to Walrus…\r"));
+          const { shareId, capId } = await createShare(feedName, "dataset");
+          const pub = await publishSealedDataset(neurus.set.name, shareId, tenant);
+          lastFeed = await createFeed(tenant, { set: neurus.set.name, name: feedName, shareId, capId, blobId: pub.blobId, identity: pub.identity, neurons: pub.neurons });
+          process.stdout.write("                                               \r");
+          ok(`feed "${feedName}" published — ${pub.neurons} neurons sealed`);
+          info(`shareId  ${c.bold(shareId)}`);
+          info(`blobId   ${c.bold(pub.blobId)}`);
+          info(`${c.dim("grant an address:")} /grant <0x…address>`);
+        } catch (e) {
+          err(e instanceof Error ? e.message : String(e));
+        }
+        continue;
+      }
+
+      if (line.startsWith("/grant")) {
+        const address = line.slice(6).trim();
+        if (!address) { warn("usage: /grant <0x…sui address>"); continue; }
+        if (!/^0x[0-9a-fA-F]{64}$/.test(address)) { err("not a valid Sui address (needs 0x + 64 hex chars)"); continue; }
+        const feed = lastFeed ?? (await listFeeds(tenant, neurus.set.name)).at(-1) ?? null;
+        if (!feed) { err("no feed for this set yet — run /share first"); continue; }
+        try {
+          process.stdout.write(c.dim("  adding to on-chain allowlist…\r"));
+          await grantReader(feed.shareId, feed.capId, address);
+          process.stdout.write("                                  \r");
+          ok(`granted ${address.slice(0, 8)}… access to "${feed.name}"`);
+          info(`they run: neurus follow ${feed.blobId} --share ${feed.shareId}`);
+          info(`or in agent: follow blobId ${feed.blobId} shareId ${feed.shareId}`);
+        } catch (e) {
+          err(e instanceof Error ? e.message : String(e));
+        }
+        continue;
+      }
+
+      if (line.startsWith("/follow")) {
+        const parts = line.slice(7).trim().split(/\s+/);
+        const blobId = parts[0];
+        const shareId = parts[1];
+        if (!blobId || !shareId) { warn("usage: /follow <blobId> <shareId>"); continue; }
+        if (!/^0x[0-9a-fA-F]{64}$/.test(shareId)) { err("shareId must be 0x + 64 hex chars"); continue; }
+        try {
+          const { secretKey: keyBytes } = decodeSuiPrivateKey(identity.secretKey);
+          const kp = Ed25519Keypair.fromSecretKey(keyBytes);
+          const signer = { signPersonalMessage: async (msg: Uint8Array) => { const { signature } = await kp.signPersonalMessage(msg); return { signature }; } };
+          process.stdout.write(c.dim("  fetching sealed blob…\r"));
+          const { sealedB64 } = await fetchSealedDataset(blobId);
+          process.stdout.write(c.dim("  requesting key from Seal servers…\r"));
+          const plaintext = await unsealForReader(sealedB64, { shareId, address: identity.address, signer });
+          const neurons = JSON.parse(plaintext) as unknown[];
+          process.stdout.write("                                      \r");
+          for (const n of neurons) await neurus.memory.remember(n as never);
+          await neurus.flush();
+          await refreshStats(); renderStatus();
+          ok(`imported ${neurons.length} neurons from shared feed into "${neurus.set.name}"`);
+        } catch (e) {
+          err(e instanceof Error ? e.message : String(e));
+        }
+        continue;
+      }
+
       if (line.startsWith("/recall")) {
         const q = line.slice(7).trim();
         if (!q) { warn("usage: /recall <query>"); continue; }
@@ -363,6 +448,73 @@ export async function runAgent(setName = "default"): Promise<void> {
 
       if (line.startsWith("/")) { warn(`unknown command — try ${c.bold("/help")}`); continue; }
 
+      // Natural language detection: follow a feed, grant access, create a feed
+      {
+        const shareIdMatch = line.match(/0x[0-9a-fA-F]{64}/);
+        const blobIdMatch = line.match(/\b([A-Za-z0-9_-]{40,60})\b/);
+        const lc = line.toLowerCase();
+        const isFollow = (lc.includes("follow") || lc.includes("import") || lc.includes("subscribe")) && shareIdMatch && blobIdMatch && blobIdMatch[1] !== shareIdMatch[0];
+        const isGrant = (lc.includes("grant") || lc.includes("give access") || lc.includes("allow")) && shareIdMatch;
+        const isShare = (lc.includes("share") || lc.includes("create feed") || lc.includes("publish feed")) && !shareIdMatch;
+
+        if (isFollow) {
+          const blobId = blobIdMatch![1];
+          const shareId = shareIdMatch![0];
+          try {
+            const { secretKey: keyBytes } = decodeSuiPrivateKey(identity.secretKey);
+            const kp = Ed25519Keypair.fromSecretKey(keyBytes);
+            const signer = { signPersonalMessage: async (msg: Uint8Array) => { const { signature } = await kp.signPersonalMessage(msg); return { signature }; } };
+            process.stdout.write(c.dim("  fetching sealed blob…\r"));
+            const { sealedB64 } = await fetchSealedDataset(blobId);
+            process.stdout.write(c.dim("  requesting key from Seal servers…\r"));
+            const plaintext = await unsealForReader(sealedB64, { shareId, address: identity.address, signer });
+            const neurons = JSON.parse(plaintext) as unknown[];
+            process.stdout.write("                                      \r");
+            for (const n of neurons) await neurus.memory.remember(n as never);
+            await neurus.flush();
+            await refreshStats(); renderStatus();
+            ok(`imported ${neurons.length} neurons from shared feed into "${neurus.set.name}"`);
+          } catch (e) {
+            err(e instanceof Error ? e.message : String(e));
+          }
+          continue;
+        }
+
+        if (isGrant) {
+          const address = shareIdMatch![0];
+          const feed = lastFeed ?? (await listFeeds(tenant, neurus.set.name)).at(-1) ?? null;
+          if (!feed) { err("no feed for this set yet — run /share first"); continue; }
+          try {
+            process.stdout.write(c.dim("  adding to on-chain allowlist…\r"));
+            await grantReader(feed.shareId, feed.capId, address);
+            process.stdout.write("                                  \r");
+            ok(`granted ${address.slice(0, 8)}… access to "${feed.name}"`);
+            info(`they run: /follow ${feed.blobId} ${feed.shareId}`);
+          } catch (e) {
+            err(e instanceof Error ? e.message : String(e));
+          }
+          continue;
+        }
+
+        if (isShare) {
+          const cfg2 = shareConfigured();
+          if (!cfg2.ok) { err(`share not configured: ${cfg2.reason}`); continue; }
+          try {
+            process.stdout.write(c.dim("  creating feed…\r"));
+            const { shareId, capId } = await createShare(neurus.set.name, "dataset");
+            const pub = await publishSealedDataset(neurus.set.name, shareId, tenant);
+            lastFeed = await createFeed(tenant, { set: neurus.set.name, name: neurus.set.name, shareId, capId, blobId: pub.blobId, identity: pub.identity, neurons: pub.neurons });
+            process.stdout.write("                \r");
+            ok(`feed published — ${pub.neurons} neurons sealed`);
+            info(`shareId  ${c.bold(shareId)}`);
+            info(`blobId   ${c.bold(pub.blobId)}`);
+          } catch (e) {
+            err(e instanceof Error ? e.message : String(e));
+          }
+          continue;
+        }
+      }
+
       try {
         const tokens = [...line.matchAll(/@(\S+)/g)].map((x) => x[1]);
         const scopedFileIds = new Set<string>();
@@ -372,14 +524,16 @@ export async function runAgent(setName = "default"): Promise<void> {
           if (st?.isFile()) {
             const existing = mentions.find((m) => m.name.toLowerCase() === basename(tok).toLowerCase());
             if (existing) { scopedFileIds.add(existing.fileId); scopedNames.push(existing.name); continue; }
-            setHdr(`writing ${basename(tok)} to Walrus…`);
             try {
-              const file = await neurus.addFile(resolve(tok));
+              const file = await neurus.addFile(resolve(tok), { store: false });
               await refreshStats();
-              setHdr(); renderStatus();
-              scopedFileIds.add(file.id); scopedNames.push(file.title);
+              renderStatus();
+              scopedFileIds.add(file.id);
+              scopedNames.push(file.title);
+              neurus.uploadFileToBlobstore(file.id, resolve(tok))
+                .then((blobId) => { info(`${c.dim("walrus ·")} ${blobId}`); })
+                .catch((e) => { warn(`walrus upload: ${e instanceof Error ? e.message : String(e)}`); });
             } catch (e) {
-              setHdr();
               err(`add ${basename(tok)}: ${e instanceof Error ? e.message : String(e)}`);
             }
           } else {

@@ -1,42 +1,5 @@
-import type { ReactNode } from "react";
 import { Reveal } from "./primitives";
 import { Container } from "./Container";
-
-const code = `const neurus = await Neurus.open("my-agent")
-
-// Remember anything — extracted into neurons on Walrus
-await neurus.note("Sarah is allergic to shellfish. I owe her the deck Friday.")
-await neurus.addFile("./contract.pdf")
-
-// Recall by meaning — two-stage retrieval, grounded + cited
-const answer = await neurus.ask("what do I owe Sarah, and when?")
-
-// Plug it into any LLM as a retriever
-const passages = await neurus.retrieve(query, { topK: 5, mmr: 0.5 })
-
-// Prove the memory was never tampered with
-await neurus.makeVerified()
-const { ok } = await neurus.verifyIntegrity()`;
-
-const TOKEN = /(\/\/[^\n]*)|("(?:[^"\\]|\\.)*")|\b(const|new|async|await|switch|case|return|let)\b/g;
-
-function highlight(src: string) {
-  const out: ReactNode[] = [];
-  let last = 0;
-  let k = 0;
-  let m: RegExpExecArray | null;
-  TOKEN.lastIndex = 0;
-  while ((m = TOKEN.exec(src))) {
-    if (m.index > last) out.push(src.slice(last, m.index));
-    const [full, comment, str, kw] = m;
-    if (comment) out.push(<span key={k++} className="text-white/35">{comment}</span>);
-    else if (str) out.push(<span key={k++} className="text-[#c3e88d]">{str}</span>);
-    else if (kw) out.push(<span key={k++} className="text-[#c792ea]">{kw}</span>);
-    last = m.index + full.length;
-  }
-  if (last < src.length) out.push(src.slice(last));
-  return out;
-}
 
 function Ic({ d }: { d: string }) {
   return (
@@ -79,19 +42,16 @@ export function PlatformShowcase() {
       <Container className="grid items-start gap-10 lg:grid-cols-2">
         <Reveal>
           <h2 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">Drop in. Remember.</h2>
-          <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-[#0c0d10]">
-            <pre className="overflow-x-auto p-5 font-mono text-[12.5px] leading-[1.7] text-white/80">
-              <code>{highlight(code)}</code>
-            </pre>
-            <div className="flex items-center justify-between border-t border-white/5 px-4 py-3">
-              <button className="rounded-md border border-white/10 p-1.5 text-white/40 transition hover:text-white/70" aria-label="Copy code">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
-                  <rect x="9" y="9" width="11" height="11" rx="2" />
-                  <path d="M5 15V5a2 2 0 0 1 2-2h10" />
-                </svg>
-              </button>
-              <span className="rounded-lg bg-white/[0.06] px-3.5 py-1.5 text-sm text-white/80">Run ↵</span>
-            </div>
+          <div className="mt-6 overflow-hidden rounded-2xl border border-white/10">
+            <video
+              src="/video.mov"
+              alt="Neurus CLI boot sequence"
+              className="w-full object-cover"
+              controls
+              autoPlay
+              muted
+              loop
+            />
           </div>
         </Reveal>
 

@@ -20,6 +20,8 @@ export default function NeuronsPage() {
   const [filter, setFilter] = useState<NeuronType | "all">("all");
   const [view, setView] = useState<"list" | "graph">("list");
   const [loading, setLoading] = useState(true);
+  const [restoring, setRestoring] = useState(false);
+  const [restoreMsg, setRestoreMsg] = useState("");
 
   const load = () => {
     if (!online) { setLoading(false); return; }
@@ -27,6 +29,20 @@ export default function NeuronsPage() {
     neurus.neurons(active).then((r) => { setRows(r); setLoading(false); }).catch(() => { setRows([]); setLoading(false); });
   };
   useEffect(load, [active, online]);
+
+  const restore = async () => {
+    setRestoring(true);
+    setRestoreMsg("");
+    try {
+      const r = await neurus.restoreIndex(active);
+      setRestoreMsg(`Restored ${r.restored} · skipped ${r.skipped} · total ${r.total}`);
+      if (r.restored > 0) load();
+    } catch {
+      setRestoreMsg("Restore failed — check server logs");
+    } finally {
+      setRestoring(false);
+    }
+  };
 
   const forget = async (id: string) => {
     await neurus.forget(active, id).catch(() => {});
@@ -54,9 +70,13 @@ export default function NeuronsPage() {
               </button>
             ))}
           </div>
+          <button onClick={restore} disabled={restoring} className="rounded-lg border border-white/10 px-3 py-1.5 text-[13px] text-white/50 transition hover:text-white disabled:opacity-40">
+            {restoring ? "Restoring…" : "Restore index"}
+          </button>
           <button onClick={load} className="rounded-lg border border-white/10 px-3 py-1.5 text-[13px] text-white/50 transition hover:text-white">Refresh</button>
         </div>
       </div>
+      {restoreMsg && <p className="mt-3 text-[12px] text-white/50">{restoreMsg}</p>}
 
       <div className="mt-6 flex flex-wrap gap-1.5">
         {TYPES.map((t) => (

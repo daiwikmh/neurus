@@ -4,10 +4,28 @@ import { z } from "zod";
 import { Neurus, localTenant } from "../src/index";
 import { listSets } from "../src/core/sets";
 import { publishSealedDataset, fetchSealedDataset } from "../src/net/share";
+import { createShare, grantReader, shareConfigured } from "../src/net/share-chain";
+import { createFeed, listFeeds } from "../src/core/feeds";
 
-try { process.loadEnvFile(".env.local"); } catch { /* noop */ }
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import { loadMcpConfig, applyMcpConfig } from "../src/cli/mcp-config";
+
+const _dir = dirname(fileURLToPath(import.meta.url));
+// dev: load local .env.local; prod: overridden by ~/.neurus/mcp.json below
+try { process.loadEnvFile(join(_dir, "../.env.local")); } catch { /* noop */ }
+// user config always wins — load after .env.local so it takes precedence
+const _mcpCfg = await loadMcpConfig();
+if (_mcpCfg) applyMcpConfig(_mcpCfg);
 
 const text = (t: string) => ({ content: [{ type: "text" as const, text: t }] });
+
+function notConfigured(): ReturnType<typeof text> | null {
+  if (!process.env.MEMWAL_ACCOUNT_ID || !process.env.MEMWAL_DELEGATE_KEY) {
+    return text("Neurus is not configured yet.\n\nRun: neurus setup\n\nThis walks you through connecting your MemWal account (https://memory.walrus.xyz) and saves credentials to ~/.neurus/mcp.json.");
+  }
+  return null;
+}
 
 const server = new McpServer({ name: "neurus", version: "0.1.0" });
 
@@ -19,6 +37,7 @@ server.registerTool(
     inputSchema: {},
   },
   async () => {
+    const nc = notConfigured(); if (nc) return nc;
     const sets = await listSets();
     if (!sets.length) return text("No knowledge sets yet.");
     return text(sets.map((s) => `${s.name} · ${s.id} · ${s.visibility}${s.sharedWith.length ? ` · shared with ${s.sharedWith.join(", ")}` : ""}`).join("\n"));
@@ -33,6 +52,7 @@ server.registerTool(
     inputSchema: { query: z.string().describe("what to search for, in natural language"), set: z.string().optional().describe("knowledge set name (default: 'default')"), limit: z.number().optional().describe("max results (default 6)") },
   },
   async ({ query, set, limit }) => {
+    const nc = notConfigured(); if (nc) return nc;
     const nx = await Neurus.open(set ?? "default");
     const hits = await nx.recall(query, { limit: limit ?? 6 });
     if (!hits.length) return text("(no relevant memories in this set)");
@@ -48,6 +68,7 @@ server.registerTool(
     inputSchema: { question: z.string(), set: z.string().optional().describe("knowledge set name (default: 'default')") },
   },
   async ({ question, set }) => {
+    const nc = notConfigured(); if (nc) return nc;
     const nx = await Neurus.open(set ?? "default");
     const a = await nx.ask(question);
     return text(a.sources.length ? `${a.text}\n\nSources: ${a.sources.join(", ")}` : a.text);
@@ -62,6 +83,7 @@ server.registerTool(
     inputSchema: { text: z.string().describe("the note / fact to remember"), set: z.string().optional().describe("knowledge set name (default: 'default')") },
   },
   async ({ text: note, set }) => {
+    const nc = notConfigured(); if (nc) return nc;
     const nx = await Neurus.open(set ?? "default");
     const r = await nx.note(note);
     return text(`Remembered in "${nx.set.name}". people: ${r.people.map((p) => p.title).join(", ") || "—"} · commitments: ${r.commitments.length}`);
@@ -69,15 +91,77 @@ server.registerTool(
 );
 
 server.registerTool(
+  "create_feed",
+  {
+    title: "Create a shareable memory feed",
+    description: "Create an on-chain Seal allowlist (Share object), seal-encrypt the set's neurons, upload to Walrus, and return the shareId + blobId. Grant the reader's Sui address with grant_feed before they can decrypt. Requires NEURUS_SEAL_PACKAGE + SUI_TESTNET_PRIVATE_KEY to be configured.",
+    inputSchema: {
+      set: z.string().describe("knowledge set to share"),
+      name: z.string().optional().describe("feed display name (default: set name)"),
+    },
+  },
+  async ({ set, name }) => {
+    const cfg = shareConfigured();
+    if (!cfg.ok) return text(`Cannot create feed: ${cfg.reason}`);
+    const tenant = localTenant();
+    const { shareId, capId } = await createShare(name ?? set, "dataset");
+    const pub = await publishSealedDataset(set, shareId, tenant);
+    await createFeed(tenant, { set, name: name ?? set, shareId, capId, blobId: pub.blobId, identity: pub.identity, neurons: pub.neurons });
+    return text(`Feed created for "${set}".\n\nshareId: ${pub.shareId}\nblobId:  ${pub.blobId}\nneurons: ${pub.neurons}\n\nNext: use grant_feed to allow a Sui address to decrypt this feed.\nReader runs: neurus follow ${pub.blobId} --share ${pub.shareId}`);
+  },
+);
+
+server.registerTool(
+  "grant_feed",
+  {
+    title: "Grant a Sui address access to a feed",
+    description: "Add a Sui address to a feed's on-chain allowlist so they can decrypt it. The reader gets the blobId + shareId and decrypts with their own key — nothing is custodied.",
+    inputSchema: {
+      shareId: z.string().describe("Share object id (0x…) from create_feed"),
+      capId: z.string().describe("Cap object id (0x…) from create_feed — needed to authorize the grant"),
+      address: z.string().describe("reader's Sui address (0x…) — they run `neurus whoami` to get this"),
+    },
+  },
+  async ({ shareId, capId, address }) => {
+    if (!/^0x[0-9a-fA-F]{64}$/.test(shareId)) return text("shareId must be a 0x-prefixed 64-hex Sui object id");
+    if (!/^0x[0-9a-fA-F]{64}$/.test(address)) return text("address must be a 0x-prefixed 64-hex Sui address");
+    const cfg = shareConfigured();
+    if (!cfg.ok) return text(`Cannot grant: ${cfg.reason}`);
+    await grantReader(shareId, capId, address);
+    return text(`Granted ${address} access to share ${shareId}.\n\nThey can now decrypt with:\n  neurus follow <blobId> --share ${shareId}`);
+  },
+);
+
+server.registerTool(
+  "list_feeds",
+  {
+    title: "List memory feeds",
+    description: "List all published memory feeds for a set, including their shareId, blobId, and who has been granted access.",
+    inputSchema: { set: z.string().optional().describe("filter by set name") },
+  },
+  async ({ set }) => {
+    const nc = notConfigured(); if (nc) return nc;
+    const feeds = await listFeeds(localTenant(), set);
+    if (!feeds.length) return text("No feeds yet. Use create_feed to publish one.");
+    return text(feeds.map((f) => `${f.name}\n  shareId: ${f.shareId}\n  blobId:  ${f.blobId}\n  neurons: ${f.neurons}\n  grants:  ${f.grants.length ? f.grants.join(", ") : "none"}`).join("\n\n"));
+  },
+);
+
+server.registerTool(
   "share_set",
   {
-    title: "Share a set (Seal + Walrus)",
-    description: "Seal-encrypt a set's entire memory and publish it to Walrus. Returns a blob id that can be shared; the data is unreadable without an allowlisted key (custodian-blind). Use this for cross-agent / cross-user memory sharing.",
-    inputSchema: { set: z.string().describe("the set to share"), shareId: z.string().optional().describe("Seal share/allowlist id (defaults to the set name)") },
+    title: "Re-seal a set under an existing Share object",
+    description: "Re-encrypt a set's current neurons and update the Walrus blob for an existing share. Use this to refresh a feed after adding new memories. The shareId must be a real Sui Share object id (0x…64hex) — use create_feed to create one first.",
+    inputSchema: {
+      set: z.string().describe("the set to share"),
+      shareId: z.string().describe("existing Sui Share object id (0x…) — from create_feed or list_feeds"),
+    },
   },
   async ({ set, shareId }) => {
-    const r = await publishSealedDataset(set, shareId ?? set, localTenant());
-    return text(`Sealed "${set}" → Walrus.\nblobId: ${r.blobId}\nshareId: ${r.shareId}\nneurons: ${r.neurons}\nThe blob is encrypted; only allowlisted readers can decrypt it.`);
+    const nc = notConfigured(); if (nc) return nc;
+    if (!/^0x[0-9a-fA-F]{64}$/.test(shareId)) return text("shareId must be a 0x-prefixed 64-hex Sui object id — use create_feed to get one");
+    const r = await publishSealedDataset(set, shareId, localTenant());
+    return text(`Re-sealed "${set}" → Walrus.\nblobId:  ${r.blobId}\nshareId: ${r.shareId}\nneurons: ${r.neurons}\n\nReader runs: neurus follow ${r.blobId} --share ${r.shareId}`);
   },
 );
 

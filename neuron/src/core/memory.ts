@@ -105,8 +105,22 @@ export class Memory {
       }
       void this.drain();
     } else {
-      await Promise.all(items.map((n) => this.embed(n)));
-      for (const n of items) if (SEARCHABLE.has(n.type)) n.meta = { ...(n.meta ?? {}), durability: "confirmed" };
+      const searchable = items.filter((n) => SEARCHABLE.has(n.type));
+      if (searchable.length > 1) {
+        const texts = searchable.map((n) => (n.meta?.embedText as string | undefined) ?? n.body);
+        const blobIds = await this.memwal.rememberBulk(texts);
+        for (let i = 0; i < searchable.length; i++) {
+          const blobId = blobIds[i];
+          if (blobId) {
+            this.byMemwalBlob.set(blobId, searchable[i].id);
+            searchable[i].meta = { ...(searchable[i].meta ?? {}), memwalBlob: blobId };
+          }
+          searchable[i].meta = { ...(searchable[i].meta ?? {}), durability: "confirmed" };
+        }
+      } else {
+        await Promise.all(items.map((n) => this.embed(n)));
+        for (const n of items) if (SEARCHABLE.has(n.type)) n.meta = { ...(n.meta ?? {}), durability: "confirmed" };
+      }
     }
     await this.save();
   }
@@ -137,6 +151,10 @@ export class Memory {
       if (this.queue.length) await new Promise((r) => setTimeout(r, WRITE_SPACING_MS));
     }
     this.draining = false;
+  }
+
+  async restoreIndex(limit = 50): Promise<{ restored: number; skipped: number; total: number }> {
+    return this.memwal.restore(limit);
   }
 
   async resume(): Promise<{ queued: number }> {

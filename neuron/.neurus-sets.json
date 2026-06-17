@@ -171,5 +171,15 @@
     "integrity": "none",
     "sharedWith": [],
     "createdAt": 1781361497554
+  },
+  {
+    "id": "set_e8ed900c",
+    "name": "58d6be5d",
+    "namespace": "neurus_local_set_e8ed900c",
+    "manifestPath": ".neurus-set_e8ed900c.json",
+    "visibility": "private",
+    "integrity": "none",
+    "sharedWith": [],
+    "createdAt": 1781693155276
   }
 ]

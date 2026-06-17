@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useCurrentAccount } from "@mysten/dapp-kit";
 import { useSets } from "../components/SetContext";
 import { neurus, type Dataset, type BlobHealth, type Widget } from "@/services/neurus";
+import { uploadToWalrus } from "@/lib/walrus-upload";
 
 const KIND_LABEL: Record<Dataset["kind"], string> = { file: "file", snapshot: "snapshot", import: "import", web: "web docs", folder: "folder", github: "github" };
 const walruscan = (blobId: string) => `https://walruscan.com/testnet/blob/${blobId}`;
@@ -52,6 +54,8 @@ function HealthBadge({ set, objectId }: { set: string; objectId?: string }) {
 
 export default function DatasetsPage() {
   const { active, online } = useSets();
+  const account = useCurrentAccount();
+  const walletAddr = account?.address;
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -60,6 +64,8 @@ export default function DatasetsPage() {
   const [repoInput, setRepoInput] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const folderRef = useRef<HTMLInputElement>(null);
+
+  const [restoreMsg, setRestoreMsg] = useState<string | null>(null);
 
   const [widgets, setWidgets] = useState<Widget[]>([]);
   const [widgetDataset, setWidgetDataset] = useState("");
@@ -92,8 +98,24 @@ export default function DatasetsPage() {
   };
 
   const onFile = async (file: File) => {
-    const content = await toBase64(file);
-    await run("upload", () => neurus.uploadDataset(active, file.name, content));
+    if (walletAddr) {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      await run("upload", async () => {
+        const { blobId } = await uploadToWalrus(bytes, { owner: walletAddr });
+        await neurus.indexWalrus(active, blobId, file.name);
+      });
+    } else {
+      const content = await toBase64(file);
+      await run("upload", () => neurus.uploadDataset(active, file.name, content));
+    }
+  };
+
+  const restoreIndex = async () => {
+    setRestoreMsg(null);
+    await run("restore-index", async () => {
+      const r = await neurus.restoreIndex(active);
+      setRestoreMsg(`restored ${r.restored} · skipped ${r.skipped} · total on-chain ${r.total}`);
+    });
   };
 
   const onFolder = async (list: FileList) => {
@@ -135,6 +157,16 @@ export default function DatasetsPage() {
         >
           <div className="text-sm font-medium text-white">{busy === "publish" ? "Publishing…" : "Publish set snapshot"}</div>
           <div className="mt-1 text-[12px] text-white/40">the whole set as one Walrus blob</div>
+        </button>
+
+        <button
+          onClick={restoreIndex}
+          disabled={!!busy}
+          className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left transition hover:border-[#9aa8f0]/40 disabled:opacity-40"
+        >
+          <div className="text-sm font-medium text-white">{busy === "restore-index" ? "Restoring…" : "Restore index"}</div>
+          <div className="mt-1 text-[12px] text-white/40">rebuild MemWal vector index from on-chain blobs</div>
+          {restoreMsg && <div className="mt-2 text-[11px] text-emerald-300/80">{restoreMsg}</div>}
         </button>
 
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">

@@ -693,6 +693,8 @@ async function handle(method: string, path: string, q: URLSearchParams, body: an
       return { pending: nx.memory.pending() };
     case "POST /v1/reconcile":
       return nx.reconcile();
+    case "POST /v1/restore":
+      return nx.restoreIndex(Number(body.limit) || 50);
     default:
       return { __notfound: true };
   }
