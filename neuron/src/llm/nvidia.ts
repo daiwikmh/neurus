@@ -1,8 +1,9 @@
 import { withRetry, RetryableError, isNetworkError } from "../util/retry";
+import { orChat, orChatStream } from "./openrouter";
 
 const NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions";
 const primaryModel = () => process.env.NVIDIA_MODEL ?? "openai/gpt-oss-120b";
-const fallbackModel = () => process.env.NVIDIA_FALLBACK_MODEL ?? "meta/llama-3.1-8b-instruct";
+const FREE_OR_MODEL = process.env.NVIDIA_FALLBACK_OR_MODEL ?? "nvidia/nemotron-3-ultra-550b-a55b:free";
 
 const retryOpts = (label: string, attempts: number) => ({
   label,
@@ -10,29 +11,15 @@ const retryOpts = (label: string, attempts: number) => ({
   shouldRetry: (e: unknown) => e instanceof RetryableError || isNetworkError(e),
 });
 
-// Run against the primary model with a single shot — a hung or unresponsive model won't recover
-// on retry, so on any failure switch straight to a known-good fallback (which gets a couple of
-// attempts). This keeps the worst case to one primary timeout, never an open-ended hang.
-async function withFallback<T>(run: (model: string) => Promise<T>): Promise<T> {
-  const primary = primaryModel();
-  try {
-    return await withRetry(() => run(primary), retryOpts(`LLM (NVIDIA ${primary})`, 1));
-  } catch (e) {
-    const fb = fallbackModel();
-    if (fb === primary) throw e;
-    return await withRetry(() => run(fb), retryOpts(`LLM (NVIDIA ${fb} fallback)`, 3));
-  }
-}
-
 export interface ChatOptions {
   maxTokens?: number;
   temperature?: number;
   timeoutMs?: number;
 }
 
-async function callOnce(system: string, user: string, opts: ChatOptions, model: string): Promise<string> {
+async function callOnce(system: string, user: string, opts: ChatOptions): Promise<string> {
   const key = process.env.NVIDIA_API_KEY;
-  if (!key) throw new Error("Missing NVIDIA_API_KEY in environment");
+  if (!key) throw new Error("Missing NVIDIA_API_KEY");
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 45_000);
   try {
@@ -40,11 +27,8 @@ async function callOnce(system: string, user: string, opts: ChatOptions, model: 
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
+        model: primaryModel(),
+        messages: [{ role: "system", content: system }, { role: "user", content: user }],
         max_tokens: opts.maxTokens ?? 700,
         temperature: opts.temperature ?? 0.3,
         stream: false,
@@ -67,14 +51,19 @@ async function callOnce(system: string, user: string, opts: ChatOptions, model: 
 }
 
 export async function chat(system: string, user: string, opts: ChatOptions = {}): Promise<string> {
-  return withFallback((model) => callOnce(system, user, opts, model));
+  try {
+    return await withRetry(() => callOnce(system, user, opts), retryOpts(`LLM (NVIDIA ${primaryModel()})`, 1));
+  } catch {
+    return withRetry(
+      () => orChat(system, user, { model: FREE_OR_MODEL, tier: "free" as const, maxTokens: opts.maxTokens, temperature: opts.temperature, timeoutMs: opts.timeoutMs }),
+      retryOpts(`LLM (OR free ${FREE_OR_MODEL})`, 2),
+    );
+  }
 }
 
-async function openStream(system: string, user: string, opts: ChatOptions, model: string): Promise<Response> {
+async function openNvidiaStream(system: string, user: string, opts: ChatOptions): Promise<Response> {
   const key = process.env.NVIDIA_API_KEY;
-  if (!key) throw new Error("Missing NVIDIA_API_KEY in environment");
-  // Time only the connection-open: if no response headers arrive in time, abort so the
-  // fallback model can take over fast. Cleared once headers land — streaming itself is uncapped.
+  if (!key) throw new Error("Missing NVIDIA_API_KEY");
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 15_000);
   let res: Response;
@@ -83,11 +72,8 @@ async function openStream(system: string, user: string, opts: ChatOptions, model
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", Accept: "text/event-stream" },
       body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
+        model: primaryModel(),
+        messages: [{ role: "system", content: system }, { role: "user", content: user }],
         max_tokens: opts.maxTokens ?? 700,
         temperature: opts.temperature ?? 0.3,
         stream: true,
@@ -106,8 +92,7 @@ async function openStream(system: string, user: string, opts: ChatOptions, model
   return res;
 }
 
-export async function chatStream(system: string, user: string, onToken: (t: string) => void, opts: ChatOptions = {}): Promise<string> {
-  const res = await withFallback((model) => openStream(system, user, opts, model));
+async function drainNvidiaStream(res: Response, onToken: (t: string) => void): Promise<string> {
   const reader = res.body!.getReader();
   const decoder = new TextDecoder();
   let buf = "";
@@ -125,16 +110,23 @@ export async function chatStream(system: string, user: string, onToken: (t: stri
       if (data === "[DONE]") return full;
       try {
         const tok = JSON.parse(data).choices?.[0]?.delta?.content;
-        if (tok) {
-          full += tok;
-          onToken(tok);
-        }
-      } catch {
-        /* keepalive / partial line */
-      }
+        if (tok) { full += tok; onToken(tok); }
+      } catch { /* keepalive / partial line */ }
     }
   }
   return full;
+}
+
+export async function chatStream(system: string, user: string, onToken: (t: string) => void, opts: ChatOptions = {}): Promise<string> {
+  try {
+    const res = await withRetry(() => openNvidiaStream(system, user, opts), retryOpts(`LLM stream (NVIDIA ${primaryModel()})`, 1));
+    return drainNvidiaStream(res, onToken);
+  } catch {
+    return withRetry(
+      () => orChatStream(system, user, onToken, { model: FREE_OR_MODEL, tier: "free", maxTokens: opts.maxTokens, temperature: opts.temperature }),
+      retryOpts(`LLM stream (OR free ${FREE_OR_MODEL})`, 2),
+    );
+  }
 }
 
 export async function chatJSON<T>(

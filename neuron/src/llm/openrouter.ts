@@ -7,14 +7,17 @@ const MAX_OUTPUT_TOKENS = Number(process.env.OPENROUTER_MAX_TOKENS ?? 1000);
 
 export interface ChatOptions {
   model: string;
+  tier?: "free" | "premium";
   maxTokens?: number;
   temperature?: number;
   timeoutMs?: number;
 }
 
-function key(): string {
-  const k = process.env.OPENROUTER_API_KEY;
-  if (!k) throw new Error("Missing OPENROUTER_API_KEY in environment");
+function key(tier: "free" | "premium" = "premium"): string {
+  const k = tier === "free"
+    ? (process.env.OPENROUTER_API_KEY_FREE ?? process.env.OPENROUTER_API_KEY)
+    : (process.env.OPENROUTER_API_KEY_PREMIUM ?? process.env.OPENROUTER_API_KEY);
+  if (!k) throw new Error(`Missing OPENROUTER_API_KEY_${tier.toUpperCase()} in environment`);
   return k;
 }
 
@@ -28,7 +31,7 @@ async function callOnce(system: string, user: string, opts: ChatOptions): Promis
   try {
     const res = await fetch(OR_URL, {
       method: "POST",
-      headers: { Authorization: `Bearer ${key()}`, "Content-Type": "application/json", Accept: "application/json" },
+      headers: { Authorization: `Bearer ${key(opts.tier)}`, "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
         model: opts.model,
         messages: [
@@ -67,7 +70,7 @@ export async function orChat(system: string, user: string, opts: ChatOptions): P
 async function openStream(system: string, user: string, opts: ChatOptions): Promise<Response> {
   const res = await fetch(OR_URL, {
     method: "POST",
-    headers: { Authorization: `Bearer ${key()}`, "Content-Type": "application/json", Accept: "text/event-stream" },
+    headers: { Authorization: `Bearer ${key(opts.tier)}`, "Content-Type": "application/json", Accept: "text/event-stream" },
     body: JSON.stringify({
       model: opts.model,
       messages: [
