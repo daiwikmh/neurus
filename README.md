@@ -23,34 +23,45 @@
 
 ## What is Neurus?
 
-LLMs are stateless — they forget everything the moment a conversation ends, and the "memory" products that fix that hold your data hostage on someone else's server. **Neurus is a memory layer you actually own.** Capture notes, files, people, and facts; recall them by meaning; and prove they were never tampered with — because the bytes live on **Walrus** decentralized storage, encrypted with **Seal**, with ownership anchored on **Sui**.
+Every LLM forgets the moment you close the tab. The products that "fix" this keep your memory on their servers, in their format, tied to their model. Leave, and it doesn't come with you.
 
-It ships as two things on the same engine:
+Neurus is memory you own. Write notes, files, people, and facts once; recall them by meaning; and carry them between Claude, Gemini, and GPT without re-explaining yourself. The bytes live on **Walrus**, encrypted with **Seal**, with ownership anchored on **Sui** — so the memory is yours, portable, and provably untampered.
 
-- **A private second brain** — sign in with Google or a Sui wallet, drop in files and notes, and ask questions that get grounded, cited answers from *your* memory.
-- **A memory API for agents** — point any agent at the `/v1` HTTP API (or `npm install neuron`) and give it durable, verifiable long-term memory.
+One engine, three ways in:
 
-> **The thesis:** "owning your memory" is only a moat if an agent can *act* on it and anyone can *verify* it. Neurus sits **above** raw storage — it ranks, reasons over, encrypts, and proves the memory, so the data stays yours and stays trustworthy. And because that memory is owned and **model-agnostic**, the models become interchangeable: Claude, Gemini, and GPT all work over the *same* context, so you're never locked to one provider.
+- **Second brain** — sign in with Google or a Sui wallet, drop in files and notes, ask in plain language, get cited answers from *your* memory.
+- **CLI** — `neurus agent` spins up a personal memory agent in your terminal with its own Sui identity. No browser, no account.
+- **Agent memory API** — point any agent at the `/v1` HTTP API, `npm install neuron`, or plug in over **MCP** / **A2A**. Durable, verifiable long-term memory in a few lines.
+
+> **Why it matters:** owning your memory is only a moat if an agent can *act* on it and anyone can *verify* it. Neurus sits **above** raw storage — it ranks, reasons, encrypts, and proves. And because the memory is model-agnostic, the models become interchangeable: swap providers mid-task and the context follows, with full provenance of which model wrote what. No lock-in.
 
 ---
 
 ## Features
 
-### For everyone — the second brain
-- **Drop & Ask** — upload PDFs, docs, Markdown, web pages, or GitHub repos; ask in natural language; get answers grounded in your own content with inline citations.
-- **Semantic recall** — find things by *meaning*, not keywords (broad vector recall + a local cross-encoder re-rank).
-- **You own it** — sign in with Google (hosted account) **or** a Sui wallet to self-custody your memory on Walrus.
-- **Proactive nudges** — reflection generates insight-neurons; Telegram alerts keep you in the loop.
-- **Private by construction** — bodies are Seal-encrypted; you can revoke and delete.
+### The second brain
+- **Drop & Ask** — feed it PDFs, docs, Markdown, web pages, or whole GitHub repos. Ask in plain language. Get answers grounded in your own content, with the exact evidence behind every claim.
+- **Semantic recall** — finds things by meaning, not keyword matching: broad vector recall, then a local cross-encoder re-rank for precision.
+- **It's actually yours** — Google for a hosted account, or a Sui wallet to self-custody every byte on Walrus.
+- **Proactive, not passive** — sleep-time reflection turns scattered notes into insight-neurons; Telegram pings you about what matters.
+- **Calendar both ways** — pull Google Calendar into memory, or write a note about a meeting and Neurus books the event.
+- **Private by construction** — bodies are Seal-encrypted; revoke and delete are real, not settings toggles.
 
-### For developers — the agent memory layer
+### The CLI
+- **Births its own agent** — `neurus agent` generates a Sui keypair whose address *is* its Walrus memory namespace. One command, no signup.
+- **A REPL over your memory** — chat, `/plan` a goal, `/recall`, `/note`, `/add` a file, or `@` to browse and ask over any file in the folder.
+- **Share across machines** — `/share` seals a set into a Seal-gated feed, `/grant <addr>` allowlists a reader, `/follow` imports one. Memory you grant on your laptop shows up in a teammate's agent.
+- **Talks like a person** — it understands "share this with 0x…" or "follow this feed" in plain English; no flag syntax required.
+
+### The agent memory layer
 - **Drop-in `/v1` HTTP API** — `remember`, `recall`, `ask` (streaming), `retrieve`, `forget`, and more.
-- **Model-agnostic context router** — one owned memory shared across models; swap Claude, Gemini, or GPT mid-session and the context carries with full provenance (which model wrote what). See `neuron/src/reason/router.ts`.
-- **Open interop** — expose your memory to any client as tools over **MCP** (`npm run mcp`), or be discovered and answer as an **A2A** agent (`/v1/a2a/...`). Plug into Claude Code, Cursor, Claude Desktop, or another vendor's agent without copying context.
+- **Model-agnostic context router** — one owned memory across every model; swap Claude, Gemini, or GPT mid-session and the context carries, tagged with which model wrote what (`neuron/src/reason/router.ts`).
+- **Never errors out on free users** — NVIDIA first, then a silent OpenRouter free-model fallback, then the top memory itself. Rate limits never reach the user.
+- **Open interop** — serve your memory as **MCP** tools (Claude Code / Cursor / Desktop) or answer as a discoverable **A2A** agent. No context copying between vendors.
 - **Knowledge sets** — namespaced, shareable, optionally verifiable collections of memory.
-- **Verifiable integrity** — publish a Merkle-rooted manifest, anchor it on Sui, and restore/verify any time.
-- **Embeddable widgets** — expose a read-only "ask" widget for a set on your own site.
-- **Multi-tenant by design** — every user writes to their *own* MemWal namespace/account; the engine never co-mingles data.
+- **Verifiable integrity** — publish a Merkle-rooted manifest, anchor it on Sui, restore or verify any time.
+- **Embeddable widgets** — drop a read-only "ask" widget for any set onto your own site.
+- **Multi-tenant by design** — every user writes to their own MemWal namespace. The engine never co-mingles data.
 
 ---
 
@@ -105,14 +116,44 @@ A developer-console-meets-second-brain workspace (think Langfuse/Braintrust, for
 | Tab | What it does |
 |-----|--------------|
 | **Overview** | Live stats, memory composition, durability + first-run guidance |
-| **Neurons** | Every memory written, live — type, trust, durability; inspect & forget |
-| **Ask** | Streaming research-chat over a set with clickable evidence citations |
-| **Second Brain** | Capture notes, generate insights (reflect), browse your feed |
-| **Sets** | Create/switch knowledge sets, manage visibility, mark verified |
-| **Datasets** | Upload files / import Walrus blobs, see **Memory Health** (certified on Sui, epochs left), renew |
-| **Connect** | API key + `npm install neuron` snippet to wire up an agent |
+| **Neurons** | Every memory written, live — type, trust, durability; graph view, inspect, forget, restore index |
+| **Ask** | Streaming research-chat over a set with clickable evidence cards and conflict detection |
+| **Second Brain** | Capture notes, sync/write Google Calendar, generate insights (reflect) |
+| **Sets** | Create/switch knowledge sets, snapshot to Walrus, import by blob ID |
+| **Datasets** | Upload files / web / GitHub / folders, **Memory Health** (certified on Sui, epochs left), renew, widgets |
+| **Agents** | Define dataset-bound Q&A agents and ask them inline |
+| **Network** | Describe a workflow in plain English, run live DeFi/price agents, grant write-access, log & grade trading plays |
 
 Plus: split **login** (Google + wallet), profile with **"Own my memory on Walrus,"** Telegram connect, and embeddable widgets.
+
+---
+
+## The CLI
+
+A full memory agent in your terminal — no browser, no account. `neurus agent` generates a Sui identity on first run and drops you into a REPL grounded in your own Walrus memory.
+
+<div align="center">
+<img src="public/terminal.png" alt="Neurus CLI boot screen" width="440" />
+</div>
+
+```bash
+npm install -g neurus      # or: npx neurus
+neurus setup               # one-time: MemWal credentials + MCP config
+neurus agent               # births an agent, opens the REPL
+```
+
+| Command | What it does |
+|---------|--------------|
+| `agent` | Interactive REPL — chat, plan, recall, and write over a set's memory |
+| `note "<text>"` | Remember a note (extracts people, facts, commitments) |
+| `add <file\|dir>` | Store a file or folder on Walrus and index it (txt/md/csv/json/pdf/docx) |
+| `ask "<question>"` | Grounded, cited answer from the set |
+| `brief <name>` · `nudges` · `reflect` · `surface` | Pre-meeting brief, open loops, insights, what to act on now |
+| `publish` / `restore` / `restore-index` | Snapshot to Walrus, restore a manifest, rebuild the vector index |
+| `follow <blobId> --share <id>` | Import a Seal-gated shared feed into a set |
+| `whoami` | Show this agent's Sui address — share it to get granted access |
+
+**Inside the REPL:** `/plan <goal>` · `/recall <q>` · `/note` · `/add` · `@` file picker · `/share [name]` · `/grant <addr>` · `/follow` · `/set <name>` · `/model` · `/help`. It also reads plain-English intent — "share this set with 0x…" works without any flags.
 
 ---
 
@@ -135,14 +176,16 @@ neurus/
 ├── src/                      # Next.js web app (landing + dashboard) → Vercel
 │   ├── app/
 │   │   ├── login/            # split Google + wallet sign-in
-│   │   ├── dashboard/        # Overview · Neurons · Ask · Brain · Sets · Datasets · Connect
+│   │   ├── dashboard/        # Overview · Neurons · Ask · Brain · Sets · Datasets · Agents · Network
 │   │   └── api/auth/         # NextAuth route
 │   ├── components/           # landing + shared providers (Auth, Sui)
 │   ├── services/neurus.ts    # typed client over the engine /v1 API
 │   └── lib/                  # auth config, session identity
 │
 ├── neuron/                   # the engine → Railway/Render/Fly
+│   ├── bin/                  # neurus CLI + neurus-mcp (MCP stdio server)
 │   └── src/
+│       ├── cli/              # interactive agent REPL, identity, setup
 │       ├── core/             # memory, sets, datasets (neurons + namespaces)
 │       ├── ingest/           # files, dirs, web, github, walrus
 │       ├── retrieval/        # recall + cross-encoder re-rank
@@ -173,7 +216,7 @@ neurus/
 | **Integrity** | `POST /publish` · `POST /restore` · `POST /flush` |
 | **Ownership** | `GET /account` · `POST /account/{link,provision,unlink}` |
 | **Widgets** | `GET /widgets` · `POST /widgets` · `/widgets/delete` · `GET /public/widget` · `POST /public/ask/stream` |
-| **Interop** | `GET /a2a/{id}/.well-known/agent-card.json` · `POST /a2a/{id}` (A2A JSON-RPC `message/send`) — plus an **MCP** stdio server (`npm run mcp`) exposing `recall` · `ask` · `remember` · `list_sets` · `share_set` · `inspect_share` |
+| **Interop** | `GET /a2a/{id}/.well-known/agent-card.json` · `POST /a2a/{id}` (A2A JSON-RPC `message/send`) — plus an **MCP** stdio server (`neurus-mcp`) exposing `list_sets` · `recall` · `ask` · `remember` · `create_feed` · `grant_feed` · `list_feeds` · `share_set` · `inspect_share` |
 | **Notify** | `GET /notify` · `POST /notify/telegram` · `/notify/test` |
 
 Every request carries an `x-neurus-user` header that scopes it to that user's namespace/account.
