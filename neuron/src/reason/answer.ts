@@ -81,9 +81,10 @@ function degraded(neurons: RankedNeuron[], docsName?: string): Answer {
 }
 
 const CONVERSE_FALLBACK = "I'm having trouble reaching the model right now — try again in a moment.";
-const promptFor = (question: string, neurons: RankedNeuron[]) => `Memory items:\n${buildContext(neurons)}\n\nQuestion: ${question}`;
+const skillBlock = (skills?: string[]) => (skills && skills.length ? `Learned procedures (apply if relevant):\n${skills.map((s) => `- ${s}`).join("\n")}\n\n` : "");
+const promptFor = (question: string, neurons: RankedNeuron[], skills?: string[]) => `${skillBlock(skills)}Memory items:\n${buildContext(neurons)}\n\nQuestion: ${question}`;
 
-export async function answer(question: string, neurons: RankedNeuron[], opts: { floor?: number; model?: string; docsName?: string } = {}): Promise<Answer> {
+export async function answer(question: string, neurons: RankedNeuron[], opts: { floor?: number; model?: string; docsName?: string; skills?: string[] } = {}): Promise<Answer> {
   const ask = chatVia(opts.model);
   if (!hasRelevantContext(neurons, opts.floor ?? FLOOR)) {
     try {
@@ -93,13 +94,13 @@ export async function answer(question: string, neurons: RankedNeuron[], opts: { 
     }
   }
   try {
-    return { text: (await ask(systemFor(opts.docsName), promptFor(question, neurons))).trim(), sources: sourcesOf(neurons) };
+    return { text: (await ask(systemFor(opts.docsName), promptFor(question, neurons, opts.skills))).trim(), sources: sourcesOf(neurons) };
   } catch {
     return degraded(neurons, opts.docsName);
   }
 }
 
-export async function answerStream(question: string, neurons: RankedNeuron[], onToken: (t: string) => void, opts: { model?: string; docsName?: string } = {}): Promise<Answer> {
+export async function answerStream(question: string, neurons: RankedNeuron[], onToken: (t: string) => void, opts: { model?: string; docsName?: string; skills?: string[] } = {}): Promise<Answer> {
   const ask = chatStreamVia(opts.model);
   if (!hasRelevantContext(neurons)) {
     try {
@@ -109,7 +110,7 @@ export async function answerStream(question: string, neurons: RankedNeuron[], on
     }
   }
   try {
-    return { text: (await ask(systemFor(opts.docsName), promptFor(question, neurons), onToken)).trim(), sources: sourcesOf(neurons) };
+    return { text: (await ask(systemFor(opts.docsName), promptFor(question, neurons, opts.skills), onToken)).trim(), sources: sourcesOf(neurons) };
   } catch {
     return degraded(neurons, opts.docsName);
   }

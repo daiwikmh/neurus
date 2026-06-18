@@ -125,4 +125,4 @@ Engine + dashboard:
 cd neuron && npm run api      # HTTP engine on :4318 (mainnet data reads)
 npm run dev                   # Next dashboard at repo root; point NEXT_PUBLIC_NEURUS_API at http://localhost:4318
 ```
-Algorithm test scripts (in `neuron/scripts`, run with `npx tsx scripts/<name>.ts`): `test-retrieve` (recall pipeline), `test-margin` (confidence), `test-crdt` (merge/caps), `test-integrity` (merkle refuse), `test-lifecycle` (consolidation), `test-plays` (P&L), `test-wallet`, `test-deepbook`, `test-compile`, `test-grounded`.
+The `neuron/scripts/` directory holds operational utilities (`deploy-share`, `set-webhook`, `check-namespace`); the algorithm test scripts were removed from the deployment tree.

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-export type NeuronType = "person" | "note" | "file" | "chunk" | "commitment" | "insight";
+export type NeuronType = "person" | "note" | "file" | "chunk" | "commitment" | "insight" | "skill";
 
 export type SynapseKind =
   | "about"
@@ -9,7 +9,9 @@ export type SynapseKind =
   | "attached_to"
   | "derived_from"
   | "promised_to"
-  | "reflects_on";
+  | "reflects_on"
+  | "learned_from"
+  | "applied_in";
 
 export type Trust = "owned" | "shared" | "untrusted";
 

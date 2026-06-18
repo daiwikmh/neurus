@@ -11,7 +11,7 @@ import { standsOut } from "../retrieval/margin";
 import { merkleRoot } from "../integrity/merkle";
 import { RateLimitError } from "../util/retry";
 
-const SEARCHABLE: Set<NeuronType> = new Set(["note", "chunk", "insight"]);
+const SEARCHABLE: Set<NeuronType> = new Set(["note", "chunk", "insight", "skill"]);
 const WRITE_SPACING_MS = Number(process.env.NEURUS_WRITE_SPACING_MS ?? 1000);
 const sigmoid = (x: number) => 1 / (1 + Math.exp(-x));
 

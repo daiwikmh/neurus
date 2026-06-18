@@ -9,6 +9,7 @@ export { answer, answerStream, type Answer } from "./reason/answer";
 export { brief, type Brief } from "./reason/brief";
 export { reflect, type ReflectResult } from "./proactive/reflect";
 export { surface, type Surfacing, type SurfaceOptions } from "./proactive/surface";
+export { learn, primeSkills, type Episode, type SkillStats } from "./proactive/skills";
 export { seal, unseal, isSealed } from "./access/seal";
 export { merkleRoot } from "./integrity/merkle";
 export { anchorRoot, type Attestation } from "./integrity/anchor";
@@ -33,6 +34,7 @@ import { answer, type Answer } from "./reason/answer";
 import { brief, type Brief } from "./reason/brief";
 import { reflect, type ReflectResult } from "./proactive/reflect";
 import { surface, type Surfacing, type SurfaceOptions } from "./proactive/surface";
+import { learn, primeSkills, type Episode } from "./proactive/skills";
 import { setIntegrity, attest } from "./core/sets";
 import { anchorRoot, type Attestation } from "./integrity/anchor";
 import { localTenant, type Tenant } from "./identity/credentials";
@@ -191,8 +193,14 @@ export class Neurus {
       const v = await this.verifyIntegrity();
       if (!v.ok) throw new Error(`integrity check FAILED — memory root ${v.root.slice(0, 16)} != attested ${v.attested?.slice(0, 16)}. Refusing to act on tampered memory.`);
     }
+    const skills = await primeSkills(this.mem, "ask");
     const hits = await this.mem.recall(question, { limit: 5 });
-    return answer(question, hits);
+    return answer(question, hits, { skills: skills.map((s) => s.body) });
+  }
+
+  // act -> outcome -> distill: record how a task turned out so the matching skill improves.
+  learn(episode: Episode): Promise<Neuron> {
+    return learn(this.mem, episode);
   }
 
   reflect(opts?: { recent?: number }): Promise<ReflectResult> {

@@ -57,6 +57,7 @@ One engine, three ways in:
 ### The agent memory layer
 - **Drop-in `/v1` HTTP API** — `remember`, `recall`, `ask` (streaming), `retrieve`, `forget`, and more.
 - **Model-agnostic context router** — one owned memory across every model; swap Claude, Gemini, or GPT mid-session and the context carries, tagged with which model wrote what (`neuron/src/reason/router.ts`).
+- **Learns on the job** — every task records its outcome and distills a reusable *skill* neuron: a procedure with a win/loss-weighted confidence, retrieved before the next similar task. Memory stops being a static library and starts compounding — answers get better at your recurring questions over time, and because skills are owned and portable, that earned competence follows you across models (`neuron/src/proactive/skills.ts`).
 - **Never errors out on free users** — NVIDIA first, then a silent OpenRouter free-model fallback, then the top memory itself. Rate limits never reach the user.
 - **Open interop** — serve your memory as **MCP** tools (Claude Code / Cursor / Desktop) or answer as a discoverable **A2A** agent. No context copying between vendors.
 - **Knowledge sets** — namespaced, shareable, optionally verifiable collections of memory.
@@ -103,10 +104,11 @@ capture ─▶ extract neurons ─▶ embed + encrypt ─▶ store (Walrus / Mem
 ask ◀── grounded answer (cited) ◀── re-rank ◀── broad recall (MemWal)
 ```
 
-1. **Capture** a note, file, or page → the engine extracts *neurons* (memory nodes: people, notes, files, chunks, insights, commitments).
+1. **Capture** a note, file, or page → the engine extracts *neurons* (memory nodes: people, notes, files, chunks, insights, commitments, skills).
 2. **Store** — bodies go to Walrus (Seal-encrypted) + MemWal for vector recall; a versioned manifest tracks the map.
 3. **Recall** — MemWal returns a broad candidate pool; a local cross-encoder (`Xenova/ms-marco-MiniLM-L-6-v2`) re-ranks for precision.
 4. **Answer** — NVIDIA `gpt-oss-120b` produces a streamed, grounded answer that cites the exact evidence it was given.
+5. **Learn** — the task's outcome is recorded and distilled into a *skill* neuron (`act → outcome → distill → retrieve`), which is primed into the next similar task so the agent develops instead of staying flat.
 
 ---
 

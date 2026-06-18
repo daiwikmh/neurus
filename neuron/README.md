@@ -145,7 +145,7 @@ Environment overrides (optional): `NVIDIA_API_KEY`, `OPENROUTER_API_KEY_FREE`, `
 
 ## How it works
 
-Capture → extract *neurons* (people, notes, files, chunks, insights, commitments) → embed for recall + Seal-encrypt the bodies → store on Walrus / MemWal. Asking runs a broad vector recall, a local cross-encoder re-rank for precision, then a grounded, cited answer. Your wallet anchors ownership on Sui; Seal makes every share revocable and verifiable.
+Capture → extract *neurons* (people, notes, files, chunks, insights, commitments, skills) → embed for recall + Seal-encrypt the bodies → store on Walrus / MemWal. Asking runs a broad vector recall, a local cross-encoder re-rank for precision, then a grounded, cited answer. Each task's outcome is distilled into a reusable *skill* neuron and primed into the next similar task, so the agent develops over time rather than staying flat. Your wallet anchors ownership on Sui; Seal makes every share revocable and verifiable.
 
 Part of [Neurus](https://neurus.xyz) — owned memory you can carry between Claude, Gemini, and GPT.
 
