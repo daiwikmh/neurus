@@ -17,6 +17,12 @@ const GROUPS: { group: string; items: Section[] }[] = [
     ],
   },
   {
+    group: "Command line",
+    items: [
+      { id: "cli", label: "Neurus CLI" },
+    ],
+  },
+  {
     group: "Workspace",
     items: [
       { id: "overview", label: "Overview" },
@@ -30,10 +36,16 @@ const GROUPS: { group: string; items: Section[] }[] = [
   {
     group: "Agents",
     items: [
+      { id: "agents", label: "Agents" },
       { id: "network", label: "Network & workflows" },
-      { id: "prompt-workflow", label: "Prompt to workflow" },
       { id: "sharing", label: "Sharing with Seal" },
+    ],
+  },
+  {
+    group: "Connect",
+    items: [
       { id: "settings", label: "Model & provider" },
+      { id: "connect", label: "MCP, API & widgets" },
     ],
   },
 ];
@@ -115,6 +127,14 @@ function Code({ children }: { children: React.ReactNode }) {
     <code className="rounded-md border border-white/10 bg-white/[0.05] px-1.5 py-0.5 font-mono text-[12.5px] text-[#bcc6ff]">
       {children}
     </code>
+  );
+}
+
+function Pre({ children }: { children: React.ReactNode }) {
+  return (
+    <pre className="overflow-x-auto rounded-xl border border-white/10 bg-black/40 p-4 font-mono text-[12.5px] leading-relaxed text-white/75">
+      {children}
+    </pre>
   );
 }
 
@@ -258,6 +278,55 @@ export default function HelpPage() {
               </div>
             </section>
 
+            <section className="space-y-6">
+              <H id="cli" kicker="Command line" title="Neurus CLI" />
+              <P>
+                The same owned memory, in your terminal — no browser, no account. One command births an agent with
+                its own Sui wallet, and that wallet address becomes its memory namespace on Walrus.
+              </P>
+              <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30">
+                <Image src="/terminal.png" alt="Neurus CLI boot screen" width={1324} height={1046} className="h-auto w-full" />
+              </div>
+              <Pre>{`npm install -g neurus
+neurus`}</Pre>
+              <P>
+                On first run it walks you through two steps, then sets up your memory automatically:
+              </P>
+              <div className="space-y-6 rounded-2xl border border-white/10 bg-white/[0.02] p-6">
+                <Step n={1} title="Pick a model provider">
+                  Choose NVIDIA or OpenRouter and paste your API key. Stored locally at{" "}
+                  <Code>~/.neurus/config.json</Code>.
+                </Step>
+                <Step n={2} title="Create or import a wallet">
+                  Generate a fresh Sui keypair, or import an existing one by pasting a{" "}
+                  <Code>suiprivkey1…</Code> key. The address namespaces your memory and signs every share.
+                </Step>
+                <Step n={3} title="Memory account, automatic">
+                  Neurus mints a Walrus Memory account on Sui owned by your wallet — funding it from the testnet
+                  faucet first if it has no gas. Runs once; saved to <Code>~/.neurus/mcp.json</Code>.
+                </Step>
+              </div>
+              <P>Then you land in the agent. Type to ask; use slash commands for everything else:</P>
+              <Pre>{`> Met Sarah at the offsite — design lead, I owe her the deck Friday.
+> what do I owe Sarah, and when?
+neurus › You owe Sarah the deck, due Friday. [1]
+
+/note <text>      remember a note (extracts people, facts, commitments)
+/add <path>  @    upload a file or folder to Walrus and index it
+/recall <q>       show the memories matching a query
+/plan <goal>      build a plan grounded in your memory
+/share [name]     seal this set into a shareable feed → shareId + blobId
+/grant <0x…>      grant a Sui address read access to your last feed
+/follow <blobId> <shareId>   import a feed shared with you
+/whoami  /model  /set <name>  /help  /exit`}</Pre>
+              <P>
+                Run one-offs without the REPL — <Code>neurus note &quot;…&quot;</Code>,{" "}
+                <Code>neurus add ./report.pdf</Code>, <Code>neurus ask &quot;…&quot;</Code>,{" "}
+                <Code>neurus reflect</Code>, <Code>neurus whoami</Code>. It also reads plain English: &ldquo;share this
+                set with 0x…&rdquo; works without any flags.
+              </P>
+            </section>
+
             <section className="space-y-5">
               <H id="overview" kicker="Workspace" title="Overview" />
               <P>
@@ -303,11 +372,17 @@ export default function HelpPage() {
               <H id="brain" kicker="Workspace" title="Second Brain" />
               <P>
                 The fastest way to capture. Drop in a thought, a person, or a fact and Neurus extracts and remembers
-                it as neurons. Run <span className="text-white/75">Reflect</span> to consolidate raw notes into
-                higher-level insight neurons — the system thinking over what you have stored.
+                it as neurons — people, facts, intros, and commitments, separated automatically. Run{" "}
+                <span className="text-white/75">Reflect</span> to consolidate raw notes into higher-level insight
+                neurons — the system thinking over what you have stored.
+              </P>
+              <P>
+                If you signed in with Google, <span className="text-white/75">Sync calendar</span> pulls your next 30
+                days of events into the set as memory you can ask about, and a note that describes a meeting can be
+                pushed straight to your Google Calendar.
               </P>
               <Feature href="/dashboard/brain" title="Second Brain">
-                Quick note capture plus Reflect to generate insight neurons.
+                Note capture, Google Calendar sync both ways, and Reflect to generate insight neurons.
               </Feature>
             </section>
 
@@ -326,55 +401,65 @@ export default function HelpPage() {
             <section className="space-y-5">
               <H id="datasets" kicker="Workspace" title="Datasets" />
               <P>
-                The tab that publishes real blobs to Walrus. Three actions: upload a file (chunked, embedded, and
-                stored with its Sui object id so it becomes askable), publish a snapshot of a set as a manifest blob,
-                or import an existing Walrus blob by its blob id.
+                The tab that publishes real blobs to Walrus. Bring in content from many sources: upload a file
+                (txt, md, csv, json, pdf, docx), crawl a web page, pull a GitHub repo, ingest a local folder, or
+                import an existing Walrus blob by its blob id. Each source is chunked, embedded, and stored with its
+                Sui object id so it becomes askable.
               </P>
               <P>
-                Each dataset card shows a live <span className="text-white/75">Memory Health</span> badge — whether
+                Every dataset card shows a live <span className="text-white/75">Memory Health</span> badge — whether
                 it is certified on Sui and how many epochs until it expires — a Walruscan link, and a Renew action to
                 refresh its storage epochs before it lapses.
               </P>
+              <P>
+                Turn any dataset into an embeddable <span className="text-white/75">Ask AI</span> widget: name it,
+                lock it to your domains, and paste one <Code>&lt;script&gt;</Code> tag on your site. Visitors get
+                grounded, cited answers — read-only, scoped to exactly the data you chose.
+              </P>
               <Feature href="/dashboard/datasets" title="Datasets">
-                Upload, publish, and import Walrus blobs with live health and renew.
+                Upload files, web, GitHub, and folders to Walrus with live health, renew, and embeddable widgets.
+              </Feature>
+            </section>
+
+            <section className="space-y-5">
+              <H id="agents" kicker="Agents" title="Agents" />
+              <P>
+                Define focused Q&amp;A agents bound to your data. Name an agent, describe what it does, and choose the
+                dataset it works on — the whole set or a single dataset inside it. Each agent answers, with citations,
+                only from the data you scoped to it, and you can ask it inline right from the tab.
+              </P>
+              <Feature href="/dashboard/agents" title="Agents">
+                Create dataset-bound agents and ask them grounded questions in place.
               </Feature>
             </section>
 
             <section className="space-y-5">
               <H id="network" kicker="Agents" title="Network & workflows" />
               <P>
-                The Network tab turns your memory into a permissioned, multi-agent workspace. Agents you authorize
-                write into a shared set; you watch them on a live graph (nodes tinted by which agent wrote them) and
-                an op feed. Grant or revoke an agent at any time — a revoked agent&apos;s next write bounces red live.
+                The Network tab runs your agents over live data. Pick agents to run — your own dataset-bound agents
+                that ground a workflow in your notes, plus ready-made ones for protocol TVL (Aave, Uniswap, Lido,
+                Curve, Compound), asset prices (SUI, ETH, BTC, SOL), and DeepBook. The runner ticks on your interval,
+                writes observation neurons, consolidates them into trends over time, and can send a grounded report or
+                a daily brief to Telegram.
               </P>
               <P>
-                The <span className="text-white/75">Build</span> zone is where you configure workflows. Use the
-                canvas to wire data sources (DefiLlama feeds, your datasets, a wallet, or DeepBook) into an analyst
-                agent and out to Telegram, then Run the flow. The runner ticks on your interval, writes observation
-                neurons, consolidates raw ticks into trend neurons over time, and can send a grounded report or a
-                daily brief.
-              </P>
-              <Feature href="/dashboard/network" title="Network">
-                Live shared-memory graph, agent roster with grant/revoke, and the workflow builder.
-              </Feature>
-            </section>
-
-            <section className="space-y-5">
-              <H id="prompt-workflow" kicker="Agents" title="Prompt to workflow" />
-              <P>
-                Rather than dragging nodes, describe what you want in plain language — for example,{" "}
+                You don&apos;t have to configure it by hand. Describe what you want in plain language — for example,{" "}
                 <span className="italic text-white/65">
                   &ldquo;for the next 5 days send Telegram updates on SUI based on my trading-rules strategy, every
-                  minute.&rdquo;
+                  minute&rdquo;
                 </span>{" "}
-                Neurus compiles it into a workflow: it maps your phrasing to a real strategy set, the assets and
-                protocols to track, the interval, and the duration, then fills the Workflow card and draws the nodes
-                on the canvas for you to review and Run.
+                — and Neurus compiles it into a running workflow: the strategy set to ground in, the assets and
+                protocols to track, the interval, and the duration.
               </P>
               <P>
-                The analyst is grounded in your chosen strategy set, so its updates reason against your own notes —
-                not generic market commentary.
+                <span className="text-white/75">Write access</span> controls who can write to the shared set — the
+                workflow&apos;s agents plus anyone you grant; revoke one and its next write bounces.{" "}
+                <span className="text-white/75">Plays</span> let you log positions that the analyst grades against
+                your strategy each cycle, writing a post-mortem when you close.
               </P>
+              <Feature href="/dashboard/network" title="Network">
+                Run agents on live data, describe workflows in plain English, manage write access, and track plays.
+              </Feature>
             </section>
 
             <section className="space-y-5">
@@ -392,18 +477,56 @@ export default function HelpPage() {
             </section>
 
             <section className="space-y-5">
-              <H id="settings" kicker="Agents" title="Model & provider" />
+              <H id="settings" kicker="Connect" title="Model & provider" />
               <P>
                 The model and provider used for answers and reflection are shown in the top bar — click the pill to
-                open settings and switch them. Ask, Second Brain reflection, and workflow analysts all use the
-                provider you select here.
+                open settings and switch them. Ask, Second Brain reflection, and workflow analysts all use the model
+                you select here.
+              </P>
+              <P>
+                The free default runs on NVIDIA at no cost. Premium models are routed through OpenRouter and unlocked
+                once with a small on-chain payment on Sui; after that they&apos;re flat-rate. If a free request ever
+                hits a rate limit, Neurus silently falls back to a free model rather than showing you an error.
               </P>
               <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
                 <P>
-                  Tip: the search box and <Code>⌘K</Code> in the top bar jump between tabs quickly, and the{" "}
-                  <Code>Ask anything</Code> command bar under the breadcrumb is the fastest path to a grounded answer
-                  from anywhere in the dashboard.
+                  Tip: press <Code>⌘K</Code> in the top bar to search and jump between tabs quickly.
                 </P>
+              </div>
+            </section>
+
+            <section className="space-y-6">
+              <H id="connect" kicker="Connect" title="MCP, API & widgets" />
+              <P>
+                Neurus is the same memory however you reach it. Beyond the dashboard and CLI, plug it into your own
+                agents and tools:
+              </P>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-[14.5px] font-medium text-white/90">MCP server</h3>
+                  <P>
+                    The CLI ships an MCP server so Claude Code, Cursor, or Claude Desktop can read and write your
+                    Walrus memory as tools — <Code>list_sets</Code>, <Code>recall</Code>, <Code>ask</Code>,{" "}
+                    <Code>remember</Code>, and the feed-sharing tools.
+                  </P>
+                  <Pre>{`neurus setup
+claude mcp add neurus neurus-mcp --scope user`}</Pre>
+                </div>
+                <div>
+                  <h3 className="text-[14.5px] font-medium text-white/90">HTTP API</h3>
+                  <P>
+                    Point any agent at the <Code>/v1</Code> HTTP API — <Code>remember</Code>, <Code>recall</Code>,{" "}
+                    <Code>ask</Code> (streaming), <Code>retrieve</Code>, <Code>forget</Code>, and more. Each request
+                    carries an <Code>x-neurus-user</Code> header that scopes it to that user&apos;s namespace.
+                  </P>
+                </div>
+                <div>
+                  <h3 className="text-[14.5px] font-medium text-white/90">A2A &amp; widgets</h3>
+                  <P>
+                    Any set can answer as a discoverable Agent2Agent endpoint, or be embedded as a read-only{" "}
+                    <Code>Ask AI</Code> widget on your own site (created in Datasets) — one script tag, origin-locked.
+                  </P>
+                </div>
               </div>
             </section>
 

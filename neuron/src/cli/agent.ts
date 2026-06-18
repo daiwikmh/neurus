@@ -11,7 +11,9 @@ import { orChat } from "../llm/openrouter";
 import { chat as nvidiaChat } from "../llm/nvidia";
 import { banner, strip, box, c, info, ok, warn, err, shortId } from "./ui";
 import { loadConfig, saveConfig, applyConfig, configPath, DEFAULT_MODEL, type CliConfig, type Provider } from "./config";
-import { loadIdentity, createIdentity, tenantFor, identityPath, shortAddr, type AgentIdentity } from "./identity";
+import { loadIdentity, createIdentity, importIdentity, tenantFor, identityPath, shortAddr, type AgentIdentity } from "./identity";
+import { loadMcpConfig, saveMcpConfig, applyMcpConfig, type McpConfig } from "./mcp-config";
+import { balanceOf, requestFaucet, isRateLimit, provisionMemwal, MIN_GAS } from "./provision";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
 import { fetchSealedDataset } from "../net/share";
@@ -95,18 +97,92 @@ function helpBox(): void {
   ]);
 }
 
-async function birth(): Promise<AgentIdentity> {
-  info("No agent here yet — let's create one. It only needs a name.");
+async function onboardWallet(): Promise<AgentIdentity> {
+  info("Your wallet — this Sui address becomes your memory namespace on Walrus.");
   const rl = rlp.createInterface({ input: process.stdin, output: process.stdout });
+  let choice = "1";
   let name = "";
   try {
+    choice = ((await ask(rl, c.cyan("> ") + "wallet: [1] create new  [2] import existing  (1) ")).trim() || "1");
     name = (await ask(rl, c.cyan("> ") + "name your agent ")).trim();
   } finally {
     rl.close();
   }
+
+  if (choice === "2") {
+    while (true) {
+      const key = await askHidden(c.cyan("> ") + "paste your Sui private key (suiprivkey1… or 0x hex) ");
+      try {
+        const id = await importIdentity(name, key);
+        ok(`imported ${id.name} · ${shortAddr(id.address)}`);
+        return id;
+      } catch (e) {
+        warn(e instanceof Error ? e.message : String(e));
+      }
+    }
+  }
+
   const id = await createIdentity(name);
-  ok(`${id.name} is born`);
+  ok(`${id.name} is born · ${shortAddr(id.address)}`);
+  info(`secret stored at ${c.dim(identityPath)} — back it up to reuse this wallet elsewhere`);
   return id;
+}
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const FAUCET_URL = "https://faucet.sui.io/?network=testnet";
+
+// Ensures the agent has a Walrus Memory account so it can store and recall. Reuses
+// credentials from ~/.neurus/mcp.json or env; otherwise mints one on Sui owned by the
+// agent's wallet — funding it from the testnet faucet first if it has no gas.
+async function ensureMemwal(identity: AgentIdentity): Promise<void> {
+  const existing = await loadMcpConfig();
+  if (existing?.memwalAccountId && existing?.memwalDelegateKey) { applyMcpConfig(existing); return; }
+  if (process.env.MEMWAL_ACCOUNT_ID && process.env.MEMWAL_DELEGATE_KEY) return;
+
+  info("Setting up your memory account on Walrus (one-time).");
+  let bal = await balanceOf(identity.address).catch(() => 0n);
+  if (bal < MIN_GAS) {
+    info("Funding your wallet from the testnet faucet…");
+    try {
+      await requestFaucet(identity.address);
+    } catch (e) {
+      warn(isRateLimit(e) ? "Faucet rate-limited — fund manually and I'll keep checking." : "Faucet request failed — fund manually and I'll keep checking.");
+    }
+    info(`Faucet: ${FAUCET_URL}`);
+    info(`Your address: ${identity.address}`);
+    const deadline = Date.now() + 120_000;
+    while (bal < MIN_GAS && Date.now() < deadline) {
+      await sleep(5000);
+      process.stdout.write(c.dim("  waiting for testnet SUI…\r"));
+      bal = await balanceOf(identity.address).catch(() => bal);
+    }
+    process.stdout.write("                              \r");
+  }
+  if (bal < MIN_GAS) {
+    throw new Error(`wallet ${shortAddr(identity.address)} still has no gas. Fund it at ${FAUCET_URL} and run neurus again.`);
+  }
+
+  info("Creating your Walrus Memory account on Sui…");
+  let creds;
+  try {
+    creds = await provisionMemwal(identity.secretKey);
+  } catch (e) {
+    const m = e instanceof Error ? e.message : String(e);
+    if (/already|exists|one account/i.test(m)) {
+      throw new Error("this wallet already has a Walrus Memory account — restore ~/.neurus/mcp.json or run `neurus setup` to paste its credentials.");
+    }
+    throw e;
+  }
+  const merged: McpConfig = {
+    ...(existing ?? {}),
+    memwalAccountId: creds.accountId,
+    memwalDelegateKey: creds.delegateKey,
+    memwalServerUrl: creds.serverUrl,
+    suiPrivateKey: identity.secretKey,
+  };
+  await saveMcpConfig(merged);
+  applyMcpConfig(merged);
+  ok(`memory account ready · ${shortAddr(creds.accountId)}`);
 }
 
 function fmtBytes(n: number): string {
@@ -139,17 +215,30 @@ export async function runAgent(setName = "default"): Promise<void> {
   const fs = screen.fullscreen();
 
   let cfg = await loadConfig();
+  let identity = await loadIdentity();
+  const fresh = (!cfg || !cfg.apiKey) && !identity;
+  if (fresh) info("Welcome to Neurus — two quick steps and you're in.\n");
+
   if (!cfg || !cfg.apiKey) {
-    if (process.env.NVIDIA_API_KEY) {
+    if (process.env.NVIDIA_API_KEY && !fresh) {
       cfg = { provider: "nvidia", apiKey: process.env.NVIDIA_API_KEY, model: process.env.NVIDIA_MODEL ?? DEFAULT_MODEL.nvidia };
     } else {
-      warn("No model configured yet — let's set one up.");
+      if (fresh) info("Step 1 of 2 — pick your model provider.");
       cfg = await runConfig(cfg);
     }
   }
   applyConfig(cfg);
 
-  const identity = (await loadIdentity()) ?? (await birth());
+  if (!identity) {
+    if (fresh) info("\nStep 2 of 2 — your wallet.");
+    identity = await onboardWallet();
+  }
+  // One wallet drives everything: the same key that namespaces memory also signs
+  // Seal share/grant transactions, unless an explicit treasury key is configured.
+  if (!process.env.SUI_TESTNET_PRIVATE_KEY) process.env.SUI_TESTNET_PRIVATE_KEY = identity.secretKey;
+  // Mint (or reuse) the agent's Walrus Memory account before opening any set, so
+  // envCredentials() resolves when the tenant is built.
+  await ensureMemwal(identity);
   const tenant = tenantFor(identity);
   setBlobOwner(identity.address);
 

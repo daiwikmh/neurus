@@ -8,11 +8,17 @@ const W = 820;
 const H = 540;
 const MAX = 140;
 
+// The graph is the knowledge layer, not the storage layer: people, notes, commitments,
+// and insights carry semantic links to each other. Chunks and files only link to their
+// parent blob (derived_from), so they add hairball noise without meaning — exclude them.
+const GRAPHED: ReadonlySet<NeuronType> = new Set(["person", "note", "commitment", "insight"]);
+
 interface GNode { id: string; type: NeuronType; title: string; deg: number; x: number; y: number; vx: number; vy: number; }
 interface GEdge { a: string; b: string }
 
 function build(neurons: NeuronRow[]) {
-  const list = neurons.slice(0, MAX);
+  const concept = neurons.filter((n) => GRAPHED.has(n.type));
+  const list = concept.slice(0, MAX);
   const ids = new Set(list.map((n) => n.id));
   const deg = new Map<string, number>();
   const edges: GEdge[] = [];
@@ -32,7 +38,7 @@ function build(neurons: NeuronRow[]) {
     const ang = (i / Math.max(1, list.length)) * Math.PI * 2;
     return { id: n.id, type: n.type, title: n.title, deg: deg.get(n.id) ?? 0, x: W / 2 + Math.cos(ang) * 190 + (Math.random() - 0.5) * 40, y: H / 2 + Math.sin(ang) * 150 + (Math.random() - 0.5) * 40, vx: 0, vy: 0 };
   });
-  return { nodes, edges, neighbors, truncated: neurons.length > MAX };
+  return { nodes, edges, neighbors, truncated: concept.length > MAX };
 }
 
 function simulate(nodes: GNode[], edges: GEdge[], byId: Map<string, GNode>, alpha: number, dragId: string | null) {
@@ -120,7 +126,7 @@ export function NeuronGraph({ neurons, colorOf, legend }: { neurons: NeuronRow[]
   const onUp = () => { drag.current = null; };
 
   if (nodes.length === 0) {
-    return <div className="rounded-2xl border border-dashed border-white/10 px-5 py-16 text-center text-sm text-white/40">No neurons to graph yet.</div>;
+    return <div className="rounded-2xl border border-dashed border-white/10 px-5 py-16 text-center text-sm text-white/40">No relationships to graph yet — add a note about a person to see the map build.</div>;
   }
 
   const lit = (id: string) => !hover || id === hover || neighbors.get(hover)?.has(id);

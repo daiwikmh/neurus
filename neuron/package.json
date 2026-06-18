@@ -2,13 +2,35 @@
   "name": "neurus",
   "version": "0.1.0",
   "type": "module",
-  "description": "Owned, verifiable memory layer for AI agents — on Walrus",
+  "description": "Owned, verifiable AI memory in your terminal — a personal memory agent with its own Sui wallet, on Walrus.",
+  "keywords": [
+    "ai",
+    "memory",
+    "agent",
+    "cli",
+    "walrus",
+    "sui",
+    "seal",
+    "mcp",
+    "llm",
+    "rag"
+  ],
+  "homepage": "https://neurus.xyz",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daiwikmh/neurus.git",
+    "directory": "neuron"
+  },
+  "bugs": "https://github.com/daiwikmh/neurus/issues",
+  "license": "MIT",
+  "author": "daiwikmh",
   "bin": {
     "neurus": "./dist/neurus.js",
     "neurus-mcp": "./dist/mcp.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "scripts": {
     "build": "node build.mjs",

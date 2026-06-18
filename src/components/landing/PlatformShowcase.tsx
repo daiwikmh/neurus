@@ -45,12 +45,13 @@ export function PlatformShowcase() {
           <div className="mt-6 overflow-hidden rounded-2xl border border-white/10">
             <video
               src="/video.mov"
-              alt="Neurus CLI boot sequence"
+              aria-label="Neurus CLI boot sequence"
               className="w-full object-cover"
               controls
               autoPlay
               muted
               loop
+              playsInline
             />
           </div>
         </Reveal>

@@ -24,7 +24,7 @@
     "id": "person_2ddf7003",
     "type": "person",
     "title": "Sarah",
-    "body": "Sarah\nowes me a design review by Friday",
+    "body": "Sarah\nowes me a design review by Friday\nhas a meeting",
     "source": {
       "author": "self",
       "trust": "owned"
@@ -139,6 +139,27 @@
       "index": 2,
       "file": "file_7c135ed0",
       "memwalBlob": "IR1AfO53ilqU-8Itn56buAQHwp5-J9YNG6clJMD0q14",
+      "durability": "confirmed"
+    }
+  },
+  {
+    "id": "note_fd19adfc",
+    "type": "note",
+    "title": "sarah has a meeting",
+    "body": "sarah has a meeting",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781727120640,
+    "synapses": [
+      {
+        "to": "person_2ddf7003",
+        "kind": "about"
+      }
+    ],
+    "meta": {
+      "memwalBlob": "wwpfURFXZd6-OOZL-BVKuOr5bTAgrhix1Zcv8Yyg7J4",
       "durability": "confirmed"
     }
   }

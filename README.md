@@ -157,49 +157,20 @@ neurus agent               # births an agent, opens the REPL
 
 ---
 
-## Tech stack
+## Embeddable widgets
 
-**Web** · Next.js 16 (App Router) · React 19 · TypeScript · Tailwind · NextAuth v5 (Google) · `@mysten/dapp-kit` (Sui wallets) · TanStack Query
+Turn any set — or a single dataset inside it — into a read-only "Ask AI" chat bubble on your own site. Build it in the **Datasets** tab (name it, optionally bind it to one dataset, set allowed origins), then paste one line:
 
-**Engine** · Node (≥22) · TypeScript · `@mysten-incubation/memwal` · `@mysten/sui` · `@mysten/seal` · `@huggingface/transformers` (cross-encoder re-rank) · `unpdf` / `mammoth` / `jsdom` (ingest) · `zod`
-
-**Infra** · Vercel (web) · Railway/Render/Fly (engine) · Upstash Redis (cache + vault) · NVIDIA-hosted LLM · Walrus + Sui (testnet/mainnet)
-
-**RPC** · [Tatum](https://tatum.io/) is the official RPC provider for all Sui on-chain interactions. On-chain reads behind integrity and Memory Health — blob certification status, object fields, dynamic fields, epoch/expiry — go through Tatum's Sui gateway (`sui-{network}.gateway.tatum.io`) with retries (`neuron/src/integrity/tatum.ts`).
-
----
-
-## Project structure
-
+```html
+<script src="https://your-engine/embed.js" data-widget="WIDGET_ID" defer></script>
 ```
-neurus/
-├── src/                      # Next.js web app (landing + dashboard) → Vercel
-│   ├── app/
-│   │   ├── login/            # split Google + wallet sign-in
-│   │   ├── dashboard/        # Overview · Neurons · Ask · Brain · Sets · Datasets · Agents · Network
-│   │   └── api/auth/         # NextAuth route
-│   ├── components/           # landing + shared providers (Auth, Sui)
-│   ├── services/neurus.ts    # typed client over the engine /v1 API
-│   └── lib/                  # auth config, session identity
-│
-├── neuron/                   # the engine → Railway/Render/Fly
-│   ├── bin/                  # neurus CLI + neurus-mcp (MCP stdio server)
-│   └── src/
-│       ├── cli/              # interactive agent REPL, identity, setup
-│       ├── core/             # memory, sets, datasets (neurons + namespaces)
-│       ├── ingest/           # files, dirs, web, github, walrus
-│       ├── retrieval/        # recall + cross-encoder re-rank
-│       ├── reason/           # grounded, streaming answers
-│       ├── proactive/        # reflect (insights) + surface (nudges)
-│       ├── integrity/        # Merkle manifest, Sui anchor, blob health
-│       ├── identity/         # per-user accounts, sealed vault, provisioning
-│       ├── access/           # Seal encryption
-│       ├── storage/          # Walrus + MemWal + Redis KV
-│       ├── crdt/             # shared multi-writer sets
-│       ├── notify/           # Telegram
-│       └── api/server.ts     # /v1 HTTP server
-└── public/
-```
+
+That drops a floating button in the corner; clicking it opens a chat panel that answers, with citations, only from the memory you scoped to it.
+
+- **Read-only** — visitors can ask, never write. No memory leaves the set you chose.
+- **Origin-locked** — requests are rejected unless they come from a domain on the widget's allowlist (`POST /v1/public/ask/stream` checks `Origin`).
+- **Scoped** — bind to a whole set or narrow to one dataset, so a docs widget only ever answers from the docs.
+- **Same grounded answers** — streaming, cited, conflict-aware — just without the dashboard around it.
 
 ---
 
