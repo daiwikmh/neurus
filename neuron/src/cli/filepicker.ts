@@ -15,6 +15,7 @@ export function pickPath(startDir: string): Promise<string | null> {
     let dir = startDir;
     let filter = "";
     let sel = 0;
+    let top = 0;
     let entries: Entry[] = [];
     let lastLines = 0;
 
@@ -31,21 +32,28 @@ export function pickPath(startDir: string): Promise<string | null> {
         entries = [];
       }
       sel = 0;
+      top = 0;
     };
 
     const MAX = 8;
     const render = () => {
       const items = visible();
       if (sel >= items.length) sel = Math.max(0, items.length - 1);
+      // Scroll the window so the selected row is always visible.
+      if (sel < top) top = sel;
+      else if (sel >= top + MAX) top = sel - MAX + 1;
+      top = Math.min(top, Math.max(0, items.length - MAX));
       if (lastLines) process.stdout.write(`\x1b[${lastLines}A\x1b[0J`);
       const head = `${c.cyan("@")} ${c.dim(dir)}`;
-      const rows = items.slice(0, MAX).map((e, i) => {
-        const marker = i === sel ? c.cyan("›") : " ";
+      const rows = items.slice(top, top + MAX).map((e, i) => {
+        const abs = top + i;
+        const marker = abs === sel ? c.cyan("›") : " ";
         const name = e.dir ? e.name + "/" : e.name;
-        return `  ${marker} ${i === sel ? c.bold(name) : c.gray(name)}`;
+        return `  ${marker} ${abs === sel ? c.bold(name) : c.gray(name)}`;
       });
       if (!rows.length) rows.push(c.dim("    (no matches)"));
-      const foot = c.dim(`  ↑↓ select · ⏎ open · esc cancel · @${filter}`);
+      const pos = items.length ? `  ${sel + 1}/${items.length}${items.length > MAX ? "  ↑↓ scroll" : ""}` : "";
+      const foot = c.dim(`  ↑↓ select · ⏎ open · esc cancel · @${filter}${pos}`);
       const out = [head, ...rows, foot];
       process.stdout.write(out.join("\n") + "\n");
       lastLines = out.length;

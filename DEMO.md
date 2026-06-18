@@ -30,7 +30,7 @@ what do I owe Sarah and when?
 
 > **VO:** "I drop in a note. Neurus pulls out the person, the facts, and the commitment as separate memories. Now I just ask — and the answer comes straight from what I stored, cited."
 
-### 0:38 – 0:58 · Ground over a file
+### 0:38 – 0:54 · Ground over a file
 **[ACTION]** Type `/add` then a real file (or `@` to open the picker and pick one). After it indexes:
 ```
 summarize the key points in that file
@@ -38,7 +38,16 @@ summarize the key points in that file
 
 > **VO:** "I can hand it a PDF or a folder — it chunks, embeds, and stores it on Walrus. Then every answer is grounded in my own documents, with the evidence behind it."
 
-### 0:58 – 1:20 · Share across machines
+### 0:54 – 1:06 · Show the blobs on Walrus
+**[ACTION]** Type:
+```
+/blobs
+```
+Show the list of uploaded files — each with a green `✓ walrus <blobId>` and its chunk count. Optionally type `/publish` to snapshot the whole set to a single durable Walrus blob and show the returned `blobId`.
+
+> **VO:** "And this isn't a local cache. `/blobs` shows every file as a real Walrus blob — on-chain, with its id and chunk count. `/publish` snapshots the entire set to one durable blob I can restore on any machine. The memory genuinely lives on Walrus, not on my laptop."
+
+### 1:06 – 1:22 · Share across machines
 **[ACTION]** Type:
 ```
 /share
@@ -50,7 +59,7 @@ Show the printed `shareId` + `blobId`. Then:
 
 > **VO:** "Here's the part that matters. `/share` seals this memory into a Seal-gated feed on Walrus. I grant another agent's address — and on *their* machine, they run `follow` and decrypt it with their own key. I never custody their data, and I can revoke access on-chain anytime."
 
-### 1:20 – 1:30 · Close
+### 1:22 – 1:30 · Close
 **[ACTION]** Type `/whoami` to show the agent's address.
 
 > **VO:** "Owned, portable, verifiable memory — running entirely from the terminal."
@@ -95,6 +104,39 @@ Hit **Remember**. Show the log line (people / commitments extracted). Optionally
 
 ---
 
+## Part 3 (optional) — Test it from Claude Code (MCP)
+
+> Goal: prove the "across every model" claim — the *same* Walrus-backed memory shows up as tools inside another agent, with no copying between vendors.
+
+### One-time setup
+**[ACTION]** In a terminal, save credentials and register the MCP server:
+```bash
+neurus setup                                   # saves MemWal + sharing creds to ~/.neurus/mcp.json
+claude mcp add neurus neurus-mcp --scope user   # exposes Neurus to Claude Code
+```
+> Developing from the repo instead of the published CLI? Point the client at `npm run mcp` with `cwd` set to `neuron/`.
+
+### Verify the connection
+**[ACTION]** Open Claude Code and run:
+```
+/mcp
+```
+Confirm **neurus** is listed as connected, exposing tools: `list_sets`, `recall`, `ask`, `remember`, `share_set`, `inspect_share`, `create_feed`, `grant_feed`, `list_feeds`.
+
+### Read + write your memory from Claude Code
+**[ACTION]** In Claude Code, just ask in plain language (it picks the tools):
+```
+Using neurus, what sets do I have, and what do I owe Sarah?
+```
+```
+Remember in neurus: Tom prefers async standups.
+```
+Then back in the **CLI or dashboard**, run `recall "how does Tom like to meet?"` — the note written from Claude Code is already there.
+
+> **VO:** "Here's the interop layer. I register Neurus once as an MCP server, and now Claude Code reads and writes the exact same memory on Walrus — list my sets, answer from them, even store a new fact. I write it from Claude, recall it from the CLI a second later. One owned memory, every model — nothing copied, nothing locked in."
+
+---
+
 ## Pre-flight checklist
 - [ ] Engine running (`npm run api`) and reachable from the web app
 - [ ] `neuron/.env.local`: `NVIDIA_API_KEY`, MemWal creds, `OPENROUTER_API_KEY_FREE` (so a rate limit never shows on camera)
@@ -102,3 +144,4 @@ Hit **Remember**. Show the log line (people / commitments extracted). Optionally
 - [ ] `default` set pre-seeded with a couple of notes
 - [ ] A sample PDF/file on hand for the `/add` and Datasets upload
 - [ ] Dashboard already authenticated to skip the login wait
+- [ ] For the MCP demo: Neurus CLI installed (`npm i -g neurus`), `neurus setup` done, and `claude mcp add neurus neurus-mcp --scope user` run (verify with `/mcp` in Claude Code)

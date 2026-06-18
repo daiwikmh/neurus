@@ -27,6 +27,9 @@ import { extractMeeting } from "../ingest/meeting";
 import { isPaid, markPaid } from "../billing/store";
 import { verifyPayment, priceSui, priceUsd, treasury, billingConfigured } from "../billing/sui";
 
+// Load local env BEFORE any module-level code reads process.env (vault master key, ports, rate caps).
+try { process.loadEnvFile(".env.local"); } catch { /* noop */ }
+
 const PAID_RATE_MAX = Number(process.env.PAID_RATE_PER_MIN ?? 15);
 
 // Resolve the model to use for an answer. Empty -> free NVIDIA default. A chosen model is
@@ -206,8 +209,6 @@ function originAllowed(origin: string, allow: string[]): boolean {
     return false;
   }
 }
-
-try { process.loadEnvFile(".env.local"); } catch { /* noop */ }
 
 const PORT = Number(process.env.PORT ?? process.env.NEURUS_API_PORT ?? 4318);
 

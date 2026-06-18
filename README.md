@@ -186,9 +186,6 @@ That drops a floating button in the corner; clicking it opens a chat panel that 
 - **Same grounded answers** — streaming, cited, conflict-aware — just without the dashboard around it.
 
 ---
-
-## API reference (`/v1`)
-
 | Group | Endpoints |
 |-------|-----------|
 | **Health** | `GET /health` |

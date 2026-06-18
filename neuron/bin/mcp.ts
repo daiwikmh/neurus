@@ -9,6 +9,7 @@ import { createFeed, listFeeds } from "../src/core/feeds";
 
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { stat } from "node:fs/promises";
 import { loadMcpConfig, applyMcpConfig } from "../src/cli/mcp-config";
 
 const _dir = dirname(fileURLToPath(import.meta.url));
@@ -87,6 +88,74 @@ server.registerTool(
     const nx = await Neurus.open(set ?? "default");
     const r = await nx.note(note);
     return text(`Remembered in "${nx.set.name}". people: ${r.people.map((p) => p.title).join(", ") || "—"} · commitments: ${r.commitments.length}`);
+  },
+);
+
+server.registerTool(
+  "add",
+  {
+    title: "Add a file or folder to memory",
+    description: "Ingest a local file or directory into a set — chunks, embeds, and stores it on Walrus so it becomes recall-/ask-able. Use this to upload blogs, docs, notes, or whole folders (txt/md/csv/json/pdf/docx).",
+    inputSchema: {
+      path: z.string().describe("absolute path to a file or folder on disk"),
+      set: z.string().optional().describe("knowledge set name (default: 'default')"),
+    },
+  },
+  async ({ path, set }) => {
+    const nc = notConfigured(); if (nc) return nc;
+    const info = await stat(path).catch(() => null);
+    if (!info) return text(`Path not found: ${path}`);
+    const nx = await Neurus.open(set ?? "default");
+    if (info.isDirectory()) {
+      const r = await nx.addDir(path, { max: 100 });
+      return text(`Added ${r.files.length} file(s) · ${r.totalChunks} chunks from ${path} → set "${nx.set.name}". Now recall or ask over it.`);
+    }
+    const file = await nx.addFile(path);
+    return text(`Added "${file.title}" → Walrus ${file.blobId ?? "(indexed)"} (set "${nx.set.name}"). Now recall or ask over it.`);
+  },
+);
+
+server.registerTool(
+  "ingest_web",
+  {
+    title: "Ingest a blog or web page URL",
+    description: "Fetch a blog post or website, extract the readable content, then chunk + embed it into a set so it becomes recall-/ask-able. For JS-heavy sites pass a direct article URL. Set max>1 to crawl multiple linked pages.",
+    inputSchema: {
+      url: z.string().describe("the blog/article/site URL"),
+      set: z.string().optional().describe("knowledge set name (default: 'default')"),
+      max: z.number().optional().describe("max pages to crawl (default 1; a single blog post needs 1)"),
+    },
+  },
+  async ({ url, set, max }) => {
+    const nc = notConfigured(); if (nc) return nc;
+    const nx = await Neurus.open(set ?? "default");
+    try {
+      const r = await nx.addSite(url, { max: max ?? 1 });
+      return text(`Ingested ${r.pages} page(s) from ${url} → set "${nx.set.name}" (${r.failed} failed, ${r.skipped} skipped). Now recall or ask over it.`);
+    } catch (e) {
+      return text(`Could not ingest ${url}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  },
+);
+
+server.registerTool(
+  "list_blobs",
+  {
+    title: "List uploaded Walrus blobs",
+    description: "List the files uploaded to Walrus in a set, with each file's Walrus blobId and chunk count. Use this to see what has actually been stored on-chain for a set.",
+    inputSchema: { set: z.string().optional().describe("knowledge set name (default: 'default')") },
+  },
+  async ({ set }) => {
+    const nc = notConfigured(); if (nc) return nc;
+    const nx = await Neurus.open(set ?? "default");
+    const all = await nx.neurons();
+    const files = all.filter((n) => n.type === "file");
+    if (!files.length) return text(`No files uploaded to "${nx.set.name}" yet. Use the 'add' tool to upload one.`);
+    const lines = files.map((f) => {
+      const chunks = all.filter((n) => (n.meta?.file as string) === f.id).length;
+      return `${f.title}\n  blobId: ${f.blobId ?? "(local only — not on Walrus)"}\n  chunks: ${chunks}`;
+    });
+    return text(`Uploaded blobs in "${nx.set.name}":\n\n${lines.join("\n\n")}`);
   },
 );
 

@@ -1,0 +1,229 @@
+[
+  {
+    "id": "file_5d24cc18",
+    "type": "file",
+    "title": "README.md",
+    "body": "# neurus **Owned, verifiable AI memory in your terminal.** `neurus` is a personal memory agent that lives in your shell. One command births an agent with its own Sui wallet — and that wallet address *is* its memory namespace on [Walrus](https://www.walrus.xyz/). Take notes, drop…",
+    "blobId": "sk1tATaIZs37bEZSofXPu-m49WrKij0n2idV5lYUKRs",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781825294321,
+    "synapses": [],
+    "meta": {
+      "mime": "text/markdown",
+      "bytes": 6234,
+      "ext": ".md",
+      "walrusObject": "0xb13df2e1a14df6f35329702d6b661d13a0d485684e74b33235f8e4091d155726",
+      "endEpoch": 438
+    }
+  },
+  {
+    "id": "chunk_1f9c1b5f",
+    "type": "chunk",
+    "title": "README.md#1",
+    "body": "# neurus\n\n**Owned, verifiable AI memory in your terminal.**\n\n`neurus` is a personal memory agent that lives in your shell. One command births an agent with its own Sui wallet — and that wallet address *is* its memory namespace on [Walrus](https://www.walrus.xyz/). Take notes, drop in files, ask questions grounded in your own data, and share memory with other agents through [Seal](https://github.com/MystenLabs/seal)-gated feeds. Nothing is held on someone else's server, and your memory isn't tied to any single model.\n\n```bash\nnpm install -g neurus\nneurus\n```\n\nThat's it — the first run walks you through two steps and drops you into the agent.\n\n---\n\n## First run\n\nThe very first time you launch, `neurus` asks two things:\n\n**1. Your model provider**\n- **NVIDIA** — paste your NVIDIA API key (`integrate.api.nvidia.com`)\n- **OpenRouter** — paste an OpenRouter key to use any model it hosts",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781825294322,
+    "synapses": [
+      {
+        "to": "file_5d24cc18",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 0,
+      "file": "file_5d24cc18",
+      "memwalBlob": "aHOmMeIRjWXEzljdXLxq3su_auL5ngbxqPYCPwP4B58",
+      "durability": "confirmed"
+    }
+  },
+  {
+    "id": "chunk_a160ce5d",
+    "type": "chunk",
+    "title": "README.md#2",
+    "body": " provider**\n- **NVIDIA** — paste your NVIDIA API key (`integrate.api.nvidia.com`)\n- **OpenRouter** — paste an OpenRouter key to use any model it hosts\n\n**2. Your wallet**\n- **Create new** — generates a fresh Sui keypair; the address becomes your memory namespace\n- **Import existing** — paste a Sui private key (`suiprivkey1…` or `0x` hex) to reuse a wallet you already own\n\nThe same wallet is used everywhere: it namespaces your memory on Walrus *and* signs the on-chain Seal transactions when you share. Credentials are written to `~/.neurus/` (mode `600`) and reused on every later run — you only do this once.\n\n```\n> wallet: [1] create new  [2] import existing  (1) 2\n> name your agent  scout\n> paste your Sui private key (suiprivkey1… or 0x hex) ****************\nimported scout · 0xd475…3a2b\n```",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781825294322,
+    "synapses": [
+      {
+        "to": "file_5d24cc18",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 1,
+      "file": "file_5d24cc18",
+      "memwalBlob": "BN4UsADrGILf8BjQvn2VZCWKENPrio--_KIdmWNubYU",
+      "durability": "confirmed"
+    }
+  },
+  {
+    "id": "chunk_eaafef37",
+    "type": "chunk",
+    "title": "README.md#3",
+    "body": "mport existing  (1) 2\n> name your agent  scout\n> paste your Sui private key (suiprivkey1… or 0x hex) ****************\nimported scout · 0xd475…3a2b\n```\n\n**Then it mints your memory account automatically.** On first run, `neurus` creates a Walrus Memory account on Sui owned by your wallet. If the wallet has no gas yet (a brand-new one won't), it requests testnet SUI from the faucet and waits for it to land — or shows you the faucet link to fund it manually:\n\n```\nSetting up your memory account on Walrus (one-time).\nFunding your wallet from the testnet faucet…\nCreating your Walrus Memory account on Sui…\nmemory account ready · 0x7571…a134\n```\n\nAfter that you're in the agent. This runs once; the account credentials are saved to `~/.neurus/mcp.json`.\n\n---\n\n## The agent (REPL)\n\n`neurus` (or `neurus agent`) opens an interactive prompt grounded in a memory set.",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781825294322,
+    "synapses": [
+      {
+        "to": "file_5d24cc18",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 2,
+      "file": "file_5d24cc18",
+      "memwalBlob": "ytKYCf8VCzBxlQviCVo_2OTH3g5oLGaSz3kE0La0OEE",
+      "durability": "confirmed"
+    }
+  },
+  {
+    "id": "chunk_55c54418",
+    "type": "chunk",
+    "title": "README.md#4",
+    "body": "tials are saved to `~/.neurus/mcp.json`.\n\n---\n\n## The agent (REPL)\n\n`neurus` (or `neurus agent`) opens an interactive prompt grounded in a memory set.\n\n```\n> Met Sarah at the offsite — design lead, I owe her the deck Friday.\n> what do I owe Sarah, and when?\nneurus › You owe Sarah the deck, due Friday. [1]\n```\n\nJust type to ask — answers come only from your stored memory, with citations. Slash commands:",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781825294322,
+    "synapses": [
+      {
+        "to": "file_5d24cc18",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 3,
+      "file": "file_5d24cc18",
+      "memwalBlob": "u94twNtcaUctoAaJWoi-3i27-r-UtwhryROz90RZMC8",
+      "durability": "confirmed"
+    }
+  },
+  {
+    "id": "chunk_e25865dc",
+    "type": "chunk",
+    "title": "README.md#5",
+    "body": "n?\nneurus › You owe Sarah the deck, due Friday. [1]\n```\n\nJust type to ask — answers come only from your stored memory, with citations. Slash commands:\n\n| Command | What it does |\n|---|---|\n| `/note <text>` | Remember a note (extracts people, facts, commitments) |\n| `/add <path>` · `@` | Upload a file or folder to Walrus and index it; `@` opens a file picker |\n| `/recall <q>` | Show the memories that match a query |\n| `/plan <goal>` | Build a numbered plan from your memory |\n| `/share [name]` | Seal-encrypt this set into a shareable feed → prints `shareId` + `blobId` |\n| `/grant <0x…>` | Grant a Sui address read access to your last feed |\n| `/follow <blobId> <shareId>` | Import a feed someone shared with you |\n| `/blobs` · `/publish` | List uploaded Walrus blobs · snapshot the set to Walrus |\n| `/set <name>` · `/model` · `/whoami` | Switch set · change model · show your address |\n| `/help` · `/exit` | List commands · leave |",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781825294322,
+    "synapses": [
+      {
+        "to": "file_5d24cc18",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 4,
+      "file": "file_5d24cc18",
+      "memwalBlob": "yoDXYIXfc-soO8TkPcleQJ41ScRCQeJoL_tLGg1i-to",
+      "durability": "confirmed"
+    }
+  },
+  {
+    "id": "chunk_a5f96064",
+    "type": "chunk",
+    "title": "README.md#6",
+    "body": "set to Walrus |\n| `/set <name>` · `/model` · `/whoami` | Switch set · change model · show your address |\n| `/help` · `/exit` | List commands · leave |\n\nIt also understands plain English — *\"share this set with 0x…\"* or *\"follow this feed\"* works without the slash commands.\n\n---\n\n## One-off commands\n\nRun a single action without entering the REPL:\n\n```bash\nneurus note \"Tom prefers async standups\"\nneurus add ./report.pdf\nneurus ask \"how does Tom like to meet?\"\nneurus brief \"Sarah\"            # pre-meeting brief on a person\nneurus reflect                  # synthesize insights from your memory\nneurus sets                     # list your knowledge sets\nneurus whoami                   # show this agent's Sui address\nneurus follow <blobId> --share <shareId>   # import a shared feed\n```\n\nAdd `--set <name>` to any command to target a specific knowledge set (default: `default`).\n\n---\n\n## Sharing memory across machines",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781825294322,
+    "synapses": [
+      {
+        "to": "file_5d24cc18",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 5,
+      "file": "file_5d24cc18",
+      "memwalBlob": "dKT76yL5joHAPI_fiU7ffXZZ-eEVaj07Wsn_dinrGa8",
+      "durability": "confirmed"
+    }
+  },
+  {
+    "id": "chunk_aef99844",
+    "type": "chunk",
+    "title": "README.md#7",
+    "body": " a shared feed\n```\n\nAdd `--set <name>` to any command to target a specific knowledge set (default: `default`).\n\n---\n\n## Sharing memory across machines\n\nMemory is portable because it lives on Walrus, not on a server. To share a set with another agent:\n\n```\n# on your machine\n> /share research\nshareId  0xabc…   blobId  k3Yc…\n> /grant 0xTHEIR_ADDRESS\n\n# on their machine\n> /follow k3Yc… 0xabc…\nimported 24 neurons from shared feed into \"default\"\n```\n\nThey decrypt with **their own** wallet — you never custody their data, and you can revoke the grant on-chain at any time. Sharing needs a Sui testnet wallet with a little gas; the agent's wallet is used automatically.\n\n---\n\n## Use it as an MCP server\n\n`neurus` also ships an MCP server so Claude Code, Cursor, or Claude Desktop can read and write your Walrus memory as tools.\n\n```bash\nneurus setup                              # save MemWal + sharing credentials\nclaude mcp add neurus neurus-mcp --scope user\n```",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781825294322,
+    "synapses": [
+      {
+        "to": "file_5d24cc18",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 6,
+      "file": "file_5d24cc18",
+      "memwalBlob": "fUop2H8OYpDiiYMCigZ7GJJPIQAaqY0e27U8NIldWN4",
+      "durability": "confirmed"
+    }
+  },
+  {
+    "id": "chunk_bf2b7afc",
+    "type": "chunk",
+    "title": "README.md#8",
+    "body": "ory as tools.\n\n```bash\nneurus setup                              # save MemWal + sharing credentials\nclaude mcp add neurus neurus-mcp --scope user\n```\n\nTools exposed: `list_sets`, `recall`, `ask`, `remember`, `create_feed`, `grant_feed`, `list_feeds`, `share_set`, `inspect_share`.\n\n---\n\n## Configuration\n\nEverything lives in `~/.neurus/` (each file is `600`):\n\n| File | Holds |\n|---|---|\n| `agent.json` | Your wallet (name, address, secret key) |\n| `config.json` | LLM provider, API key, model |\n| `mcp.json` | MemWal account + sharing credentials (written by `neurus setup`) |\n\nEnvironment overrides (optional): `NVIDIA_API_KEY`, `OPENROUTER_API_KEY_FREE`, `OPENROUTER_API_KEY_PREMIUM`, `SUI_TESTNET_PRIVATE_KEY`, `NEURUS_SEAL_PACKAGE`.\n\n**Requirements:** Node ≥ 22.\n\n---\n\n## How it works",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781825294322,
+    "synapses": [
+      {
+        "to": "file_5d24cc18",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 7,
+      "file": "file_5d24cc18",
+      "memwalBlob": "PK9MvVUFf-vxsHNooS5K9vZ1dYnHMiBMAhUZQHFi83U",
+      "durability": "confirmed"
+    }
+  },
+  {
+    "id": "chunk_05325987",
+    "type": "chunk",
+    "title": "README.md#9",
+    "body": "TER_API_KEY_FREE`, `OPENROUTER_API_KEY_PREMIUM`, `SUI_TESTNET_PRIVATE_KEY`, `NEURUS_SEAL_PACKAGE`.\n\n**Requirements:** Node ≥ 22.\n\n---\n\n## How it works\n\nCapture → extract *neurons* (people, notes, files, chunks, insights, commitments, skills) → embed for recall + Seal-encrypt the bodies → store on Walrus / MemWal. Asking runs a broad vector recall, a local cross-encoder re-rank for precision, then a grounded, cited answer. Each task's outcome is distilled into a reusable *skill* neuron and primed into the next similar task, so the agent develops over time rather than staying flat. Your wallet anchors ownership on Sui; Seal makes every share revocable and verifiable.\n\nPart of [Neurus](https://neurus.xyz) — owned memory you can carry between Claude, Gemini, and GPT.\n\n## License\n\nMIT",
+    "source": {
+      "author": "self",
+      "trust": "owned"
+    },
+    "createdAt": 1781825294322,
+    "synapses": [
+      {
+        "to": "file_5d24cc18",
+        "kind": "derived_from"
+      }
+    ],
+    "meta": {
+      "index": 8,
+      "file": "file_5d24cc18",
+      "memwalBlob": "m4K0GxH0UpFLeYrQ1ZKiEVephWUuMVIV9ad0w4DP9-Y",
+      "durability": "confirmed"
+    }
+  }
+]
