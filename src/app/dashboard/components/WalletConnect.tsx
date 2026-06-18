@@ -1,12 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ConnectModal, useCurrentAccount, useDisconnectWallet } from "@mysten/dapp-kit";
+import { useWalletSignIn } from "@/lib/wallet-signin";
 
 export function WalletConnect() {
   const account = useCurrentAccount();
   const { mutate: disconnect } = useDisconnectWallet();
+  const signInWallet = useWalletSignIn();
   const [open, setOpen] = useState(false);
+
+  const addr = account?.address ?? null;
+  useEffect(() => {
+    if (!addr) return;
+    signInWallet(addr).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addr]);
+
+  const disconnectWallet = () => {
+    fetch("/api/wallet/logout", { method: "POST" }).catch(() => {});
+    disconnect();
+  };
 
   if (account) {
     const a = account.address;
@@ -16,7 +30,7 @@ export function WalletConnect() {
           <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
           <span className="font-mono">{a.slice(0, 6)}…{a.slice(-4)}</span>
         </span>
-        <button onClick={() => disconnect()} className="shrink-0 text-[11px] text-white/40 transition hover:text-white/70">
+        <button onClick={disconnectWallet} className="shrink-0 text-[11px] text-white/40 transition hover:text-white/70">
           disconnect
         </button>
       </div>

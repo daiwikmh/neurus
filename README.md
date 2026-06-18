@@ -14,6 +14,7 @@
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](#-license)
+[![npm](https://img.shields.io/npm/v/neurus?logo=npm&label=neurus%20CLI)](https://www.npmjs.com/package/neurus)
 
 [**Live App**](https://neurus.xyz) · [**Dashboard**](https://neurus.xyz/dashboard) · [**Blog**](https://neurus.xyz/blog)
 
@@ -136,11 +137,21 @@ A full memory agent in your terminal — no browser, no account. `neurus agent` 
 <img src="public/terminal.png" alt="Neurus CLI boot screen" width="440" />
 </div>
 
+The CLI is **published on npm** as [`neurus`](https://www.npmjs.com/package/neurus):
+
 ```bash
-npm install -g neurus      # or: npx neurus
-neurus setup               # one-time: MemWal credentials + MCP config
-neurus agent               # births an agent, opens the REPL
+npm install -g neurus      # published on npm · or run once with: npx neurus
+neurus                     # first run: creates a Sui wallet, auto-provisions your
+                           #   Walrus memory account from the faucet, opens the REPL
+
+# optional
+neurus setup               # save MemWal credentials for the MCP server
+claude mcp add neurus neurus-mcp --scope user
 ```
+
+> First launch needs no signup and no manual setup — `neurus` mints a wallet whose
+> address *is* your Walrus memory namespace and funds it from the testnet faucet.
+> `neurus setup` is only for wiring the MCP server into Claude Code / Cursor.
 
 | Command | What it does |
 |---------|--------------|
@@ -197,8 +208,6 @@ Every request carries an `x-neurus-user` header that scopes it to that user's na
 ## 🔒 Security & trust
 
 Memory bodies are **Seal-encrypted** at rest on Walrus; the per-user credential vault is sealed with `NEURON_VAULT_KEY`. Ownership is enforced by MemWal's owner/delegate model on Sui — access is **revocable and verifiable**.
-
-> **Current limitation:** the engine trusts the client-set `x-neurus-user` header (CORS open), so cross-user isolation is functional but not yet cryptographically enforced. Hardening it (signed identity / JWT) is on the roadmap. Don't put untrusted production secrets behind it until then.
 
 ---
 

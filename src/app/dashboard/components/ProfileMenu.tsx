@@ -47,6 +47,7 @@ export function ProfileMenu({ collapsed }: { collapsed: boolean }) {
     } catch {
       /* no wallet connected */
     }
+    await fetch("/api/wallet/logout", { method: "POST" }).catch(() => {});
     await signOut({ redirect: false });
     router.replace("/login");
   };

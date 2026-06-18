@@ -1,7 +1,8 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse, type NextRequest } from "next/server";
+import { engineHeaders } from "@/lib/server-identity";
 
-const ENGINE = process.env.NEXT_PUBLIC_NEURUS_API ?? "http://localhost:4318";
+const ENGINE = process.env.NEURUS_API ?? process.env.NEXT_PUBLIC_NEURUS_API ?? "http://localhost:4318";
 
 export async function POST(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.AUTH_SECRET });
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest) {
 
   const ex = await fetch(`${ENGINE}/v1/extract/meeting`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...(await engineHeaders()) },
     body: JSON.stringify({ text }),
   });
   const spec = await ex.json().catch(() => ({}));

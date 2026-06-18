@@ -1,12 +1,12 @@
 import { getToken } from "next-auth/jwt";
 import { NextResponse, type NextRequest } from "next/server";
+import { engineHeaders } from "@/lib/server-identity";
 
-const ENGINE = process.env.NEXT_PUBLIC_NEURUS_API ?? "http://localhost:4318";
+const ENGINE = process.env.NEURUS_API ?? process.env.NEXT_PUBLIC_NEURUS_API ?? "http://localhost:4318";
 
 export async function POST(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.AUTH_SECRET });
   const accessToken = token?.accessToken;
-  const userId = token?.sub;
   if (!accessToken) {
     return NextResponse.json({ error: "Google Calendar not connected — sign out and sign in again to grant calendar access." }, { status: 401 });
   }
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
   const ing = await fetch(`${ENGINE}/v1/ingest/calendar`, {
     method: "POST",
-    headers: { "content-type": "application/json", ...(userId ? { "x-neurus-user": userId } : {}) },
+    headers: { "content-type": "application/json", ...(await engineHeaders()) },
     body: JSON.stringify({ set, events }),
   });
   const out = await ing.json().catch(() => ({}));

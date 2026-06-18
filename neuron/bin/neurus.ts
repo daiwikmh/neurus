@@ -113,6 +113,9 @@ async function main() {
     return;
   }
 
+  const memoryCommands = new Set(["note", "add", "index", "ask", "brief", "nudges", "reflect", "surface", "map", "publish", "restore", "restore-index", "follow"]);
+  if (!memoryCommands.has(cmd)) { usage(); return; }
+
   const neurus = await Neurus.open(setName ?? "default");
 
   switch (cmd) {

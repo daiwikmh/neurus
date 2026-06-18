@@ -1,19 +1,21 @@
+// Direct engine URL — only used for PUBLIC, unauthenticated endpoints (embeddable widgets).
 const BASE = process.env.NEXT_PUBLIC_NEURUS_API ?? "http://localhost:4318";
+// Authenticated traffic goes through the same-origin Next.js proxy, which derives the user's
+// identity server-side (NextAuth session + signed wallet cookie) and injects it. The browser
+// can no longer assert who it is.
+const PROXY = "/api/neurus";
 
-let currentUser: string | null = null;
-export function setNeurusUser(user: string | null) {
-  currentUser = user;
-}
+// Kept for back-compat with callers; identity now comes from the server session, so this is a no-op.
+export function setNeurusUser(_user: string | null) {}
 
 function headers(json = false): Record<string, string> {
   const h: Record<string, string> = {};
   if (json) h["content-type"] = "application/json";
-  if (currentUser) h["x-neurus-user"] = currentUser;
   return h;
 }
 
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${BASE}/v1${path}`, {
+  const res = await fetch(`${PROXY}/v1${path}`, {
     method,
     headers: headers(!!body),
     body: body ? JSON.stringify(body) : undefined,
@@ -80,7 +82,7 @@ export const neurus = {
   neurons: (set: string) => call<{ neurons: NeuronRow[] }>("GET", `/neurons?set=${encodeURIComponent(set)}`).then((r) => r.neurons),
   ask: (set: string, question: string, model?: string) => call<{ answer: string; sources: string[]; spans: Span[] }>("POST", "/ask", { set, question, model }),
   askStream: async (set: string, question: string, onEvent: (e: { event: string; data: any }) => void, model?: string): Promise<void> => {
-    const res = await fetch(`${BASE}/v1/ask/stream`, {
+    const res = await fetch(`${PROXY}/v1/ask/stream`, {
       method: "POST",
       headers: headers(true),
       body: JSON.stringify({ set, question, model }),
@@ -364,7 +366,7 @@ export interface NetSnapshot {
 }
 
 export function netStream(set: string, onEvent: (e: { event: string; data: any }) => void): () => void {
-  const es = new EventSource(`${BASE}/v1/net/stream?set=${encodeURIComponent(set)}`);
+  const es = new EventSource(`${PROXY}/v1/net/stream?set=${encodeURIComponent(set)}`);
   for (const ev of ["op", "state", "roster"]) {
     es.addEventListener(ev, (m) => onEvent({ event: ev, data: JSON.parse((m as MessageEvent).data) }));
   }

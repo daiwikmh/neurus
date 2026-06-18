@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ConnectModal, useCurrentAccount, useDisconnectWallet, useSignAndExecuteTransaction, useSignPersonalMessage, useSuiClient } from "@mysten/dapp-kit";
 import { neurus, type AccountStatus } from "@/services/neurus";
 import { claimOwnership, revokeOwnership, relinkOwnership, ownershipConfigured, type WalletSigner } from "@/lib/ownership";
+import { useWalletSignIn } from "@/lib/wallet-signin";
 
 export function WalletOwnership() {
   const account = useCurrentAccount();
@@ -11,6 +12,7 @@ export function WalletOwnership() {
   const suiClient = useSuiClient();
   const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const { mutateAsync: signMessage } = useSignPersonalMessage();
+  const signInWallet = useWalletSignIn();
 
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<AccountStatus | null>(null);
@@ -19,10 +21,24 @@ export function WalletOwnership() {
 
   const addr = account?.address ?? null;
 
+  // Connecting a wallet here links it to the current account: prove ownership to the server
+  // (sets the wallet session cookie) so the engine treats this address as the canonical memory.
   useEffect(() => {
     if (!addr) { setStatus(null); return; }
-    neurus.accountStatus().then(setStatus).catch(() => setStatus(null));
+    let cancelled = false;
+    (async () => {
+      try { await signInWallet(addr); } catch { /* user may decline the signature */ }
+      if (cancelled) return;
+      neurus.accountStatus().then(setStatus).catch(() => setStatus(null));
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addr]);
+
+  const disconnectWallet = () => {
+    fetch("/api/wallet/logout", { method: "POST" }).catch(() => {});
+    disconnect();
+  };
 
   const signer: WalletSigner | null = addr
     ? {
@@ -115,7 +131,7 @@ export function WalletOwnership() {
           <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
           <span className="font-mono">{addr.slice(0, 6)}…{addr.slice(-4)}</span>
         </span>
-        <button onClick={() => disconnect()} className="shrink-0 text-[11px] text-white/40 transition hover:text-white/70">disconnect</button>
+        <button onClick={disconnectWallet} className="shrink-0 text-[11px] text-white/40 transition hover:text-white/70">disconnect</button>
       </div>
 
       {status?.owned ? (

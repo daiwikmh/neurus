@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react";
 import { ConnectModal, useCurrentAccount } from "@mysten/dapp-kit";
 import Image from "next/image";
 import { setLoginMethod } from "@/lib/session-identity";
+import { useWalletSignIn } from "@/lib/wallet-signin";
 import Link from "next/link";
 
 
@@ -27,10 +28,23 @@ function GoogleIcon() {
 function LoginCard() {
   const account = useCurrentAccount();
   const router = useRouter();
+  const signInWallet = useWalletSignIn();
   const [open, setOpen] = useState(false);
   const [intent, setIntent] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const proceedWallet = () => {
+  const proceedWallet = async () => {
+    if (!account || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await signInWallet(account.address);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "wallet sign-in failed");
+      setBusy(false);
+      return;
+    }
     setLoginMethod("wallet");
     router.push("/dashboard");
   };
@@ -101,9 +115,10 @@ function LoginCard() {
           {account ? (
             <button
               onClick={proceedWallet}
-              className="flex w-full items-center justify-center gap-2.5 rounded-lg bg-[#9aa8f0] py-2.5 text-sm font-medium text-[#14152b] transition hover:bg-[#aeb9f4]"
+              disabled={busy}
+              className="flex w-full items-center justify-center gap-2.5 rounded-lg bg-[#9aa8f0] py-2.5 text-sm font-medium text-[#14152b] transition hover:bg-[#aeb9f4] disabled:opacity-60"
             >
-              Continue as {account.address.slice(0, 6)}…{account.address.slice(-4)}
+              {busy ? "Sign the message in your wallet…" : `Continue as ${account.address.slice(0, 6)}…${account.address.slice(-4)}`}
             </button>
           ) : (
             <ConnectModal
@@ -119,6 +134,8 @@ function LoginCard() {
               }
             />
           )}
+
+          {error && <p className="mt-4 text-center text-[11px] text-red-400/80">{error}</p>}
 
           <p className="mt-6 text-center text-[11px] leading-relaxed text-white/30">
             Google signs you in to a hosted memory account. A wallet lets you self-custody and own your memory on Walrus.

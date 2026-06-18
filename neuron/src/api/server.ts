@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { Neurus, answer, answerStream, listSets, createSet, Vault, AccountManager, localTenant, safeTenantId, getWidget, getChatBinding, bindChat, sendTelegram, connectTelegram, getNotifyConfig, mintLinkToken, consumeLinkToken, envCredentials, type Tenant } from "../index";
+import { getLink, setLink } from "../identity/links";
 import type { RankedNeuron } from "../core/memory";
 import { warmup, rerank } from "../retrieval/rerank";
 import { NetHub } from "../net/hub";
@@ -131,6 +132,56 @@ async function tenantById(id: string): Promise<Tenant> {
   if (id === "local") return localTenant();
   const credentials = await vault.get(id);
   return { id, root: join(".neurus-data", id), credentials };
+}
+
+class AuthError extends Error {
+  status = 401;
+}
+
+// Canonical identity: a wallet address is the namespace; an email/Google sub links to it.
+// Google-only users keep their bare sub as the namespace until they link a wallet, then converge.
+async function resolveCanonicalTenant(ids: { wallet?: string; googleSub?: string; email?: string; direct?: string }): Promise<string | undefined> {
+  const { wallet, googleSub, email, direct } = ids;
+  if (wallet) {
+    if (email) await setLink(`email:${email.toLowerCase()}`, wallet);
+    if (googleSub) await setLink(`google:${googleSub}`, wallet);
+    return wallet;
+  }
+  if (googleSub || email) {
+    const linked = (email && (await getLink(`email:${email.toLowerCase()}`))) || (googleSub && (await getLink(`google:${googleSub}`)));
+    if (linked) return linked;
+    return googleSub ?? (email ? `email:${email.toLowerCase()}` : undefined);
+  }
+  return direct;
+}
+
+// Identity for an HTTP request. With NEURUS_PROXY_SECRET set (production), only the trusted
+// Next.js proxy — which carries the secret and server-derived identity headers — may assert a
+// user; the client can no longer forge x-neurus-user. Without the secret (local/dev) behaviour
+// is unchanged: the x-neurus-user header is trusted directly.
+async function resolveRequestTenant(req: any): Promise<Tenant> {
+  const h = (k: string) => (req.headers[k] as string | undefined)?.trim() || undefined;
+  const secret = process.env.NEURUS_PROXY_SECRET;
+  // When the secret is set (production), only callers that present it may assert identity at all.
+  // When it is not set (local/dev), identity headers are trusted directly. Either way the canonical
+  // resolution below understands both the proxy's rich headers and a legacy x-neurus-user.
+  if (secret && h("x-neurus-proxy-secret") !== secret) throw new AuthError("missing or invalid proxy credentials");
+  const id = await resolveCanonicalTenant({
+    wallet: h("x-neurus-wallet"),
+    googleSub: h("x-neurus-google"),
+    email: h("x-neurus-email"),
+    direct: h("x-neurus-user"),
+  });
+  return resolveTenant(id);
+}
+
+async function authedTenant(req: any, res: any): Promise<Tenant | null> {
+  try {
+    return await resolveRequestTenant(req);
+  } catch (e: any) {
+    send(res, e?.status ?? 401, { error: e?.message ?? "unauthorized" });
+    return null;
+  }
 }
 
 const rate = new Map<string, number[]>();
@@ -775,8 +826,13 @@ const server = createServer(async (req, res) => {
     res.end(html);
     return;
   }
+  if (req.method === "GET" && url.pathname === "/v1/health") {
+    send(res, 200, { ok: true, name: "neurus", version: "0.1.0" });
+    return;
+  }
   if (req.method === "GET" && url.pathname === "/v1/net/stream") {
-    const streamTenant = await resolveTenant((req.headers["x-neurus-user"] as string | undefined)?.trim() || undefined);
+    const streamTenant = await authedTenant(req, res);
+    if (!streamTenant) return;
     const set = scopeKey(streamTenant.id, url.searchParams.get("set")?.trim() || "default");
     res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive", ...CORS });
     const sse = (event: string, data: unknown) => res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
@@ -850,7 +906,8 @@ const server = createServer(async (req, res) => {
   if (req.method === "POST" && url.pathname === "/v1/ask/stream") {
     try {
       const body = await readBody(req);
-      const tenant = await resolveTenant((req.headers["x-neurus-user"] as string | undefined)?.trim() || undefined);
+      const tenant = await authedTenant(req, res);
+      if (!tenant) return;
       const model = await gateModel(tenant, body.model);
       const nx = await Neurus.open(body.set ?? "default", { behind: true, tenant });
       const hits = await nx.recall(String(body.question), { limit: body.limit ?? 5 }).catch(() => nx.recall(String(body.question), { limit: body.limit ?? 5 }));
@@ -879,7 +936,8 @@ const server = createServer(async (req, res) => {
   }
   try {
     const body = req.method === "POST" ? await readBody(req) : {};
-    const tenant = await resolveTenant((req.headers["x-neurus-user"] as string | undefined)?.trim() || undefined);
+    const tenant = await authedTenant(req, res);
+    if (!tenant) return;
     const out = await handle(req.method ?? "GET", url.pathname, url.searchParams, body, tenant);
     if (out && out.__notfound) {
       send(res, 404, { error: `no route ${req.method} ${url.pathname}` });
