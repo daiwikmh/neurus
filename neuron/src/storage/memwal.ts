@@ -45,12 +45,18 @@ export class MemwalStore {
   }
 
   async rememberBulk(texts: string[], timeoutMs = 150_000): Promise<string[]> {
+    const BATCH = 20;
     try {
-      const res = await withRetry(
-        () => this.mw.rememberBulkAndWait(texts.map((text) => ({ text, namespace: this.namespace })), { timeoutMs }),
-        { label: "memory bulk write (MemWal)", attempts: 3, shouldRetry: isNetworkError },
-      );
-      return res.results.map((r) => r.blob_id ?? "");
+      const blobIds: string[] = [];
+      for (let i = 0; i < texts.length; i += BATCH) {
+        const slice = texts.slice(i, i + BATCH);
+        const res = await withRetry(
+          () => this.mw.rememberBulkAndWait(slice.map((text) => ({ text, namespace: this.namespace })), { timeoutMs }),
+          { label: "memory bulk write (MemWal)", attempts: 3, shouldRetry: isNetworkError },
+        );
+        for (const r of res.results) blobIds.push(r.blob_id ?? "");
+      }
+      return blobIds;
     } catch (e) {
       const rl = asRateLimit(e);
       if (rl) throw rl;

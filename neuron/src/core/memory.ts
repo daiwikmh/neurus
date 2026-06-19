@@ -1,4 +1,5 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { dirname } from "node:path";
 import { createNeuron, type Neuron, type NeuronType, type Trust } from "./neuron";
 import { MemwalStore } from "../storage/memwal";
 import { putBlobInfo, getBlobText, type BlobInfo } from "../storage/walrus";
@@ -63,6 +64,7 @@ export class Memory {
   }
 
   private async save() {
+    await mkdir(dirname(this.manifestPath), { recursive: true });
     await writeFile(this.manifestPath, JSON.stringify([...this.neurons.values()], null, 2));
   }
 

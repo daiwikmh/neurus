@@ -1,6 +1,6 @@
 {
   "name": "neurus",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Owned, verifiable AI memory in your terminal — a personal memory agent with its own Sui wallet, on Walrus.",
   "keywords": [
