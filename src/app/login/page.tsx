@@ -84,7 +84,7 @@ function LoginCard() {
           <h1 className="text-4xl font-semibold leading-tight">
             One memory. 
             <br />
-            Every AI.
+            For You and Your Agents
           </h1>
           <p className="mt-4 max-w-sm text-sm text-white/50">
             Sign in to your owned, verifiable memory on Walrus.

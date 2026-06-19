@@ -10,21 +10,45 @@ const springConfig = { stiffness: 60, damping: 22, mass: 0.6 };
 
 function Content({ copied, copy }: { copied: boolean; copy: () => void }) {
   return (
-    <div className="flex flex-col items-center text-center">
-      <span className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-white/60 backdrop-blur-sm">
-        Persistent · Verifiable · Owned
+    <div className="relative flex flex-col items-center text-center">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-[150%] w-[160%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(7,8,9,0.9)_0%,rgba(7,8,9,0.55)_42%,transparent_72%)] blur-2xl"
+      />
+
+      <span className="mb-7 inline-flex items-center gap-2.5 rounded-full border border-white/20 bg-white/[0.08] px-4 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80 backdrop-blur-md">
+        <span className="h-1.5 w-1.5 rounded-full bg-[#9aa8f0] shadow-[0_0_8px_#9aa8f0]" />
+        Persistent
+        <span className="text-white/25">·</span>
+        Verifiable
+        <span className="text-white/25">·</span>
+        Owned
       </span>
 
-      <h1 className="max-w-4xl text-5xl font-bold leading-[1.03] tracking-tight text-white sm:text-[68px]">
-        One memory. Every model. 
+      <h1
+        className="max-w-4xl text-5xl font-display leading-[1.05] tracking-tight text-white drop-shadow-[0_2px_30px_rgba(0,0,0,0.7)] sm:text-[76px]"
+      >
+        One memory.
         <br />
-        Always yours. 
+        For you and your{" "}
+        <span className="bg-gradient-to-r from-[#cbd3ff] via-[#9aa8f0] to-[#a78bfa] bg-clip-text text-transparent">
+          agents
+        </span>
+        .
       </h1>
 
-      <p className="mt-7 max-w-xl text-lg leading-relaxed text-white/65 sm:text-xl">
-        The owned, verifiable memory layer for AI agents — on Walrus. Capture anything,
-        recall it by meaning, and prove it was never tampered with.
-      </p>
+      {/* <p className="mt-7 max-w-lg text-lg font-medium leading-relaxed text-white/80 drop-shadow-[0_1px_14px_rgba(0,0,0,0.85)] sm:text-xl">
+        The owned, verifiable memory layer for AI agents
+        <span className="text-white"> — on Walrus.</span>
+      </p> */}
+
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 font-mono text-[13px] uppercase tracking-wide text-white/70 drop-shadow-[0_1px_10px_rgba(0,0,0,0.85)]">
+        <span>Capture anything</span>
+        <span className="text-[#9aa8f0]">/</span>
+        <span>Recall by meaning</span>
+        <span className="text-[#9aa8f0]">/</span>
+        <span className="text-white/90">Prove it untampered</span>
+      </div>
 
       <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
         <a href="/login" className="rounded-full bg-white px-5 py-2.5 text-sm font-medium text-black transition hover:bg-white/90">
@@ -70,7 +94,7 @@ export function Hero() {
   if (reduced) {
     return (
       <section className="relative flex h-screen items-center overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url(/hero-room.jpeg)" }} />
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url(/hero_section.jpeg)" }} />
         <div className="absolute inset-0 bg-black/50" />
         <Container className="relative">
           <Content copied={copied} copy={copy} />
@@ -84,7 +108,7 @@ export function Hero() {
       <section className="sticky top-0 flex h-screen items-center overflow-hidden">
         <motion.div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url(/hero-room.jpeg)", scale: bgScale }}
+          style={{ backgroundImage: "url(/hero_section.jpeg)", scale: bgScale }}
         />
         <motion.div className="absolute inset-0 bg-black" style={{ opacity: overlayOpacity }} />
 

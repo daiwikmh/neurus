@@ -7,7 +7,7 @@ import { Container } from "./Container";
 import { site } from "@/lib/site";
 
 function Logo() {
-  return <Image src="/neurus.png" alt="Neurus" width={50} height={50} priority />;
+  return <Image src="/neurus.png" alt="Neurus" width={75} height={75} priority />;
 }
 
 export function Nav() {
@@ -35,7 +35,7 @@ export function Nav() {
               <Link
                 key={l.label}
                 href={l.href}
-                className={`text-[13px] transition-colors hover:text-white ${i === 0 ? "text-white" : "text-white/45"}`}
+                className={`text-[16px] font-semibold transition-colors hover:text-white ${i === 0 ? "text-white" : "text-white/45"}`}
               >
                 {l.label}
               </Link>
