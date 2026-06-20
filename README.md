@@ -148,6 +148,9 @@ neurus                     # first run: creates a Sui wallet, auto-provisions yo
 
 # optional
 neurus setup               # save MemWal credentials for the MCP server
+
+## Claude
+
 claude mcp add neurus neurus-mcp --scope user
 ```
 
@@ -184,23 +187,6 @@ That drops a floating button in the corner; clicking it opens a chat panel that 
 - **Origin-locked** — requests are rejected unless they come from a domain on the widget's allowlist (`POST /v1/public/ask/stream` checks `Origin`).
 - **Scoped** — bind to a whole set or narrow to one dataset, so a docs widget only ever answers from the docs.
 - **Same grounded answers** — streaming, cited, conflict-aware — just without the dashboard around it.
-
----
-| Group | Endpoints |
-|-------|-----------|
-| **Health** | `GET /health` |
-| **Memory** | `POST /remember` · `POST /recall` · `POST /retrieve` · `POST /ask` · `POST /ask/stream` · `POST /forget` |
-| **Ingest** | `POST /ingest/file` · `/ingest/dir` · `/ingest/walrus` |
-| **Datasets** | `GET /datasets` · `POST /datasets/{upload,import,web,github,folder,publish,health,renew}` |
-| **Sets & map** | `GET /sets` · `POST /sets` · `GET /map` · `GET /neurons` |
-| **Proactive** | `POST /reflect` · `POST /surface` · `POST /brief` |
-| **Integrity** | `POST /publish` · `POST /restore` · `POST /flush` |
-| **Ownership** | `GET /account` · `POST /account/{link,provision,unlink}` |
-| **Widgets** | `GET /widgets` · `POST /widgets` · `/widgets/delete` · `GET /public/widget` · `POST /public/ask/stream` |
-| **Interop** | `GET /a2a/{id}/.well-known/agent-card.json` · `POST /a2a/{id}` (A2A JSON-RPC `message/send`) — plus an **MCP** stdio server (`neurus-mcp`) exposing `list_sets` · `recall` · `ask` · `remember` · `create_feed` · `grant_feed` · `list_feeds` · `share_set` · `inspect_share` |
-| **Notify** | `GET /notify` · `POST /notify/telegram` · `/notify/test` |
-
-Every request carries an `x-neurus-user` header that scopes it to that user's namespace/account.
 
 ---
 
