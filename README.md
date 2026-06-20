@@ -69,7 +69,7 @@ One engine, three ways in:
 
 ## 🏛️ Architecture
 
-<img src="public/excalineurus.png" alt="Neurus CLI boot screen" width="440" />
+<img src="public/excalineurus.png" alt="Neurus CLI boot screen" width="600" />
 
 
 Two deploys, one engine. The Next.js app is static/serverless on Vercel; the engine is a long-running Node service (it holds in-memory state and an ML re-ranker, so it can't be serverless).
