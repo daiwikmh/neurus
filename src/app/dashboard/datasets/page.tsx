@@ -10,6 +10,7 @@ const KIND_LABEL: Record<Dataset["kind"], string> = { file: "file", snapshot: "s
 const walruscan = (blobId: string) => `https://walruscan.com/testnet/blob/${blobId}`;
 const hostOf = (u: string) => { try { return new URL(u).host; } catch { return u; } };
 const STRUCTURE = new Set(["web", "folder", "github"]);
+const WIDGET_KINDS = new Set<Dataset["kind"]>(["file", "web", "folder", "github"]);
 const DOC_EXT = /\.(txt|md|markdown|csv|json|log|text|pdf|docx)$/i;
 
 function toBase64(file: File): Promise<string> {
@@ -78,7 +79,7 @@ export default function DatasetsPage() {
   };
   useEffect(() => { if (online) refresh(); }, [active, online]);
 
-  const fileDatasets = datasets.filter((d) => d.kind === "file");
+  const widgetDatasets = datasets.filter((d) => WIDGET_KINDS.has(d.kind));
   const datasetTitle = (id?: string) => datasets.find((d) => d.id === id)?.title ?? id ?? "—";
 
   const snippet = (id: string) => `<script src="${origin}/embed.js" data-widget="${id}" defer></script>`;
@@ -323,7 +324,7 @@ export default function DatasetsPage() {
               className="mt-1 block rounded-lg border border-white/10 bg-[#0c0d10] px-3 py-2 text-[13px] text-white outline-none focus:border-[#9aa8f0]/50"
             >
               <option value="" className="bg-[#0c0d10]">Select a dataset…</option>
-              {fileDatasets.map((d) => (
+              {widgetDatasets.map((d) => (
                 <option key={d.id} value={d.id} className="bg-[#0c0d10]">{d.title}</option>
               ))}
             </select>
@@ -345,8 +346,8 @@ export default function DatasetsPage() {
             {busy === "widget" ? "Creating…" : "Create widget"}
           </button>
         </div>
-        {fileDatasets.length === 0 && (
-          <p className="mt-2 text-[12px] text-white/35">Upload a file/database above first — widgets attach to one uploaded dataset.</p>
+        {widgetDatasets.length === 0 && (
+          <p className="mt-2 text-[12px] text-white/35">Add a dataset above first — widgets attach to one dataset (file, web, folder, or GitHub).</p>
         )}
         <div className="mt-3 space-y-2">
           {widgets.length === 0 ? (
