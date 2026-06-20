@@ -14,6 +14,7 @@ import { RateLimitError } from "../util/retry";
 
 const SEARCHABLE: Set<NeuronType> = new Set(["note", "chunk", "insight", "skill"]);
 const WRITE_SPACING_MS = Number(process.env.NEURUS_WRITE_SPACING_MS ?? 1000);
+const WRITE_BATCH = Math.max(1, Number(process.env.NEURUS_WRITE_BATCH ?? 16));
 const sigmoid = (x: number) => 1 / (1 + Math.exp(-x));
 
 export interface RankedNeuron {
@@ -77,6 +78,22 @@ export class Memory {
     }
   }
 
+  private async embedBatch(neurons: Neuron[]): Promise<void> {
+    const searchable = neurons.filter((n) => SEARCHABLE.has(n.type));
+    if (searchable.length <= 1) {
+      if (searchable.length === 1) await this.embed(searchable[0]);
+      return;
+    }
+    const texts = searchable.map((n) => (n.meta?.embedText as string | undefined) ?? n.body);
+    const blobIds = await this.memwal.rememberBulk(texts);
+    for (let i = 0; i < searchable.length; i++) {
+      const blobId = blobIds[i];
+      if (!blobId) continue;
+      this.byMemwalBlob.set(blobId, searchable[i].id);
+      searchable[i].meta = { ...(searchable[i].meta ?? {}), memwalBlob: blobId };
+    }
+  }
+
   async remember(neuron: Neuron, opts: { behind?: boolean } = {}): Promise<Neuron> {
     await this.load();
     this.neurons.set(neuron.id, neuron);
@@ -132,14 +149,14 @@ export class Memory {
     this.draining = true;
     this.deferred = false;
     while (this.queue.length) {
-      const n = this.queue.shift()!;
+      const batch = this.queue.splice(0, WRITE_BATCH);
       try {
-        await this.embed(n);
-        n.meta = { ...(n.meta ?? {}), durability: "confirmed" };
+        await this.embedBatch(batch);
+        for (const n of batch) n.meta = { ...(n.meta ?? {}), durability: "confirmed" };
       } catch (e) {
         if (e instanceof RateLimitError) {
-          this.queue.unshift(n);
-          n.meta = { ...(n.meta ?? {}), durability: "pending" };
+          this.queue.unshift(...batch);
+          for (const n of batch) n.meta = { ...(n.meta ?? {}), durability: "pending" };
           await this.save();
           this.draining = false;
           this.deferred = true;
@@ -147,7 +164,7 @@ export class Memory {
           setTimeout(() => void this.drain(), wait);
           return;
         }
-        n.meta = { ...(n.meta ?? {}), durability: "failed" };
+        for (const n of batch) n.meta = { ...(n.meta ?? {}), durability: "failed" };
       }
       await this.save();
       if (this.queue.length) await new Promise((r) => setTimeout(r, WRITE_SPACING_MS));
