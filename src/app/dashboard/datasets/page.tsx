@@ -67,6 +67,7 @@ export default function DatasetsPage() {
   const folderRef = useRef<HTMLInputElement>(null);
 
   const [restoreMsg, setRestoreMsg] = useState<string | null>(null);
+  const [sizeNote, setSizeNote] = useState(false);
 
   const [widgets, setWidgets] = useState<Widget[]>([]);
   const [widgetDataset, setWidgetDataset] = useState("");
@@ -210,6 +211,7 @@ export default function DatasetsPage() {
 
         <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
           <div className="text-sm font-medium text-white">{busy === "github" ? "Importing repo…" : "Import GitHub repo"}</div>
+          {sizeNote && <div className="mt-1 text-[11px] text-amber-400/70">Large repos may take a moment — each file is uploading to Walrus.</div>}
           <div className="mt-2 flex gap-1.5">
             <input
               value={repoInput}
@@ -218,7 +220,12 @@ export default function DatasetsPage() {
               className="min-w-0 flex-1 rounded-lg border border-white/10 bg-[#0c0d10] px-2.5 py-1.5 font-mono text-[11px] text-white/80 outline-none focus:border-white/25"
             />
             <button
-              onClick={() => repoInput.trim() && run("github", () => neurus.addRepoDataset(active, repoInput.trim()).then(() => setRepoInput("")))}
+              onClick={() => {
+                if (!repoInput.trim()) return;
+                setSizeNote(true);
+                setTimeout(() => setSizeNote(false), 2000);
+                run("github", () => neurus.addRepoDataset(active, repoInput.trim()).then(() => setRepoInput("")));
+              }}
               disabled={!!busy || !repoInput.trim()}
               className="rounded-lg bg-[#9aa8f0] px-3 text-[12px] font-medium text-[#14152b] transition hover:bg-[#aeb9f4] disabled:opacity-40"
             >

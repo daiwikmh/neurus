@@ -304,7 +304,7 @@ export class Neurus {
     let failed = 0;
     for (const it of items) {
       try {
-        const { file, chunks } = await ingestBuffer(it.name, it.bytes, { store: false });
+        const { file, chunks } = await ingestBuffer(it.name, it.bytes, { store: true });
         file.meta = { ...file.meta, datasetId: dataset.id };
         for (const c of chunks) c.meta = { ...c.meta, datasetId: dataset.id };
         await this.mem.ingest(file, chunks, { behind: this.behind });
