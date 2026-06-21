@@ -98,9 +98,21 @@ function LoginCard() {
           <h2 className="text-xl font-semibold">Sign in</h2>
           <p className="mt-1 text-sm text-white/45">Choose how you want to access your memory.</p>
 
+          <div className="mt-6 rounded-xl border border-[#9aa8f0]/20 bg-[#9aa8f0]/[0.05] px-4 py-3">
+            <div className="flex items-center gap-2">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9aa8f0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 opacity-70">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              <span className="text-[11px] font-medium text-[#9aa8f0]/90 uppercase tracking-wide">Early access</span>
+            </div>
+            <p className="mt-1.5 text-[11.5px] leading-relaxed text-white/45">
+              Neurus is pending Google verification. Google sign-in is currently limited to approved accounts only. Use a Sui wallet for unrestricted access.
+            </p>
+          </div>
+
           <button
             onClick={loginGoogle}
-            className="mt-6 flex w-full items-center justify-center gap-2.5 rounded-lg border border-white/15 bg-white py-2.5 text-sm font-medium text-[#14152b] transition hover:bg-white/90"
+            className="mt-3 flex w-full items-center justify-center gap-2.5 rounded-lg border border-white/15 bg-white py-2.5 text-sm font-medium text-[#14152b] transition hover:bg-white/90"
           >
             <GoogleIcon />
             Sign in with Google
