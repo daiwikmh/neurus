@@ -244,7 +244,12 @@ export class Memory {
     const { limit = 5, overFetch = 20, type, trust, minRelevance = 0, mmr, datasetId } = opts;
     const dsOk = (n: Neuron) => !datasetId || (n.meta as Record<string, unknown> | undefined)?.datasetId === datasetId;
 
-    const hits = await this.memwal.recall(query, overFetch);
+    let hits: Awaited<ReturnType<typeof this.memwal.recall>> = [];
+    try {
+      hits = await this.memwal.recall(query, overFetch);
+    } catch {
+      // degrade to sparse-only
+    }
     const seen = new Set<string>();
     const pool: Neuron[] = [];
     for (const h of hits) {
