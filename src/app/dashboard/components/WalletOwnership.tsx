@@ -58,20 +58,7 @@ export function WalletOwnership() {
       setStatus(s);
       setMsg("You now own this memory on Walrus.");
     } catch (e) {
-      const m = e instanceof Error ? e.message : String(e);
-      // This wallet already owns a Walrus Memory account (the contract allows one per address).
-      // Link the existing account instead of creating a second one.
-      if (/create_account|abort code: ?3|already/i.test(m)) {
-        try {
-          setStatus(await neurus.adoptEnvAccount());
-          setMsg("Linked your existing Walrus Memory account.");
-          return;
-        } catch (e2) {
-          setMsg(e2 instanceof Error ? e2.message : "failed to link existing account");
-          return;
-        }
-      }
-      setMsg(m);
+      setMsg(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(null);
     }

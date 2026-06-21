@@ -10,6 +10,7 @@ export const site = {
   x: "https://x.com/neurusHQ",
   nav: [
     { label: "Neurus", href: "/" },
+    { label: "Docs", href: "/help" },
     { label: "Blogs", href: "/blog" },
   ] as NavLink[],
 } as const;

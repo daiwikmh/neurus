@@ -46,26 +46,45 @@ export async function relinkOwnership(signer: WalletSigner, suiClient: unknown, 
   return { delegateKey: delegate.privateKey };
 }
 
+async function findExistingAccount(signer: WalletSigner, suiClient: unknown): Promise<string | null> {
+  try {
+    const result = await (suiClient as any).getOwnedObjects({
+      owner: signer.address,
+      filter: { StructType: `${PACKAGE_ID}::account::MemWalAccount` },
+      options: { showType: true },
+    });
+    return (result?.data?.[0]?.data?.objectId as string) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function claimOwnership(signer: WalletSigner, suiClient: unknown): Promise<ClaimResult> {
   if (!ownershipConfigured()) {
     throw new Error("MEMWAL package/registry id not configured — set NEXT_PUBLIC_MEMWAL_PACKAGE_ID / _REGISTRY_ID");
   }
   const delegate = await generateDelegateKey();
-  const account = await createAccount({
-    packageId: PACKAGE_ID,
-    registryId: REGISTRY_ID,
-    walletSigner: signer as any,
-    suiClient: suiClient as any,
-    suiNetwork: NETWORK,
-  });
+
+  let accountId = await findExistingAccount(signer, suiClient);
+  if (!accountId) {
+    const account = await createAccount({
+      packageId: PACKAGE_ID,
+      registryId: REGISTRY_ID,
+      walletSigner: signer as any,
+      suiClient: suiClient as any,
+      suiNetwork: NETWORK,
+    });
+    accountId = account.accountId;
+  }
+
   await addDelegateKey({
     packageId: PACKAGE_ID,
-    accountId: account.accountId,
+    accountId,
     publicKey: delegate.publicKey,
     label: "Neurus dashboard",
     walletSigner: signer as any,
     suiClient: suiClient as any,
     suiNetwork: NETWORK,
   });
-  return { accountId: account.accountId, delegateKey: delegate.privateKey };
+  return { accountId, delegateKey: delegate.privateKey };
 }

@@ -516,8 +516,8 @@ claude mcp add neurus neurus-mcp --scope user`}</Pre>
                   <h3 className="text-[14.5px] font-medium text-white/90">HTTP API</h3>
                   <P>
                     Point any agent at the <Code>/v1</Code> HTTP API — <Code>remember</Code>, <Code>recall</Code>,{" "}
-                    <Code>ask</Code> (streaming), <Code>retrieve</Code>, <Code>forget</Code>, and more. Each request
-                    carries an <Code>x-neurus-user</Code> header that scopes it to that user&apos;s namespace.
+                    <Code>ask</Code> (streaming), <Code>retrieve</Code>, <Code>forget</Code>, and more. Identity is
+                    resolved server-side; all dashboard calls are proxied through <Code>/api/neurus/</Code>.
                   </P>
                 </div>
                 <div>

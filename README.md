@@ -77,7 +77,7 @@ Two deploys, one engine. The Next.js app is static/serverless on Vercel; the eng
 ```mermaid
 graph TD
   U["User · Agent"] -->|"Google / Sui wallet"| W["Next.js Dashboard<br/>(Vercel)"]
-  W -->|"/v1 HTTP · x-neurus-user"| E["Neurus Engine<br/>(Node · Railway)"]
+  W -->|"/api/neurus proxy (identity injected server-side)"| E["Neurus Engine<br/>(Node · Railway)"]
 
   E --> R[("L1 · Redis<br/>hot cache + sealed vault")]
   E --> M[("L2 · MemWal<br/>vector index + recall")]
@@ -107,7 +107,7 @@ capture ─▶ extract neurons ─▶ embed + encrypt ─▶ store (Walrus / Mem
 ask ◀── grounded answer (cited) ◀── re-rank ◀── broad recall (MemWal)
 ```
 
-1. **Capture** a note, file, or page → the engine extracts *neurons* (memory nodes: people, notes, files, chunks, insights, commitments, skills).
+1. **Capture** a note, file, or page → the engine extracts *neurons* (memory nodes: people, notes, files, chunks, insights, commitments, skills — each typed and linked by synapses).
 2. **Store** — bodies go to Walrus (Seal-encrypted) + MemWal for vector recall; a versioned manifest tracks the map.
 3. **Recall** — MemWal returns a broad candidate pool; a local cross-encoder (`Xenova/ms-marco-MiniLM-L-6-v2`) re-ranks for precision.
 4. **Answer** — NVIDIA `gpt-oss-120b` produces a streamed, grounded answer that cites the exact evidence it was given.
@@ -195,7 +195,7 @@ That drops a floating button in the corner; clicking it opens a chat panel that 
 
 ## 🔒 Security & trust
 
-Memory bodies are **Seal-encrypted** at rest on Walrus; the per-user credential vault is sealed with `NEURON_VAULT_KEY`. Ownership is enforced by MemWal's owner/delegate model on Sui — access is **revocable and verifiable**.
+Memory bodies are **Seal-encrypted** at rest on Walrus; the per-user credential vault is sealed with `NEURUS_VAULT_KEY`. Identity is server-derived — the web proxies all engine calls through `/api/neurus/` with session-scoped headers; clients never self-assert identity. Ownership is enforced by MemWal's owner/delegate model on Sui — access is **revocable and verifiable**.
 
 ---
 

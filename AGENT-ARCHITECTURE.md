@@ -1,14 +1,14 @@
 # Neurus — Agent & Algorithms
 
-How the agent is actually built: the retrieval/reasoning stack, the multi-agent layer, and exactly which algorithm runs where. Every claim below is cited to a file in `neuron/src`. Written 2026-06-10; reflects the live `neuron/` engine (the `packages/` layout in old docs is dead).
+How the agent is actually built: the retrieval/reasoning stack, the multi-agent layer, and exactly which algorithm runs where. Every claim below is cited to a file in `neuron/src`.
 
 ## 0. One-paragraph mental model
 
-A **neuron** is the atomic memory unit (`core/neuron.ts`) — a typed record (`note | person | file | chunk | insight | commitment`) with a body, provenance (`author`, `trust`), synapses (edges), and `meta`. Bodies are embedded and stored on Walrus via **MemWal**; the durable map lives in a local manifest. **Reading** a memory is a 5-stage retrieval pipeline (recall → fuse → rerank → gate → generate). **Multi-agent** memory is a signed CRDT op-log persisted to Walrus. **Workflows** are scheduled agents that write observations into that shared memory and reason over it. No model is fine-tuned; all "learning" is in-context + memory state.
+A **neuron** is the atomic memory unit (`core/neuron.ts`) — a typed record (`note | person | file | chunk | insight | commitment | skill`) with a body, provenance (`author`, `trust`), synapses (edges), and `meta`. Bodies are embedded and stored on Walrus via **MemWal**; the durable map lives in a local manifest. **Reading** a memory is a 5-stage retrieval pipeline (recall → fuse → rerank → gate → generate). **Multi-agent** memory is a signed CRDT op-log persisted to Walrus. **Workflows** are scheduled agents that write observations into that shared memory and reason over it. No model is fine-tuned; all "learning" is in-context + memory state.
 
 ## 1. The retrieval pipeline (the core read path)
 
-Runs on every `/v1/ask`, `/v1/recall`, `/v1/retrieve`, `/v1/net/ask`, and inside `surface`/`brief`. Implemented in `core/memory.ts::recall` (lines ~135-186).
+Runs on every `/v1/ask`, `/v1/recall`, `/v1/retrieve`, `/v1/net/ask`, and inside `surface`/`brief`. Implemented in `core/memory.ts::recall`.
 
 ```
 query
@@ -42,7 +42,7 @@ query
 
 ## 2. Trust, provenance, and the quality gate
 
-There is **no separate "fact verifier" in the current engine** (an older URL-checking verifier lived in the dead `packages/` tree). Today the anti-fabrication guarantees are three structural mechanisms:
+Anti-fabrication guarantees are three structural mechanisms:
 1. **Grounding** — generation is constrained to provided neurons; uncited claims are prompted against.
 2. **Trust-tagging** — every neuron carries `source.trust` (`owned`/`shared`/`untrusted`); recall can filter by it and the answer prompt weights by it. An injected memory from an unknown writer is `untrusted` → treated as data, not instruction.
 3. **Merkle integrity (opt-in per set)** — see §4.3.
@@ -60,10 +60,10 @@ Not a cron watcher — two algorithms:
 `crdt/oplog.ts`, `crdt/replica.ts`, `net/manager.ts`, `net/hub.ts`. This is what makes memory shareable across agents with permissions and convergence.
 
 ### 4.1 Signed op-log + capabilities
-Every write is an `Op {type: add|remove|update, neuronId, tag, neuron?, lamport, actor, sig}`. The signature is `sha256(secret : payload)` (`oplog.ts:20`); `Capabilities.verify` checks the actor's granted secret. An op from an actor without a capability is **dropped at merge** — this is how grant/revoke works (revoke → the next write bounces, rendered red in the UI). It's a capability-based auth model, the off-chain twin of a Seal grant.
+Every write is an `Op {type: add|remove|update, neuronId, tag, neuron?, lamport, actor, sig}`. The signature is `sha256(secret : payload)` (`crdt/oplog.ts`); `Capabilities.verify` checks the actor's granted secret. An op from an actor without a capability is **dropped at merge** — this is how grant/revoke works (revoke → the next write bounces, rendered red in the UI). It's a capability-based auth model, the off-chain twin of a Seal grant.
 
 ### 4.2 CRDT merge — OR-Set + Lamport
-`mergeOps` (`oplog.ts:46`). An **OR-Set** (observed-remove set): adds win, removes only tombstone the specific tags they observed, so concurrent add/remove converges deterministically without a coordinator. **Lamport clocks** give causal ordering (`replica.ts::tick`); ties break by tag. `update` tombstones prior tags for the same neuronId then re-adds (last-writer-by-lamport). Two replicas that have seen the same ops compute identical state — **convergence is the proof agents agree**, no message-passing protocol.
+`mergeOps` (`crdt/oplog.ts`). An **OR-Set** (observed-remove set): adds win, removes only tombstone the specific tags they observed, so concurrent add/remove converges deterministically without a coordinator. **Lamport clocks** give causal ordering (`crdt/replica.ts`); ties break by tag. `update` tombstones prior tags for the same neuronId then re-adds (last-writer-by-lamport). Two replicas that have seen the same ops compute identical state — **convergence is the proof agents agree**, no message-passing protocol.
 
 ### 4.3 Merkle integrity
 `integrity/merkle.ts`. Content-addressed leaf hash per neuron over a **canonical** projection (id, type, body, blob, trust, author, sorted synapses), sorted leaves, binary tree → root. The Network UI **recomputes this root in-browser** and shows "verified" only when it matches the server's — honest agreement, not blind trust. `integrity:"verified"` sets gate recall/ask on root-match (tamper → refuse). On-chain anchoring (`integrity/anchor.ts`) is a stub (`anchorOnSui` throws); the Move HEAD module is drafted but undeployed.

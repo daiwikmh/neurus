@@ -110,6 +110,12 @@ export class Neurus {
 
   async indexWalrus(blobId: string, opts?: WalrusIngestOptions): Promise<Neuron> {
     const { source, chunks } = await ingestWalrusBlob(blobId, opts);
+    const dataset = await addDataset(
+      { set: this.set.id, kind: "file", title: source.title, blobId },
+      this.tenant,
+    );
+    source.meta = { ...source.meta, datasetId: dataset.id };
+    for (const c of chunks) c.meta = { ...c.meta, datasetId: dataset.id };
     await this.mem.ingest(source, chunks, { behind: this.behind });
     return source;
   }
