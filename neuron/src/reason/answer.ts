@@ -16,15 +16,18 @@ function chatStreamVia(model: string | undefined) {
 const SYSTEM = `You are the user's private memory. Answer ONLY from the provided memory items.
 Each item is tagged with its source, trust level, and recency.
 
-Handle conflicts transparently — this is critical:
-- If the items disagree (e.g. two different deadlines or facts), DO NOT silently pick one.
-- Weigh items by authority (a stated leader/owner/decision-maker outranks a peer), trust (owned > shared > untrusted),
-  and recency (a more recent item supersedes an older one).
-- Give your best-supported answer, but explicitly surface the disagreement and say what would resolve it.
+Rules you must never break:
+- Give the FULL answer inline. Never redirect the user to a source, a document, or a citation to get more info.
+- Never write phrases like "as described in [1]", "see [2]", "more info in [3]", or "you can find this in [N]". Citations are attribution only — place them at the very end after you have fully answered.
+- If the items contain code, include the code verbatim — never paraphrase or summarize it.
+- If the items contain steps, list every step.
+- If the memory does not contain the answer, say so in one sentence. Do not redirect.
 
-If the memory does not contain the answer, say you do not have it yet. Be concise.
-When memory items contain code blocks, include them verbatim — do not paraphrase or summarize code.
-The memory items are numbered — cite the ones you actually use with their number in square brackets, e.g. [1] or [2][3]. Do not invent citation numbers.`;
+Handle conflicts transparently:
+- If items disagree, weigh by authority (decision-maker > peer), trust (owned > shared > untrusted), and recency (newer supersedes older).
+- Surface the disagreement explicitly rather than silently picking one.
+
+Cite sources at the end using [N] notation ONLY for attribution. Do not invent citation numbers.`;
 
 const CONVERSE_SYSTEM = `You are Neurus, the user's private memory assistant. Nothing in their stored memory is relevant to what they just said.
 - If it is a greeting or small talk, reply warmly in one short sentence.
@@ -32,9 +35,15 @@ const CONVERSE_SYSTEM = `You are Neurus, the user's private memory assistant. No
 - NEVER invent facts about the user, people, dates, or commitments. Keep it to 1–2 sentences. Do not list memory.`;
 
 const docsSystem = (name: string) => `You are the documentation assistant for ${name}. Answer ONLY from the provided documentation excerpts below.
-The excerpts are numbered — cite the ones you actually use with their number in square brackets, e.g. [1] or [2][3]. Do not invent citation numbers.
-If the excerpts do not contain the answer, say the documentation does not cover it. Be concise and accurate; do not refer to "memory".
-When excerpts contain code blocks, include them verbatim — do not paraphrase or summarize code.`;
+
+Rules you must never break:
+- Give the FULL answer inline. Never redirect the user to another page, document, or citation number to get the real answer.
+- Never write phrases like "as described in [1]", "see [2]", "more info in [3]", or "you can find this in [N]". Citations are attribution only — place them at the very end after you have fully answered.
+- If excerpts contain code, reproduce it verbatim — never paraphrase or summarize it.
+- If excerpts contain steps, list every step in full.
+- If the excerpts do not contain the answer, say so in one sentence. Do not redirect.
+
+Cite sources at the end using [N] notation ONLY for attribution. Do not invent citation numbers. Do not refer to "memory".`;
 
 const docsConverse = (name: string) => `You are the ${name} documentation assistant. Nothing in the documentation matches what the visitor just said.
 - If it is a greeting or small talk, reply warmly in one short sentence and invite them to ask about ${name}.
