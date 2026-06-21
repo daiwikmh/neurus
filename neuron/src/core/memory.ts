@@ -1,5 +1,6 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
+import { kvEnabled, kvGet, kvSet } from "../storage/kv";
 import { createNeuron, type Neuron, type NeuronType, type Trust } from "./neuron";
 import { MemwalStore } from "../storage/memwal";
 import { putBlobInfo, getBlobText, type BlobInfo } from "../storage/walrus";
@@ -49,24 +50,43 @@ export class Memory {
     private memwal = new MemwalStore(namespace),
   ) {}
 
+  private useKv(): boolean {
+    return kvEnabled() && this.manifestPath.includes("neurus-data");
+  }
+
+  private kvKey(): string {
+    return `neurus:manifest:${this.namespace}`;
+  }
+
   private async load() {
     if (this.loaded) return;
     try {
-      const arr: Neuron[] = JSON.parse(await readFile(this.manifestPath, "utf8"));
+      let arr: Neuron[];
+      if (this.useKv()) {
+        const raw = await kvGet(this.kvKey());
+        arr = raw ? JSON.parse(raw) : [];
+      } else {
+        arr = JSON.parse(await readFile(this.manifestPath, "utf8"));
+      }
       for (const n of arr) {
         this.neurons.set(n.id, n);
         const mb = n.meta?.memwalBlob as string | undefined;
         if (mb) this.byMemwalBlob.set(mb, n.id);
       }
     } catch {
-      console.error("No existing memory manifest found, starting fresh.");
+      // fresh start
     }
     this.loaded = true;
   }
 
   private async save() {
+    const data = JSON.stringify([...this.neurons.values()], null, 2);
+    if (this.useKv()) {
+      await kvSet(this.kvKey(), data);
+      return;
+    }
     await mkdir(dirname(this.manifestPath), { recursive: true });
-    await writeFile(this.manifestPath, JSON.stringify([...this.neurons.values()], null, 2));
+    await writeFile(this.manifestPath, data);
   }
 
   private async embed(neuron: Neuron): Promise<void> {

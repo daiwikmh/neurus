@@ -280,6 +280,13 @@ export default function DatasetsPage() {
                       {busy === "renew" ? "…" : "Renew"}
                     </button>
                   )}
+                  <button
+                    onClick={() => run(`del-${d.id}`, () => neurus.deleteDataset(active, d.id))}
+                    disabled={!!busy}
+                    className="rounded-md border border-white/10 px-2.5 py-1 text-[11px] text-white/30 transition hover:border-red-500/30 hover:text-red-400 disabled:opacity-40"
+                  >
+                    {busy === `del-${d.id}` ? "…" : "Delete"}
+                  </button>
                 </div>
                 <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
                   {STRUCTURE.has(d.kind) ? (
