@@ -298,8 +298,13 @@ export class Memory {
     if (trust) out = out.filter((r) => r.neuron.source.trust === trust);
 
     if (wantsCode(query)) {
-      out = out.map((r) => ({ ...r, score: r.neuron.body.includes("```") ? r.score + 2 : r.score }))
-               .sort((a, b) => b.score - a.score);
+      const anyCode = out.some((r) => r.neuron.body.includes("```"));
+      out = out.map((r) => {
+        const hasCode = r.neuron.body.includes("```");
+        const isSummary = /llms[._-]|llms\.txt|llms-full/i.test(r.neuron.title);
+        const delta = hasCode ? 2 : (isSummary && anyCode ? -4 : 0);
+        return { ...r, score: r.score + delta };
+      }).sort((a, b) => b.score - a.score);
     }
 
     if (opts.abstain != null && out.length > 1 && standsOut(out.map((r) => r.score)) < opts.abstain) return [];
