@@ -4,13 +4,13 @@ export interface ChunkOptions {
 }
 
 export function chunkText(text: string, opts: ChunkOptions = {}): string[] {
-  const maxChars = opts.maxChars ?? 1000;
-  const overlap = opts.overlapChars ?? 150;
+  const maxChars = opts.maxChars ?? 1500;
+  const overlap = opts.overlapChars ?? 200;
   const clean = text.replace(/\r\n/g, "\n").trim();
   if (!clean) return [];
   if (clean.length <= maxChars) return [clean];
 
-  const paragraphs = clean.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  const paragraphs = splitParagraphs(clean);
   const chunks: string[] = [];
   let buf = "";
 
@@ -29,6 +29,39 @@ export function chunkText(text: string, opts: ChunkOptions = {}): string[] {
   }
   if (buf) chunks.push(buf);
   return chunks;
+}
+
+function splitParagraphs(text: string): string[] {
+  const blocks: string[] = [];
+  const lines = text.split("\n");
+  let current: string[] = [];
+  let inFence = false;
+
+  for (const line of lines) {
+    if (line.trimStart().startsWith("```")) {
+      if (!inFence) {
+        const pending = current.join("\n").trim();
+        if (pending) blocks.push(pending);
+        current = [line];
+        inFence = true;
+      } else {
+        current.push(line);
+        blocks.push(current.join("\n"));
+        current = [];
+        inFence = false;
+      }
+    } else if (inFence) {
+      current.push(line);
+    } else if (line.trim() === "") {
+      const pending = current.join("\n").trim();
+      if (pending) { blocks.push(pending); current = []; }
+    } else {
+      current.push(line);
+    }
+  }
+  const pending = current.join("\n").trim();
+  if (pending) blocks.push(pending);
+  return blocks.filter(Boolean);
 }
 
 function splitLong(s: string, maxChars: number, overlap: number): string[] {

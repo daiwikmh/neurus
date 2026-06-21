@@ -299,31 +299,35 @@ export class Neurus {
   }
 
   private async ingestStructure(kind: DatasetKind, title: string, url: string | undefined, items: { name: string; bytes: Buffer }[]): Promise<{ dataset: Dataset; files: number; failed: number }> {
-    let files = 0;
-    let failed = 0;
-    let firstBlobId: string | undefined;
+    const CONCURRENCY = 6;
     const staged: { file: Parameters<Memory["ingest"]>[0]; chunks: Parameters<Memory["ingest"]>[1] }[] = [];
-    const tempId = `ds_tmp_${Date.now()}`;
-    for (const it of items) {
-      try {
-        const { file, chunks } = await ingestBuffer(it.name, it.bytes, { store: true });
-        if (!firstBlobId && file.blobId) firstBlobId = file.blobId;
-        file.meta = { ...file.meta, datasetId: tempId };
-        for (const c of chunks) c.meta = { ...c.meta, datasetId: tempId };
-        staged.push({ file, chunks });
-        files++;
-      } catch {
-        failed++;
+    let firstBlobId: string | undefined;
+    let failed = 0;
+
+    for (let i = 0; i < items.length; i += CONCURRENCY) {
+      const batch = items.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(batch.map((it) => ingestBuffer(it.name, it.bytes, { store: true })));
+      for (const r of results) {
+        if (r.status === "fulfilled") {
+          staged.push(r.value);
+          if (!firstBlobId && r.value.file.blobId) firstBlobId = r.value.file.blobId;
+        } else {
+          failed++;
+        }
       }
     }
-    if (files === 0) throw new Error(`no ingestible files found in "${title}" (need md/txt/csv/json/log/pdf/docx)`);
-    const dataset = await addDataset({ set: this.set.id, kind, title, url, pages: files, ...(firstBlobId ? { blobId: firstBlobId } : {}) }, this.tenant);
+
+    if (staged.length === 0) throw new Error(`no ingestible files found in "${title}" (need md/txt/csv/json/log/pdf/docx)`);
+    const dataset = await addDataset(
+      { set: this.set.id, kind, title, url, pages: staged.length, ...(firstBlobId ? { blobId: firstBlobId } : {}) },
+      this.tenant,
+    );
     for (const { file, chunks } of staged) {
       file.meta = { ...file.meta, datasetId: dataset.id };
       for (const c of chunks) c.meta = { ...c.meta, datasetId: dataset.id };
       await this.mem.ingest(file, chunks, { behind: this.behind });
     }
-    return { dataset, files, failed };
+    return { dataset, files: staged.length, failed };
   }
 
   async addRepo(repoUrl: string, opts?: { max?: number }): Promise<{ dataset: Dataset; files: number; failed: number }> {
