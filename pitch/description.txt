@@ -1,0 +1,106 @@
+NEURUS
+
+
+WHAT IT IS
+
+Neurus is owned, verifiable memory for AI agents, and a private second brain for me.
+
+Every LLM forgets the moment I close the tab. The products that claim to fix this keep my memory on their servers, in their format, tied to their model. If I leave, it doesn't come with me. I built Neurus so the memory is mine. I write notes, files, people, and facts once, recall them by meaning, and carry them between Claude, Gemini, and GPT without re-explaining myself. The bytes live on Walrus, encrypted with Seal, with ownership anchored on Sui, so the memory is mine, portable, and provably untampered.
+
+It is one engine with three ways in: a private second brain, a CLI agent, and an agent memory API.
+
+Why it matters: owning my memory is only a moat if an agent can act on it and anyone can verify it. Neurus sits above raw storage. It ranks, reasons, encrypts, and proves. And because the memory is model agnostic, the models become interchangeable. I can swap providers mid task and the context follows, with full provenance of which model wrote what. No lock in.
+
+
+THE SECOND BRAIN
+
+Drop and Ask: I feed it PDFs, docs, Markdown, web pages, or whole GitHub repos. I ask in plain language. I get answers grounded in my own content, with the exact evidence behind every claim.
+
+Semantic recall: it finds things by meaning, not keyword matching. Broad vector recall first, then a local cross encoder re rank for precision.
+
+It is actually mine: I can use Google for a hosted account, or a Sui wallet to self custody every byte on Walrus.
+
+Proactive, not passive: sleep time reflection turns scattered notes into insight neurons, and Telegram pings me about what matters.
+
+Calendar both ways: I can pull Google Calendar into memory, or write a note about a meeting and Neurus books the event.
+
+Private by construction: bodies are Seal encrypted, and revoke and delete are real, not settings toggles.
+
+
+THE CLI
+
+It births its own agent. The command neurus agent generates a Sui keypair whose address is its Walrus memory namespace. One command, no signup. The CLI is published on npm as neurus.
+
+It is a REPL over my memory: I chat, plan a goal, recall, note, add a file, or use the file picker to browse and ask over any file in the folder.
+
+It shares across machines: share seals a set into a Seal gated feed, grant allowlists a reader by address, follow imports one. Memory I grant on my laptop shows up in a teammate's agent. I never custody their data and I can revoke access on chain anytime.
+
+It talks like a person: it understands share this with an address or follow this feed in plain English. No flag syntax required.
+
+
+THE AGENT MEMORY LAYER
+
+Drop in HTTP API: remember, recall, ask with streaming, retrieve, forget, and more.
+
+Model agnostic context router: one owned memory across every model. I swap Claude, Gemini, or GPT mid session and the context carries, tagged with which model wrote what.
+
+Learns on the job: every task records its outcome and distills a reusable skill neuron, a procedure with a win and loss weighted confidence, retrieved before the next similar task. Memory stops being a static library and starts compounding. Answers get better at my recurring questions over time, and because skills are owned and portable, that earned competence follows me across models.
+
+Never errors out on free users: NVIDIA first, then a silent OpenRouter free model fallback, then the top memory itself. Rate limits never reach the user.
+
+Open interop: I serve my memory as MCP tools for Claude Code, Cursor, and Desktop, or answer as a discoverable A2A agent. No context copying between vendors.
+
+Knowledge sets: namespaced, shareable, optionally verifiable collections of memory.
+
+Verifiable integrity: I publish a Merkle rooted manifest, anchor it on Sui, and restore or verify any time.
+
+Embeddable widgets: I drop a read only Ask widget for any set onto my own site.
+
+Multi tenant by design: every user writes to their own MemWal namespace. The engine never co mingles data.
+
+
+ARCHITECTURE
+
+Two deploys, one engine. The Next.js app is static and serverless on Vercel. The engine is a long running Node service because it holds in memory state and an ML re ranker, so it cannot be serverless. The web proxies every engine call through an identity injected server side proxy, so clients never self assert identity.
+
+The tiered memory:
+L1 is a hot cache plus a per user sealed credential vault, backed by Upstash Redis with a disk fallback.
+L2 is the vector index for semantic recall, backed by MemWal, which is Walrus Memory.
+L3 is the durable encrypted source of truth, backed by Walrus blobs.
+Trust is ownership, access control, and the integrity anchor, backed by Sui and Seal.
+
+
+HOW MEMORY WORKS
+
+Capture a note, file, or page, and the engine extracts neurons, which are memory nodes such as people, notes, files, chunks, insights, commitments, and skills, each typed and linked by synapses.
+
+Store the bodies on Walrus, Seal encrypted, plus MemWal for vector recall, with a versioned manifest that tracks the map.
+
+Recall returns a broad candidate pool from MemWal, then a local cross encoder re ranks it for precision.
+
+Answer with NVIDIA gpt oss 120b, which produces a streamed, grounded answer that cites the exact evidence it was given.
+
+Learn by recording the task outcome and distilling it into a skill neuron, which is primed into the next similar task so the agent develops instead of staying flat.
+
+
+THE DASHBOARD
+
+It is a developer console meets second brain workspace.
+Overview shows live stats, memory composition, and durability with first run guidance.
+Neurons shows every memory written live, with type, trust, and durability, a graph view, inspect, forget, and restore index.
+Ask is a streaming research chat over a set with clickable evidence cards and conflict detection.
+Second Brain captures notes, syncs and writes Google Calendar, and generates insights.
+Sets lets me create and switch knowledge sets, snapshot to Walrus, and import by blob id.
+Datasets uploads files, web pages, GitHub repos, and folders, shows Memory Health certified on Sui with epochs left, renews, and manages widgets.
+Agents lets me define dataset bound question and answer agents and ask them inline.
+Network lets me describe a workflow in plain English, run live DeFi and price agents, grant write access, and log and grade trading plays.
+
+
+SECURITY AND TRUST
+
+Memory bodies are Seal encrypted at rest on Walrus, and the per user credential vault is sealed with a vault key. Identity is server derived, since the web proxies all engine calls through a session scoped proxy and clients never self assert identity. Ownership is enforced by MemWal's owner and delegate model on Sui, so access is revocable and verifiable.
+
+
+THE LINE
+
+Memory I own, across every model. My mind, portable. My agents, grounded. My memory, mine.

@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Neurus · Owned, Verifiable Memory for AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,900;1,500&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#070809; --bg2:#0b0d10; --fg:#ededed; --muted:#8b9096; --faint:#5a6066;
+  --sui:#6fbcf0; --walrus:#1a73e8; --seal:#9333ea;
+  --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14);
+  --grad:linear-gradient(100deg,var(--sui),var(--walrus) 45%,var(--seal));
+  --glass:rgba(255,255,255,.025);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--fg);
+  font-family:'Inter',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+.mono{font-family:'JetBrains Mono',monospace}
+.serif{font-family:'Playfair Display',serif}
+
+/* ---- neural canvas bg ---- */
+#neural{position:fixed;inset:0;z-index:0;opacity:.55}
+.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse 70% 60% at 50% 40%,transparent 30%,rgba(7,8,9,.55) 80%,var(--bg) 100%)}
+
+/* ---- deck / slides ---- */
+#deck{position:relative;z-index:2;height:100vh;overflow-y:scroll;scroll-snap-type:y mandatory;scroll-behavior:smooth}
+#deck::-webkit-scrollbar{width:0}
+.slide{min-height:100vh;scroll-snap-align:start;scroll-snap-stop:always;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:7vh max(6vw,28px);position:relative}
+.wrap{max-width:1120px;margin:0 auto;width:100%}
+
+/* progress + nav */
+#bar{position:fixed;top:0;left:0;height:2px;width:0;z-index:50;background:var(--grad);transition:width .25s ease;box-shadow:0 0 18px rgba(111,188,240,.6)}
+#dots{position:fixed;right:26px;top:50%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:14px}
+#dots button{width:9px;height:9px;border-radius:50%;border:1px solid var(--line2);background:transparent;cursor:pointer;padding:0;transition:.3s;position:relative}
+#dots button.on{background:var(--sui);border-color:var(--sui);box-shadow:0 0 12px var(--sui);transform:scale(1.25)}
+#dots button:hover{border-color:var(--fg)}
+#brandfix{position:fixed;left:26px;top:24px;z-index:50;display:flex;align-items:center;gap:10px;opacity:.85}
+#brandfix img{width:26px;height:26px;filter:drop-shadow(0 0 8px rgba(111,188,240,.35))}
+#brandfix .nm{font-weight:600;letter-spacing:.18em;font-size:12px;text-transform:uppercase;color:var(--muted)}
+#hint{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:50;color:var(--faint);font-size:12px;letter-spacing:.05em;display:flex;align-items:center;gap:8px;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translate(-50%,6px)}}
+
+/* reveal */
+.r{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1)}
+.slide.live .r{opacity:1;transform:none}
+.slide.live .r.d1{transition-delay:.08s}.slide.live .r.d2{transition-delay:.16s}
+.slide.live .r.d3{transition-delay:.24s}.slide.live .r.d4{transition-delay:.32s}
+.slide.live .r.d5{transition-delay:.40s}.slide.live .r.d6{transition-delay:.48s}
+.slide.live .r.d7{transition-delay:.56s}.slide.live .r.d8{transition-delay:.64s}
+
+/* typography */
+.kicker{font-size:12.5px;letter-spacing:.32em;text-transform:uppercase;color:#fff;font-weight:600;margin-bottom:22px;display:flex;align-items:center;gap:12px}
+.kicker::before{content:"";width:30px;height:1px;background:var(--grad)}
+h1{font-size:clamp(40px,7vw,92px);line-height:.98;font-weight:900;letter-spacing:-.02em}
+h2{font-size:clamp(30px,4.6vw,58px);line-height:1.02;font-weight:700;letter-spacing:-.02em}
+.lead{font-size:clamp(17px,2vw,23px);color:#dfe3e7;line-height:1.6;max-width:780px;margin-top:26px;font-weight:300}
+.grad-txt{color:#fff}
+.hl{color:#fff;font-weight:600}
+em.acc{font-style:italic;color:#fff}
+
+/* chips / pills */
+.pills{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
+.pill{font-size:13px;color:var(--muted);border:1px solid var(--line2);border-radius:999px;padding:8px 16px;background:var(--glass);backdrop-filter:blur(6px)}
+.pill b{color:var(--fg);font-weight:600}
+
+/* grid cards */
+.grid{display:grid;gap:18px;margin-top:42px}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line);border-radius:18px;padding:26px;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01));
+  backdrop-filter:blur(8px);position:relative;overflow:hidden;transition:.4s}
+.card::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;background:var(--grad);opacity:.5}
+.card:hover{transform:translateY(-4px);border-color:var(--line2);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.015))}
+.card .ic{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#fff;font-weight:600;margin-bottom:14px;opacity:.85}
+.card h3{font-size:20px;font-weight:600;margin-bottom:10px;letter-spacing:-.01em;color:#fff}
+.card p{font-size:14.5px;color:#c7ccd1;line-height:1.55;font-weight:300}
+.card .big{font-family:'Playfair Display',serif;font-size:40px;font-weight:700;line-height:1;margin-bottom:6px;color:#fff}
+
+/* problem stack */
+.bad{border-left:2px solid var(--seal);padding:16px 0 16px 22px;margin:14px 0;opacity:.92}
+.bad b{color:#fff} .bad span{color:#c7ccd1;font-weight:300}
+
+/* stack diagram */
+.stack{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.tier{display:grid;grid-template-columns:60px 1fr auto;align-items:center;gap:20px;border:1px solid var(--line);border-radius:14px;padding:18px 22px;background:var(--glass);position:relative;overflow:hidden}
+.tier .lv{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:#fff}
+.tier .ti{font-weight:600;font-size:16px;color:#fff}.tier .ts{font-size:13px;color:#c7ccd1;font-weight:300;margin-top:3px}
+.tier .by{font-size:12px;color:#9aa0a6;letter-spacing:.05em;text-align:right}
+.tier.t-trust{border-color:rgba(147,51,234,.35)}
+
+/* pipeline */
+.pipe{display:flex;align-items:stretch;gap:0;margin-top:38px;flex-wrap:wrap}
+.step{flex:1;min-width:130px;border:1px solid var(--line);border-radius:14px;padding:18px 16px;background:var(--glass);position:relative;text-align:center}
+.step .n{font-size:11px;color:#fff;font-weight:700;letter-spacing:.15em;opacity:.7}
+.step .t{font-weight:600;font-size:15px;margin:8px 0 4px;color:#fff}
+.step .s{font-size:12px;color:#9aa0a6;font-weight:300}
+.arrow{display:flex;align-items:center;color:var(--faint);padding:0 6px;font-size:18px}
+
+/* compare table */
+.cmp{margin-top:38px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--glass)}
+.cmp .row{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr 1fr;border-bottom:1px solid var(--line)}
+.cmp .row:last-child{border-bottom:0}
+.cmp .row>div{padding:16px 18px;font-size:13.5px;display:flex;align-items:center}
+.cmp .head>div{font-weight:600;color:var(--muted);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;background:rgba(255,255,255,.02)}
+.cmp .head .us{color:#fff}
+.cmp .feat{color:#fff;font-weight:500}
+.cmp .yes{color:#fff;font-weight:700}.cmp .no{color:#6b7178}
+.cmp .us-col{background:linear-gradient(180deg,rgba(111,188,240,.08),rgba(147,51,234,.05))}
+
+/* big metric row */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:42px}
+.metric{text-align:left}
+.metric .v{font-family:'Playfair Display',serif;font-size:clamp(34px,4.4vw,56px);font-weight:900;line-height:1;color:#fff}
+.metric .l{color:#c7ccd1;font-size:13px;margin-top:10px;line-height:1.4;font-weight:300}
+
+/* thesis quote */
+.thesis{border:1px solid var(--line2);border-radius:22px;padding:44px;margin-top:30px;background:linear-gradient(135deg,rgba(111,188,240,.06),rgba(147,51,234,.05));position:relative}
+.thesis .q{font-family:'Playfair Display',serif;font-size:clamp(22px,3vw,36px);line-height:1.35;font-weight:500}
+.thesis .a{margin-top:20px;color:#c7ccd1;font-size:14px;letter-spacing:.04em}
+
+/* code */
+.code{margin-top:30px;border:1px solid var(--line);border-radius:14px;background:#0a0c0f;overflow:hidden;max-width:640px}
+.code .top{display:flex;gap:7px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.code .top i{width:11px;height:11px;border-radius:50%;display:block}
+.code pre{padding:20px;font-family:'JetBrains Mono',monospace;font-size:13.5px;line-height:1.7;color:#cdd3d8;overflow-x:auto}
+.code .c{color:#6b7178}.code .g{color:#fff}.code .p{color:#fff;font-weight:500}
+
+/* footer cta */
+.cta{display:flex;gap:14px;margin-top:40px;flex-wrap:wrap}
+.btn{padding:15px 30px;border-radius:12px;font-weight:600;font-size:15px;text-decoration:none;transition:.3s;display:inline-flex;align-items:center;gap:9px}
+.btn.pri{background:var(--grad);color:#04060a;box-shadow:0 10px 40px rgba(111,188,240,.25)}
+.btn.pri:hover{transform:translateY(-2px);box-shadow:0 14px 50px rgba(111,188,240,.4)}
+.btn.sec{border:1px solid var(--line2);color:var(--fg)}.btn.sec:hover{background:var(--glass);border-color:var(--fg)}
+
+.bignum{position:absolute;right:-2vw;top:50%;transform:translateY(-50%);font-family:'Playfair Display',serif;font-size:clamp(160px,32vw,420px);font-weight:900;color:rgba(255,255,255,.018);z-index:-1;line-height:1;user-select:none;pointer-events:none}
+
+.footer-note{margin-top:48px;color:var(--faint);font-size:12.5px;letter-spacing:.05em;display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+.footer-note span{display:flex;align-items:center;gap:7px}
+.dot-s{width:6px;height:6px;border-radius:50%;background:var(--sui)}
+.dot-w{width:6px;height:6px;border-radius:50%;background:var(--walrus)}
+.dot-se{width:6px;height:6px;border-radius:50%;background:var(--seal)}
+
+@media(max-width:860px){
+  .g3,.g4,.metrics,.g2{grid-template-columns:1fr 1fr}
+  .cmp{font-size:11px;overflow-x:auto}
+  #dots{display:none}.pipe{flex-direction:column}.arrow{transform:rotate(90deg);justify-content:center}
+  .bignum{display:none}
+}
+@media(prefers-reduced-motion:reduce){.r{transition:none;opacity:1;transform:none}#neural{display:none}}
+</style>
+</head>
+<body>
+<canvas id="neural"></canvas>
+<div class="vignette"></div>
+<div id="bar"></div>
+<div id="brandfix"><img src="neurus.png" alt="Neurus" /><span class="nm">Neurus</span></div>
+<div id="dots"></div>
+<div id="hint"><span>scroll</span><span>↓</span></div>
+
+<div id="deck">
+
+  <!-- 1 · HERO -->
+  <section class="slide" data-name="Neurus">
+    <div class="bignum serif">N</div>
+    <div class="wrap">
+      <div class="kicker r">Owned · Verifiable · Portable</div>
+      <h1 class="r d1 serif">Memory that <span class="grad-txt">you own</span>.<br/>For every AI you'll ever use.</h1>
+      <p class="lead r d2">Every LLM forgets the moment you close the tab. The products that "fix" it keep your memory on <span class="hl">their</span> servers, in <span class="hl">their</span> format, tied to <span class="hl">their</span> model. <span class="hl">Neurus is memory you own</span> — stored on Walrus, encrypted with Seal, anchored on Sui. Carry it between Claude, Gemini, and GPT without re-explaining yourself.</p>
+      <div class="pills r d3">
+        <span class="pill"><b>Walrus</b> storage</span>
+        <span class="pill"><b>Seal</b> encryption</span>
+        <span class="pill"><b>Sui</b> ownership</span>
+        <span class="pill"><b>MemWal</b> recall</span>
+        <span class="pill">live on <b>npm</b> · <b>neurus.xyz</b></span>
+      </div>
+      <div class="footer-note r d4">
+        <span><i class="dot-s"></i> The intelligence layer over the Walrus data economy</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · PROBLEM -->
+  <section class="slide" data-name="The Problem">
+    <div class="bignum serif">01</div>
+    <div class="wrap">
+      <div class="kicker r">The Problem</div>
+      <h2 class="r d1">AI has amnesia.<br/>The cure became a <span class="grad-txt">cage</span>.</h2>
+      <div class="grid g2" style="margin-top:38px">
+        <div class="r d2">
+          <div class="bad"><b>Agents forget everything.</b><br/><span>Close the tab and the context is gone. Every session starts from zero.</span></div>
+          <div class="bad"><b>"Memory" products lock you in.</b><br/><span>Mem0, Zep, ChatGPT memory — your context lives on their servers, in their schema, behind their model. Leave and it doesn't come with you.</span></div>
+          <div class="bad"><b>You can't verify or revoke it.</b><br/><span>No proof it wasn't tampered with. No real delete. "Privacy" is a settings toggle, not a guarantee.</span></div>
+        </div>
+        <div class="r d3">
+          <div class="thesis" style="margin-top:0">
+            <div class="q">"Context is becoming the moat. The models themselves are commoditizing — cost down <span class="grad-txt">9–900×</span> a year, the capability gap collapsing."</div>
+            <div class="a">— the market consensus. The twist nobody's pricing in: if switching models is cheap, <span class="hl">whoever owns the memory captures the durable value</span> — not the model vendor.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · INSIGHT / WEDGE -->
+  <section class="slide" data-name="The Wedge">
+    <div class="bignum serif">02</div>
+    <div class="wrap">
+      <div class="kicker r">The Insight</div>
+      <h2 class="r d1">Owned memory makes models<br/><span class="grad-txt">interchangeable</span>.</h2>
+      <p class="lead r d2">When your memory is portable and model-agnostic, the model becomes a swappable part. Claude writes the plan, Gemini runs the assets, GPT drafts the reply — <span class="hl">one memory follows all of them</span>, with full provenance of which model wrote what. No context loss. No lock-in. The biggest unpriced opportunity in AI.</p>
+      <div class="grid g3 r d3">
+        <div class="card"><div class="ic">Today</div><h3>Memory = vendor moat</h3><p>Your history is the reason you can't leave. The vendor wins by trapping it.</p></div>
+        <div class="card"><div class="ic">Neurus flips it</div><h3>Memory = your asset</h3><p>You hold the keys. The model is rented; the memory is owned. Switching is free.</p></div>
+        <div class="card"><div class="ic">Result</div><h3>Durable value to you</h3><p>Earned competence compounds and travels with you across every model and agent.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · PRODUCT -->
+  <section class="slide" data-name="Product">
+    <div class="bignum serif">03</div>
+    <div class="wrap">
+      <div class="kicker r">The Product</div>
+      <h2 class="r d1">One engine. <span class="grad-txt">Three ways in.</span></h2>
+      <div class="grid g3 r d2">
+        <div class="card">
+          <div class="ic">For people</div>
+          <h3>Second Brain</h3>
+          <p>Sign in with Google or a Sui wallet. Drop in PDFs, docs, web pages, whole repos. Ask in plain language, get <span class="hl">cited</span> answers from your own memory. Sleep-time reflection turns notes into insights; Telegram pings you about what matters.</p>
+        </div>
+        <div class="card">
+          <div class="ic">For builders</div>
+          <h3>CLI Agent</h3>
+          <p><span class="mono">npx neurus</span> mints a Sui wallet whose address <span class="hl">is</span> its Walrus memory namespace — funded from the faucet, no signup. A REPL that chats, plans, recalls, and shares Seal-gated memory across machines.</p>
+        </div>
+        <div class="card">
+          <div class="ic">For agents</div>
+          <h3>Memory API</h3>
+          <p>Point any agent at the <span class="mono">/v1</span> HTTP API, or plug in over <span class="hl">MCP</span> and <span class="hl">A2A</span>. Durable, verifiable, model-agnostic long-term memory in a few lines — Claude Code, Cursor, and Desktop already speak it.</p>
+        </div>
+      </div>
+      <div class="code r d3">
+        <div class="top"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i></div>
+        <pre><span class="c"># one command — births an agent with its own on-chain identity</span>
+$ <span class="g">npx neurus</span>
+<span class="c">→ minted Sui wallet · funded from faucet · memory namespace ready</span>
+neurus › <span class="p">/note</span> "shipped A2A interop; Walrus Docs Agent is live"
+<span class="c">✓ remembered · 1 neuron · sealed → Walrus</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · HOW IT WORKS / STACK -->
+  <section class="slide" data-name="The Stack">
+    <div class="bignum serif">04</div>
+    <div class="wrap">
+      <div class="kicker r">How it works</div>
+      <h2 class="r d1">A tiered memory built on <span class="grad-txt">trust-minimized</span> rails.</h2>
+      <div class="stack" style="margin-top:38px">
+        <div class="tier r d2"><div class="lv">L1</div><div><div class="ti">Hot cache + sealed credential vault</div><div class="ts">Sub-ms reads; per-user vault sealed at rest</div></div><div class="by">Redis</div></div>
+        <div class="tier r d3"><div class="lv">L2</div><div><div class="ti">Vector index for semantic recall</div><div class="ts">Broad candidate retrieval — disposable, rebuildable cache</div></div><div class="by">MemWal</div></div>
+        <div class="tier r d4"><div class="lv">L3</div><div><div class="ti">Durable, encrypted source of truth</div><div class="ts">Your bytes, your namespace — Walrus is the tenant boundary</div></div><div class="by">Walrus blobs</div></div>
+        <div class="tier t-trust r d5"><div class="lv">T</div><div><div class="ti">Ownership · access control · integrity anchor</div><div class="ts">Revocable, verifiable, provably untampered — not a toggle</div></div><div class="by">Sui + Seal</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · RETRIEVAL PIPELINE -->
+  <section class="slide" data-name="Pipeline">
+    <div class="bignum serif">05</div>
+    <div class="wrap">
+      <div class="kicker r">The read path</div>
+      <h2 class="r d1">We sit <span class="grad-txt">above</span> raw storage.<br/>We rank, reason, and prove.</h2>
+      <p class="lead r d2">Raw vector stores return noise. Neurus runs a real retrieval pipeline — the precision layer storage alone can't give you.</p>
+      <div class="pipe r d3">
+        <div class="step"><div class="n">01</div><div class="t">Dense recall</div><div class="s">bi-encoder · MemWal</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="n">02</div><div class="t">Sparse recall</div><div class="s">BM25 over bodies</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="n">03</div><div class="t">Fusion</div><div class="s">Reciprocal Rank Fusion</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="n">04</div><div class="t">Rerank</div><div class="s">cross-encoder, joint</div></div>
+        <div class="arrow">→</div>
+        <div class="step"><div class="n">05</div><div class="t">Gate</div><div class="s">MMR · confidence · abstain</div></div>
+        <div class="arrow">→</div>
+        <div class="step" style="border-color:rgba(111,188,240,.4)"><div class="n" style="color:#fff;opacity:1">✓</div><div class="t">Grounded answer</div><div class="s">cited · conflict-aware</div></div>
+      </div>
+      <div class="pills r d4">
+        <span class="pill">local cross-encoder rerank — <b>~3ms/pair</b>, no API key</span>
+        <span class="pill"><b>abstains</b> when it doesn't know — says "I don't have that"</span>
+        <span class="pill">weights conflicts by <b>authority · trust · recency</b></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · MOAT -->
+  <section class="slide" data-name="The Moat">
+    <div class="bignum serif">06</div>
+    <div class="wrap">
+      <div class="kicker r">The Moat</div>
+      <h2 class="r d1">Owning memory isn't enough.<br/>It must be <span class="grad-txt">actionable</span> and <span class="grad-txt">verifiable</span>.</h2>
+      <div class="grid g3 r d2">
+        <div class="card"><div class="ic">Act</div><h3>Memory that does things</h3><p>Seal as a policy-gated authorization oracle — memory-grounded agents that spend, book, and execute against an on-chain mandate. Never-custody.</p></div>
+        <div class="card"><div class="ic">Verify</div><h3>Provable integrity</h3><p>Merkle-rooted manifests recomputed in-browser. "Verified" means honest agreement with the chain — not blind trust in a server.</p></div>
+        <div class="card"><div class="ic">Compound</div><h3>It learns on the job</h3><p>Every task distills a reusable <span class="hl">skill neuron</span> with win/loss confidence, primed into the next similar task. Competence that's owned and travels across models.</p></div>
+      </div>
+      <div class="thesis r d3">
+        <div class="q">"Owning your memory is only a moat if an agent can <span class="grad-txt">act</span> on it and anyone can <span class="grad-txt">verify</span> it."</div>
+        <div class="a">That's the gap Mem0, Zep, and Supermemory leave open. Neurus is the trust-minimized layer that closes it.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 · COMPETITION -->
+  <section class="slide" data-name="Landscape">
+    <div class="bignum serif">07</div>
+    <div class="wrap">
+      <div class="kicker r">The Landscape</div>
+      <h2 class="r d1">The missing <span class="grad-txt">third option</span>.</h2>
+      <p class="lead r d2">Everyone is either local-only or custodial SaaS. Nobody is owned <em class="acc">and</em> neutral <em class="acc">and</em> verifiable <em class="acc">and</em> shareable.</p>
+      <div class="cmp r d3">
+        <div class="row head">
+          <div>Capability</div><div>Mem0 / OpenMemory</div><div>Zep</div><div>Supermemory</div><div class="us">Neurus</div>
+        </div>
+        <div class="row"><div class="feat">You own the bytes</div><div class="no">partial</div><div class="no">no</div><div class="no">no</div><div class="us-col yes">yes · Walrus</div></div>
+        <div class="row"><div class="feat">Neutral / no vendor lock</div><div class="no">no</div><div class="no">no</div><div class="no">no</div><div class="us-col yes">yes</div></div>
+        <div class="row"><div class="feat">Verifiable + revocable</div><div class="no">no</div><div class="no">no</div><div class="no">no</div><div class="us-col yes">Seal + Sui</div></div>
+        <div class="row"><div class="feat">Shareable across agents</div><div class="no">no</div><div class="no">limited</div><div class="no">no</div><div class="us-col yes">CRDT + A2A</div></div>
+        <div class="row"><div class="feat">Model-interchangeable</div><div class="no">no</div><div class="no">no</div><div class="no">no</div><div class="us-col yes">context router</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · TRACTION -->
+  <section class="slide" data-name="What's Built">
+    <div class="bignum serif">08</div>
+    <div class="wrap">
+      <div class="kicker r">It's real, and it runs</div>
+      <h2 class="r d1">Not a deck. <span class="grad-txt">A working system.</span></h2>
+      <div class="metrics r d2">
+        <div class="metric"><div class="v">3</div><div class="l">ways in — Second Brain, CLI, Agent API — on one engine</div></div>
+        <div class="metric"><div class="v">5-stage</div><div class="l">retrieval pipeline: recall → fuse → rerank → gate → ground</div></div>
+        <div class="metric"><div class="v">npm</div><div class="l"><span class="mono">neurus</span> CLI published & live; app at neurus.xyz</div></div>
+        <div class="metric"><div class="v">A2A + MCP</div><div class="l">discoverable agents; verified live over Walrus datasets</div></div>
+      </div>
+      <div class="grid g4 r d3" style="margin-top:30px">
+        <div class="card"><h3 style="font-size:16px">Skill loop</h3><p>act → outcome → distill → retrieve. Compounding competence, tested.</p></div>
+        <div class="card"><h3 style="font-size:16px">CRDT shared memory</h3><p>Signed op-log, OR-Set + Lamport, capability grant/revoke.</p></div>
+        <div class="card"><h3 style="font-size:16px">Memory feeds</h3><p>Publish a Seal-gated, subscribable feed; followers decrypt with their own wallet.</p></div>
+        <div class="card"><h3 style="font-size:16px">Self-custody</h3><p>"Own my memory on Walrus" wired end-to-end in the browser.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · VISION / CLOSE -->
+  <section class="slide" data-name="Vision">
+    <div class="wrap" style="text-align:center">
+      <div style="display:flex;justify-content:center;margin-bottom:30px" class="r"><img src="neurus.png" style="width:84px;filter:drop-shadow(0 0 26px rgba(111,188,240,.45))"/></div>
+      <div class="kicker r d1" style="justify-content:center">The Vision</div>
+      <h1 class="r d2 serif" style="font-size:clamp(36px,6vw,80px)">Your mind, <span class="grad-txt">portable</span>.<br/>Your agents, <span class="grad-txt">grounded</span>.<br/>Your memory, <span class="grad-txt">yours</span>.</h1>
+      <p class="lead r d3" style="margin:30px auto 0">Neurus is the intelligence layer over the Walrus data economy — making any company's, and any person's, data agent-usable, ownable, and provable. Memory is the last thing AI got wrong. We're fixing it for everyone.</p>
+      <div class="cta r d4" style="justify-content:center">
+        <a class="btn pri" href="https://neurus.xyz">Try the app →</a>
+        <a class="btn sec" href="https://www.npmjs.com/package/neurus"><span class="mono">npx neurus</span></a>
+      </div>
+      <div class="footer-note r d5" style="justify-content:center">
+        <span><i class="dot-s"></i> Sui</span>
+        <span><i class="dot-w"></i> Walrus</span>
+        <span><i class="dot-se"></i> Seal</span>
+        <span style="color:var(--faint)">· MemWal · MIT licensed</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ---------- neural network animated background ---------- */
+const cv=document.getElementById('neural'),ctx=cv.getContext('2d');
+let W,H,DPR,nodes=[],mouse={x:-999,y:-999};
+const SUI=[111,188,240],SEAL=[147,51,234],WAL=[26,115,232];
+function resize(){DPR=Math.min(devicePixelRatio||1,2);W=cv.width=innerWidth*DPR;H=cv.height=innerHeight*DPR;cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';build();}
+function build(){
+  const count=Math.min(90,Math.floor(innerWidth*innerHeight/16000));
+  nodes=[];
+  for(let i=0;i<count;i++){
+    const t=Math.random();const c=t<.6?SUI:t<.85?WAL:SEAL;
+    nodes.push({x:Math.random()*W,y:Math.random()*H,
+      vx:(Math.random()-.5)*.18*DPR,vy:(Math.random()-.5)*.18*DPR,
+      r:(Math.random()*1.6+.8)*DPR,c,pulse:Math.random()*Math.PI*2});
+  }
+}
+const LINK=140;
+function draw(t){
+  ctx.clearRect(0,0,W,H);
+  const mx=mouse.x*DPR,my=mouse.y*DPR,LK=LINK*DPR;
+  for(let i=0;i<nodes.length;i++){
+    const a=nodes[i];
+    a.x+=a.vx;a.y+=a.vy;
+    if(a.x<0||a.x>W)a.vx*=-1;if(a.y<0||a.y>H)a.vy*=-1;
+    // mouse rep*attract* slight
+    const dmx=mx-a.x,dmy=my-a.y,dm=Math.hypot(dmx,dmy);
+    if(dm<200*DPR&&dm>0){a.x-=dmx/dm*.4;a.y-=dmy/dm*.4;}
+    for(let j=i+1;j<nodes.length;j++){
+      const b=nodes[j],dx=a.x-b.x,dy=a.y-b.y,d=Math.hypot(dx,dy);
+      if(d<LK){
+        const o=(1-d/LK)*.5;
+        const c=a.c;
+        ctx.strokeStyle=`rgba(${c[0]},${c[1]},${c[2]},${o*.5})`;
+        ctx.lineWidth=DPR*.6;
+        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+      }
+    }
+  }
+  for(const n of nodes){
+    const p=(Math.sin(t/900+n.pulse)+1)/2;
+    const c=n.c;
+    ctx.beginPath();
+    ctx.fillStyle=`rgba(${c[0]},${c[1]},${c[2]},${.5+p*.5})`;
+    ctx.shadowBlur=10*DPR;ctx.shadowColor=`rgba(${c[0]},${c[1]},${c[2]},.8)`;
+    ctx.arc(n.x,n.y,n.r*(.8+p*.5),0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+  }
+  requestAnimationFrame(draw);
+}
+addEventListener('resize',resize);
+addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
+resize();requestAnimationFrame(draw);
+
+/* ---------- slides: reveal, dots, progress ---------- */
+const deck=document.getElementById('deck'),slides=[...document.querySelectorAll('.slide')];
+const bar=document.getElementById('bar'),dotsBox=document.getElementById('dots'),hint=document.getElementById('hint');
+slides.forEach((s,i)=>{
+  const b=document.createElement('button');b.title=s.dataset.name||('Slide '+(i+1));
+  b.onclick=()=>s.scrollIntoView({behavior:'smooth'});dotsBox.appendChild(b);
+});
+const dots=[...dotsBox.children];
+const io=new IntersectionObserver(es=>{
+  es.forEach(e=>{
+    const i=slides.indexOf(e.target);
+    if(e.isIntersecting&&e.intersectionRatio>.55){
+      e.target.classList.add('live');
+      dots.forEach((d,k)=>d.classList.toggle('on',k===i));
+    }
+  });
+},{threshold:[.55]});
+slides.forEach(s=>io.observe(s));
+deck.addEventListener('scroll',()=>{
+  const max=deck.scrollHeight-deck.clientHeight;
+  bar.style.width=(deck.scrollTop/max*100)+'%';
+  hint.style.opacity=deck.scrollTop>120?'0':'.8';
+});
+/* keyboard nav */
+addEventListener('keydown',e=>{
+  const cur=slides.findIndex(s=>s.classList.contains('live'));
+  if((e.key==='ArrowDown'||e.key==='PageDown'||e.key===' ')&&cur<slides.length-1){e.preventDefault();slides[cur+1].scrollIntoView({behavior:'smooth'});}
+  if((e.key==='ArrowUp'||e.key==='PageUp')&&cur>0){e.preventDefault();slides[cur-1].scrollIntoView({behavior:'smooth'});}
+});
+slides[0].classList.add('live');
+</script>
+</body>
+</html>
