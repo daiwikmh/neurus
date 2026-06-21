@@ -299,27 +299,30 @@ export class Neurus {
   }
 
   private async ingestStructure(kind: DatasetKind, title: string, url: string | undefined, items: { name: string; bytes: Buffer }[]): Promise<{ dataset: Dataset; files: number; failed: number }> {
-    const dataset = await addDataset({ set: this.set.id, kind, title, url, pages: 0 }, this.tenant);
     let files = 0;
     let failed = 0;
     let firstBlobId: string | undefined;
+    const staged: { file: Parameters<Memory["ingest"]>[0]; chunks: Parameters<Memory["ingest"]>[1] }[] = [];
+    const tempId = `ds_tmp_${Date.now()}`;
     for (const it of items) {
       try {
         const { file, chunks } = await ingestBuffer(it.name, it.bytes, { store: true });
         if (!firstBlobId && file.blobId) firstBlobId = file.blobId;
-        file.meta = { ...file.meta, datasetId: dataset.id };
-        for (const c of chunks) c.meta = { ...c.meta, datasetId: dataset.id };
-        await this.mem.ingest(file, chunks, { behind: this.behind });
+        file.meta = { ...file.meta, datasetId: tempId };
+        for (const c of chunks) c.meta = { ...c.meta, datasetId: tempId };
+        staged.push({ file, chunks });
         files++;
       } catch {
         failed++;
       }
     }
-    if (files === 0) {
-      await deleteDataset(dataset.id, this.tenant);
-      throw new Error(`no ingestible files found in "${title}" (need md/txt/csv/json/log/pdf/docx)`);
+    if (files === 0) throw new Error(`no ingestible files found in "${title}" (need md/txt/csv/json/log/pdf/docx)`);
+    const dataset = await addDataset({ set: this.set.id, kind, title, url, pages: files, ...(firstBlobId ? { blobId: firstBlobId } : {}) }, this.tenant);
+    for (const { file, chunks } of staged) {
+      file.meta = { ...file.meta, datasetId: dataset.id };
+      for (const c of chunks) c.meta = { ...c.meta, datasetId: dataset.id };
+      await this.mem.ingest(file, chunks, { behind: this.behind });
     }
-    await updateDataset(dataset.id, { pages: files, ...(firstBlobId ? { blobId: firstBlobId } : {}) }, this.tenant);
     return { dataset, files, failed };
   }
 
