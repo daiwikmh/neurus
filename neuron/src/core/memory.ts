@@ -14,6 +14,8 @@ import { merkleRoot } from "../integrity/merkle";
 import { RateLimitError } from "../util/retry";
 
 const SEARCHABLE: Set<NeuronType> = new Set(["note", "chunk", "insight", "skill"]);
+const CODE_QUERY = /\b(code|example|sample|snippet|how.?to|implement|write|show me|create|build|curl|api call)\b/i;
+const wantsCode = (q: string) => CODE_QUERY.test(q);
 const WRITE_SPACING_MS = Number(process.env.NEURUS_WRITE_SPACING_MS ?? 1000);
 const WRITE_BATCH = Math.max(1, Number(process.env.NEURUS_WRITE_BATCH ?? 16));
 const sigmoid = (x: number) => 1 / (1 + Math.exp(-x));
@@ -294,6 +296,12 @@ export class Memory {
       .map((r) => ({ neuron: pool[r.index], score: r.score, relevance: sigmoid(r.score) }))
       .filter((r) => r.relevance >= minRelevance);
     if (trust) out = out.filter((r) => r.neuron.source.trust === trust);
+
+    if (wantsCode(query)) {
+      out = out.map((r) => ({ ...r, score: r.neuron.body.includes("```") ? r.score + 2 : r.score }))
+               .sort((a, b) => b.score - a.score);
+    }
+
     if (opts.abstain != null && out.length > 1 && standsOut(out.map((r) => r.score)) < opts.abstain) return [];
     return mmr != null
       ? mmrSelect(out, limit, mmr, (r) => r.neuron.body, (r) => r.relevance)
