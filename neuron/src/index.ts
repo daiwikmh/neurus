@@ -302,9 +302,11 @@ export class Neurus {
     const dataset = await addDataset({ set: this.set.id, kind, title, url, pages: 0 }, this.tenant);
     let files = 0;
     let failed = 0;
+    let firstBlobId: string | undefined;
     for (const it of items) {
       try {
         const { file, chunks } = await ingestBuffer(it.name, it.bytes, { store: true });
+        if (!firstBlobId && file.blobId) firstBlobId = file.blobId;
         file.meta = { ...file.meta, datasetId: dataset.id };
         for (const c of chunks) c.meta = { ...c.meta, datasetId: dataset.id };
         await this.mem.ingest(file, chunks, { behind: this.behind });
@@ -317,7 +319,7 @@ export class Neurus {
       await deleteDataset(dataset.id, this.tenant);
       throw new Error(`no ingestible files found in "${title}" (need md/txt/csv/json/log/pdf/docx)`);
     }
-    await updateDataset(dataset.id, { pages: files }, this.tenant);
+    await updateDataset(dataset.id, { pages: files, ...(firstBlobId ? { blobId: firstBlobId } : {}) }, this.tenant);
     return { dataset, files, failed };
   }
 

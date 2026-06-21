@@ -299,6 +299,17 @@ export default function DatasetsPage() {
                           {d.kind === "github" ? d.title : hostOf(d.url)} ↗
                         </a>
                       )}
+                      {d.blobId && (
+                        <a
+                          href={walruscan(d.blobId)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-mono text-[11px] text-[#9aa8f0]/80 transition hover:text-[#aeb9f4]"
+                          title="first file blob on Walrus"
+                        >
+                          {d.blobId.slice(0, 14)}… ↗
+                        </a>
+                      )}
                     </>
                   ) : (
                     <>
