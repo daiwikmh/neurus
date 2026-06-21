@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "Neurus",
   description: "Neurus is a personal AI memory app. Sign in with Google to capture notes, files, and calendar events — then ask questions and get grounded answers from your own private memory stored on Walrus.",
   verification: {
-    google: process.env.GOOGLE_SITE_VERIFICATION,
+    google: "tUVY3EiMaEMTqYmoxQFZbm8yU0Gpo6u4jCl75qqyogQ",
   },
 };
 
