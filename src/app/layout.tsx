@@ -10,7 +10,10 @@ const playfair = Playfair_Display({ variable: "--font-playfair", subsets: ["lati
 
 export const metadata: Metadata = {
   title: "Neurus",
-  description: "The owned, verifiable memory layer for AI agents, on Walrus. Capture anything, recall it by meaning, and prove it was never tampered with.",
+  description: "Neurus is a personal AI memory app. Sign in with Google to capture notes, files, and calendar events — then ask questions and get grounded answers from your own private memory stored on Walrus.",
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+  },
 };
 
 export default function RootLayout({

@@ -105,8 +105,15 @@ export function Footer() {
       </div>
 
       <div className="relative mx-auto max-w-7xl px-6 py-5">
+        <p className="mb-3 text-xs text-white/25 max-w-2xl">
+          Neurus lets you sign in with Google to save notes, files, and calendar events as private AI memory — then ask questions and get cited answers from your own data. Google account access is used only for authentication and optional Calendar sync.
+        </p>
         <div className="flex items-center justify-between text-xs text-white/30">
-          <span>© {new Date().getFullYear()} Neurus. All rights reserved.</span>
+          <span className="flex items-center gap-4">
+            <span>© {new Date().getFullYear()} Neurus. All rights reserved.</span>
+            <a href="/privacy" className="hover:text-white/60 transition-colors">Privacy Policy</a>
+            <a href="/terms" className="hover:text-white/60 transition-colors">Terms of Service</a>
+          </span>
           <span className="flex items-center gap-2">
             <span className="h-1.5 w-1.5 rounded-full bg-[#9aa8f0]" />
             Built on Walrus
